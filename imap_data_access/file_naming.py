@@ -18,9 +18,9 @@ def extract_filename_components(filename: str):
     """
     pattern = (
         r"^imap_"
-        r"(?P<instrument>[^_]*)_"
-        r"(?P<datalevel>[^_]*)_"
-        r"(?P<descriptor>[^_]*)_"
+        r"(?P<instrument>[^_]+)_"
+        r"(?P<datalevel>[^_]+)_"
+        r"(?P<descriptor>[^_]*)_?"  # optional
         r"(?P<startdate>\d{8})_"
         r"(?P<enddate>\d{8})_"
         r"(?P<version>v\d{2}-\d{2})"
