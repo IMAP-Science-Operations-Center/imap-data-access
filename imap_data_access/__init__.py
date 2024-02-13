@@ -11,7 +11,7 @@ from imap_data_access.file_validation import ScienceFilePath
 from imap_data_access.io import download, query, upload
 
 __all__ = ["query", "download", "upload", "ScienceFilePath"]
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 
 config = {
