@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "imap-data-access"
-version = "0.3.0"
+version = "0.3.1"
 description = "IMAP SDC Data Access"
 authors = [{name = "IMAP SDC Developers", email = "imap-sdc@lists.lasp.colorado.edu"}]
 readme = "README.md"
