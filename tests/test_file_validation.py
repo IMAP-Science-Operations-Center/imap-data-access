@@ -104,3 +104,21 @@ def test_construct_upload_path():
     )
 
     assert sfm.construct_path() == expected_output
+
+
+def test_generate_from_inputs():
+    sfm = ScienceFilePath.generate_from_inputs(
+        "mag", "l1a", "burst", "20210101", "20210102", "v01-01"
+    )
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_20210102_v01-01.cdf"
+    )
+
+    assert sfm.construct_path() == expected_output
+    assert sfm.instrument == "mag"
+    assert sfm.data_level == "l1a"
+    assert sfm.descriptor == "burst"
+    assert sfm.startdate == "20210101"
+    assert sfm.enddate == "20210102"
+    assert sfm.version == "v01-01"
+    assert sfm.extension == "cdf"
