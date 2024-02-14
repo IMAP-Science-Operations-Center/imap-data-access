@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+import imap_data_access
 from imap_data_access.file_validation import ScienceFilePath
 
 
@@ -98,21 +99,8 @@ def test_is_valid_date():
 def test_construct_upload_path():
     valid_filename = "imap_mag_l1a_burst_20210101_20210102_v01-01.cdf"
     sfm = ScienceFilePath(valid_filename)
-    expected_output = Path(
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
         "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_20210102_v01-01.cdf"
-    )
-
-    assert sfm.construct_path() == expected_output
-
-
-def test_data_dir():
-    optional_data_dir = Path("/test/data")
-    valid_filename = Path("imap_mag_l1a_burst_20210101_20210102_v01-01.cdf")
-
-    sfm = ScienceFilePath(valid_filename, data_dir=optional_data_dir)
-    expected_output = Path(
-        "/test/data/imap/mag/l1a/2021/01/"
-        "imap_mag_l1a_burst_20210101_20210102_v01-01.cdf"
     )
 
     assert sfm.construct_path() == expected_output

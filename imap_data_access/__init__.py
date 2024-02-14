@@ -10,7 +10,16 @@ from pathlib import Path
 from imap_data_access.file_validation import ScienceFilePath
 from imap_data_access.io import download, query, upload
 
-__all__ = ["query", "download", "upload", "ScienceFilePath"]
+__all__ = [
+    "query",
+    "download",
+    "upload",
+    "ScienceFilePath",
+    "VALID_INSTRUMENTS",
+    "VALID_DATALEVELS",
+    "VALID_FILE_EXTENSION",
+    "FILENAME_CONVENTION",
+]
 __version__ = "0.3.1"
 
 
