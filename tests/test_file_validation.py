@@ -122,3 +122,12 @@ def test_generate_from_inputs():
     assert sfm.enddate == "20210102"
     assert sfm.version == "v01-01"
     assert sfm.extension == "cdf"
+
+    sfm = ScienceFilePath.generate_from_inputs(
+        "mag", "l0", "raw", "20210101", "20210102", "v01-01"
+    )
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101_20210102_v01-01.pkts"
+    )
+
+    assert sfm.construct_path() == expected_output

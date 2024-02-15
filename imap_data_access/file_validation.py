@@ -73,7 +73,7 @@ class ScienceFilePath:
     def generate_from_inputs(
         cls,
         instrument: str,
-        level: str,
+        data_level: str,
         descriptor: str,
         start_time: str,
         end_time: str,
@@ -94,7 +94,7 @@ class ScienceFilePath:
             The descriptor for the filename
         instrument : str
             The instrument for the filename
-        level : str
+        data_level : str
             The data level for the filename
         start_time: str
             The start time for the filename
@@ -108,9 +108,13 @@ class ScienceFilePath:
         str
             The generated filename
         """
+        extension = "cdf"
+        if data_level == "l0":
+            extension = "pkts"
+
         filename = (
-            f"imap_{instrument}_{level}_{descriptor}_{start_time}_{end_time}_"
-            f"{version}.cdf"
+            f"imap_{instrument}_{data_level}_{descriptor}_{start_time}_{end_time}_"
+            f"{version}.{extension}"
         )
         return cls(filename)
 
