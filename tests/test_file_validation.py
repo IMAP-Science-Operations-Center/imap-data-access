@@ -12,7 +12,7 @@ def test_extract_filename_components():
     expected_output = {
         "mission": "imap",
         "instrument": "mag",
-        "datalevel": "l1a",
+        "data_level": "l1a",
         "descriptor": "burst",
         "startdate": "20210101",
         "enddate": "20210102",

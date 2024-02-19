@@ -58,7 +58,7 @@ class ScienceFilePath:
 
         self.mission = split_filename["mission"]
         self.instrument = split_filename["instrument"]
-        self.data_level = split_filename["datalevel"]
+        self.data_level = split_filename["data_level"]
         self.descriptor = split_filename["descriptor"]
         self.startdate = split_filename["startdate"]
         self.enddate = split_filename["enddate"]
@@ -255,7 +255,7 @@ class ScienceFilePath:
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
-            r"(?P<datalevel>[^_]+)_"
+            r"(?P<data_level>[^_]+)_"
             r"(?P<descriptor>[^_]+)_"
             r"(?P<startdate>\d{8})_"
             r"(?P<enddate>\d{8})_"
