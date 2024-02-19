@@ -164,10 +164,4 @@ science_file = imap_data_access.ScienceFilePath("imap_swe_l0_sci_20240105_202401
 
 # Filepath = /imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_20240105_v00-05.pkts
 filepath = science_file.construct_file_path()
-
-# Use a data directory
-science_file = imap_data_access.ScienceFilePath("imap_swe_l0_sci_20240105_20240105_v00-05.pkts", data_dir="/data/personal")
-
-# Filepath = /data/personal/imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_20240105_v00-05.pkts
-filepath = science_file.construct_file_path()
 ```

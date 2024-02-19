@@ -20,7 +20,7 @@ __all__ = [
     "VALID_FILE_EXTENSION",
     "FILENAME_CONVENTION",
 ]
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 
 config = {
