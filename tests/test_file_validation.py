@@ -14,8 +14,8 @@ def test_extract_filename_components():
         "instrument": "mag",
         "data_level": "l1a",
         "descriptor": "burst",
-        "startdate": "20210101",
-        "enddate": "20210102",
+        "start_date": "20210101",
+        "end_date": "20210102",
         "version": "v01-01",
         "extension": "pkts",
     }
@@ -53,8 +53,8 @@ def test_construct_sciencefilepathmanager():
     assert sfm.instrument == "mag"
     assert sfm.data_level == "l1a"
     assert sfm.descriptor == "burst"
-    assert sfm.startdate == "20210101"
-    assert sfm.enddate == "20210102"
+    assert sfm.start_date == "20210101"
+    assert sfm.end_date == "20210102"
     assert sfm.version == "v01-01"
     assert sfm.extension == "cdf"
 
@@ -76,8 +76,8 @@ def test_construct_sciencefilepathmanager():
     assert sfm.instrument == "mag"
     assert sfm.data_level == "l1a"
     assert sfm.descriptor == "burst"
-    assert sfm.startdate == "20210101"
-    assert sfm.enddate == "20210102"
+    assert sfm.start_date == "20210101"
+    assert sfm.end_date == "20210102"
     assert sfm.version == "v01-01"
     assert sfm.extension == "cdf"
 
@@ -118,8 +118,8 @@ def test_generate_from_inputs():
     assert sfm.instrument == "mag"
     assert sfm.data_level == "l1a"
     assert sfm.descriptor == "burst"
-    assert sfm.startdate == "20210101"
-    assert sfm.enddate == "20210102"
+    assert sfm.start_date == "20210101"
+    assert sfm.end_date == "20210102"
     assert sfm.version == "v01-01"
     assert sfm.extension == "cdf"
 

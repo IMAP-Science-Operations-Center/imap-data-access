@@ -23,7 +23,7 @@ class ScienceFilePath:
         path is set by the "IMAP_DATA_DIR" environment variable, or defaults to "data/"
 
         Current filename convention:
-        <mission>_<instrument>_<datalevel>_<descriptor>_<startdate>_<enddate>
+        <mission>_<instrument>_<datalevel>_<descriptor>_<start_date>_<end_date>
         _<version>.<extension>
 
         NOTE: There are no optional parameters. All parameters are required.
@@ -60,8 +60,8 @@ class ScienceFilePath:
         self.instrument = split_filename["instrument"]
         self.data_level = split_filename["data_level"]
         self.descriptor = split_filename["descriptor"]
-        self.startdate = split_filename["startdate"]
-        self.enddate = split_filename["enddate"]
+        self.start_date = split_filename["start_date"]
+        self.end_date = split_filename["end_date"]
         self.version = split_filename["version"]
         self.extension = split_filename["extension"]
 
@@ -139,8 +139,8 @@ class ScienceFilePath:
                 self.instrument,
                 self.data_level,
                 self.descriptor,
-                self.startdate,
-                self.enddate,
+                self.start_date,
+                self.end_date,
                 self.version,
                 self.extension,
             ]
@@ -164,9 +164,9 @@ class ScienceFilePath:
                 f"from "
                 f"{imap_data_access.VALID_DATALEVELS} \n"
             )
-        if not self.is_valid_date(self.startdate):
+        if not self.is_valid_date(self.start_date):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
-        if not self.is_valid_date(self.enddate):
+        if not self.is_valid_date(self.end_date):
             error_message += "Invalid end date format. Please use YYYYMMDD format. \n"
         if not bool(re.match(r"^v\d{2}-\d{2}$", self.version)):
             error_message += "Invalid version format. Please use vxx-xx format. \n"
@@ -221,7 +221,7 @@ class ScienceFilePath:
         """
         upload_path = Path(
             f"{self.mission}/{self.instrument}/{self.data_level}/"
-            f"{self.startdate[:4]}/{self.startdate[4:6]}/{self.filename}"
+            f"{self.start_date[:4]}/{self.start_date[4:6]}/{self.filename}"
         )
         if self.data_dir:
             upload_path = self.data_dir / upload_path
@@ -257,8 +257,8 @@ class ScienceFilePath:
             r"(?P<instrument>[^_]+)_"
             r"(?P<data_level>[^_]+)_"
             r"(?P<descriptor>[^_]+)_"
-            r"(?P<startdate>\d{8})_"
-            r"(?P<enddate>\d{8})_"
+            r"(?P<start_date>\d{8})_"
+            r"(?P<end_date>\d{8})_"
             r"(?P<version>v\d{2}-\d{2})"
             r"\.(?P<extension>cdf|pkts)$"
         )
