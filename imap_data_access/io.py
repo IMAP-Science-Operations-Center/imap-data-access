@@ -109,7 +109,7 @@ def query(
     repointing: Optional[int] = None,
     version: Optional[str] = None,
     extension: Optional[str] = None,
-) -> list[str]:
+) -> list[dict[str, str]]:
     """Query the data archive for files matching the parameters.
 
     Parameters
