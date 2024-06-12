@@ -161,7 +161,7 @@ section for an example of how to set this up.
 This package validates filenames and paths to check they follow our standards, as defined by the filename conventions. There is also a class available for
 use by other packages to create filepaths and filenames that follow the IMAP SDC conventions.
 
-To use this class, use `imap_data_access.ScienceFilepath`.
+To use this class, use `imap_data_access.ScienceFilePath`.
 
 Usage:
 
@@ -170,5 +170,5 @@ Usage:
 science_file = imap_data_access.ScienceFilePath("imap_swe_l0_sci_20240101_v001.pkts")
 
 # Filepath = /imap/swe/l0/2024/01/imap_swe_l0_sci_20240101_v001.pkts
-filepath = science_file.construct_file_path()
+filepath = science_file.construct_path()
 ```
