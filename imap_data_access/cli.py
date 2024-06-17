@@ -94,6 +94,7 @@ def _query_parser(args: argparse.Namespace):
         "data_level",
         "descriptor",
         "start_date",
+        "end_date",
         "repointing",
         "version",
         "extension",
