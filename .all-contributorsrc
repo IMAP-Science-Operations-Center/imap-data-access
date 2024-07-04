@@ -6,7 +6,44 @@
   "commit": false,
   "commitType": "docs",
   "commitConvention": "angular",
-  "contributors":
+  "contributors": [
+      {
+          "login": "greglucas",
+          "name": "Greg Lucas",
+          "avatar_url": "https://avatars.githubusercontent.com/u/12417828?v=4",
+          "profile": "http://greglucas.github.io",
+          "contributions": [
+            "code"
+          ]
+      },
+      {
+      "login": "bourque",
+      "name": "Matthew Bourque",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2250769?v=4",
+      "profile": "https://github.com/bourque",
+      "contributions": [
+        "code"
+      ]
+      },
+      {
+      "login": "maxinelasp",
+      "name": "Maxine Hartnett",
+      "avatar_url": "https://avatars.githubusercontent.com/u/117409426?v=4",
+      "profile": "https://github.com/maxinelasp",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "mfacchinelli",
+      "name": "Michele Facchinelli",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19731497?v=4",
+      "profile": "https://github.com/mfacchinelli",
+      "contributions": [
+        "code"
+      ]
+    },
+  ]
   "contributorsPerLine": 7,
   "skipCi": true,
   "repoType": "github",
