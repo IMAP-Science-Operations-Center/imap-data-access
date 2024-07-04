@@ -1,8 +1,7 @@
 # IMAP Data Access Package
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-0-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
-[![readthedocs](https://readthedocs.org/projects/imap-data-access/badge/?version=latest)](https://imap-data-access.readthedocs.io/en/latest/)
 
 This lightweight  Python package allows users to download, query, and upload data from the IMAP Science Data Center (SDC).
 
@@ -189,3 +188,5 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
