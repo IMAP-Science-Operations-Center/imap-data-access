@@ -1,6 +1,6 @@
 # IMAP Data Access Package
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 This lightweight  Python package allows users to download, query, and upload data from the IMAP Science Data Center (SDC).
@@ -190,6 +190,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/bourque"><img src="https://avatars.githubusercontent.com/u/2250769?v=4?s=100" width="100px;" alt="Matthew Bourque"/><br /><sub><b>Matthew Bourque</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=bourque" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/maxinelasp"><img src="https://avatars.githubusercontent.com/u/117409426?v=4?s=100" width="100px;" alt="Maxine Hartnett"/><br /><sub><b>Maxine Hartnett</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=maxinelasp" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mfacchinelli"><img src="https://avatars.githubusercontent.com/u/19731497?v=4?s=100" width="100px;" alt="Michele Facchinelli"/><br /><sub><b>Michele Facchinelli</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=mfacchinelli" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anamanica"><img src="https://avatars.githubusercontent.com/u/171708990?v=4?s=100" width="100px;" alt="anamanica"/><br /><sub><b>anamanica</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=anamanica" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
