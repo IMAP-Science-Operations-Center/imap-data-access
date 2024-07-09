@@ -18,6 +18,7 @@ Use
 import argparse
 import logging
 import os
+import sys
 from pathlib import Path
 
 import imap_data_access
@@ -125,7 +126,7 @@ def _upload_parser(args: argparse.Namespace):
     print("Successfully uploaded the file to the IMAP SDC")
 
 
-def main():
+def main():  # noqa: PLR0915
     """Parse the command line arguments.
 
     Run the command line interface to the IMAP Data Access API.
@@ -271,7 +272,12 @@ def main():
     parser_upload.set_defaults(func=_upload_parser)
 
     # Parse the arguments and set the values
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except Exception:
+        print("Please provide input parameters.")
+        sys.exit(0)
+
     logging.basicConfig(level=args.loglevel)
 
     if args.data_dir:
