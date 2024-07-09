@@ -142,7 +142,10 @@ def query(
     # and allows us to filter out the None values
     query_params = {key: value for key, value in locals().items() if value is not None}
     if not query_params:
-        raise ValueError("At least one query parameter must be provided")
+        raise ValueError(
+            "At least one query parameter must be provided. "
+            "Run 'query -h' for more information."
+        )
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
     url += f"/query?{urlencode(query_params)}"
 
