@@ -201,7 +201,7 @@ def main():  # noqa: PLR0915
         default=logging.WARNING,
     )
     parser.add_argument(
-        "-vb",
+        "-v",
         "--verbose",
         help="Add verbose output",
         action="store_const",
