@@ -148,6 +148,10 @@ def main():  # noqa: PLR0915
     )
     download_help = (
         "Download a file from the IMAP SDC to the locally configured data directory. "
+        "Run 'download -h' for more information. "
+    )
+    help_menu_download = (
+        "Download a file from the IMAP SDC to the locally configured data directory. "
     )
     file_path_help = (
         "This must be the full path to the file."
@@ -155,11 +159,21 @@ def main():  # noqa: PLR0915
     )
     query_help = (
         "Query the IMAP SDC for files matching the query parameters. "
-        "The query parameters are optional, but at least one must be provided."
+        "The query parameters are optional, but at least one must be provided. "
+        "Run 'query -h' for more information."
+    )
+    help_menu_query = (
+        "Query the IMAP SDC for files matching the query parameters. "
+        "The query parameters are optional, but at least one must be provided. "
     )
     upload_help = (
         "Upload a file to the IMAP SDC. This must be the full path to the file."
-        "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts"
+        "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts. "
+        "Run 'upload -h' for more information."
+    )
+    help_menu_upload = (
+        "Upload a file to the IMAP SDC. This must be the full path to the file."
+        "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts. "
     )
     url_help = (
         "URL of the IMAP SDC API. "
@@ -172,6 +186,7 @@ def main():  # noqa: PLR0915
         "--version",
         action="version",
         version=f"%(prog)s {imap_data_access.__version__}",
+        help="Show programs version number and exit. No other parameters needed.",
     )
     parser.add_argument("--api-key", type=str, required=False, help=api_key_help)
     parser.add_argument("--data-dir", type=Path, required=False, help=data_dir_help)
@@ -179,14 +194,14 @@ def main():  # noqa: PLR0915
     # Logging level
     parser.add_argument(
         "--debug",
-        help="Print lots of debugging statements",
+        help="Print lots of debugging statements.",
         action="store_const",
         dest="loglevel",
         const=logging.DEBUG,
         default=logging.WARNING,
     )
     parser.add_argument(
-        "-v",
+        "-vb",
         "--verbose",
         help="Add verbose output",
         action="store_const",
@@ -197,14 +212,14 @@ def main():  # noqa: PLR0915
     # Download command
     subparsers = parser.add_subparsers(required=True)
     parser_download = subparsers.add_parser(
-        "download", help=download_help, description=download_help
+        "download", help=download_help, description=help_menu_download
     )
     parser_download.add_argument("file_path", type=Path, help=file_path_help)
     parser_download.set_defaults(func=_download_parser)
 
     # Query command (with optional arguments)
     query_parser = subparsers.add_parser(
-        "query", help=query_help, description=query_help
+        "query", help=query_help, description=help_menu_query
     )
     query_parser.add_argument(
         "--instrument",
@@ -266,7 +281,7 @@ def main():  # noqa: PLR0915
 
     # Upload command
     parser_upload = subparsers.add_parser(
-        "upload", help=upload_help, description=upload_help
+        "upload", help=upload_help, description=help_menu_upload
     )
     parser_upload.add_argument("file_path", type=Path, help=file_path_help)
     parser_upload.set_defaults(func=_upload_parser)
