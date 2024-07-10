@@ -126,6 +126,7 @@ def _upload_parser(args: argparse.Namespace):
     print("Successfully uploaded the file to the IMAP SDC")
 
 
+# PLR0915: too many statements
 def main():  # noqa: PLR0915
     """Parse the command line arguments.
 
