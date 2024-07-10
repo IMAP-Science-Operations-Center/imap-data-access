@@ -150,7 +150,7 @@ def main():  # noqa: PLR0915
         "Download a file from the IMAP SDC to the locally configured data directory. "
         "Run 'download -h' for more information. "
     )
-    help_menu_download = (
+    help_menu_for_download = (
         "Download a file from the IMAP SDC to the locally configured data directory. "
     )
     file_path_help = (
@@ -162,7 +162,7 @@ def main():  # noqa: PLR0915
         "The query parameters are optional, but at least one must be provided. "
         "Run 'query -h' for more information."
     )
-    help_menu_query = (
+    help_menu_for_query = (
         "Query the IMAP SDC for files matching the query parameters. "
         "The query parameters are optional, but at least one must be provided. "
     )
@@ -171,7 +171,7 @@ def main():  # noqa: PLR0915
         "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts. "
         "Run 'upload -h' for more information."
     )
-    help_menu_upload = (
+    help_menu_for_upload = (
         "Upload a file to the IMAP SDC. This must be the full path to the file."
         "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts. "
     )
@@ -212,14 +212,14 @@ def main():  # noqa: PLR0915
     # Download command
     subparsers = parser.add_subparsers(required=True)
     parser_download = subparsers.add_parser(
-        "download", help=download_help, description=help_menu_download
+        "download", help=download_help, description=help_menu_for_download
     )
     parser_download.add_argument("file_path", type=Path, help=file_path_help)
     parser_download.set_defaults(func=_download_parser)
 
     # Query command (with optional arguments)
     query_parser = subparsers.add_parser(
-        "query", help=query_help, description=help_menu_query
+        "query", help=query_help, description=help_menu_for_query
     )
     query_parser.add_argument(
         "--instrument",
@@ -281,7 +281,7 @@ def main():  # noqa: PLR0915
 
     # Upload command
     parser_upload = subparsers.add_parser(
-        "upload", help=upload_help, description=help_menu_upload
+        "upload", help=upload_help, description=help_menu_for_upload
     )
     parser_upload.add_argument("file_path", type=Path, help=file_path_help)
     parser_upload.set_defaults(func=_upload_parser)
