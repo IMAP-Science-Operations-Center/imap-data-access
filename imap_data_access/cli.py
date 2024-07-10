@@ -18,7 +18,6 @@ Use
 import argparse
 import logging
 import os
-import sys
 from pathlib import Path
 
 import imap_data_access
@@ -290,9 +289,12 @@ def main():  # noqa: PLR0915
     # Parse the arguments and set the values
     try:
         args = parser.parse_args()
-    except Exception:
-        print("Please provide input parameters.")
-        sys.exit(0)
+    except TypeError as e:
+        parser.exit(
+            status=1,
+            message=str(e) + "\n" + "Please provide input parameters, "
+            "or use '-h' for more information.",
+        )
 
     logging.basicConfig(level=args.loglevel)
 
