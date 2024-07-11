@@ -289,10 +289,10 @@ def main():  # noqa: PLR0915
     # Parse the arguments and set the values
     try:
         args = parser.parse_args()
-    except TypeError as e:
+    except TypeError:
         parser.exit(
             status=1,
-            message=str(e) + "\n" + "Please provide input parameters, "
+            message="Please provide input parameters, "
             "or use '-h' for more information.",
         )
 
