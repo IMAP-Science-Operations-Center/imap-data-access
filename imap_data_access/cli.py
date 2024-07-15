@@ -80,6 +80,11 @@ def _print_query_results_table(query_results: list[dict]):
     print(hyphens)
 
 
+def extract_version_number(str_version: str) -> int:
+    """Take a version string 'vXXX' and return and int 'XXX'."""
+    return int(str_version[1:4])
+
+
 def _query_parser(args: argparse.Namespace):
     """Query the IMAP SDC.
 
@@ -99,12 +104,31 @@ def _query_parser(args: argparse.Namespace):
         "version",
         "extension",
     ]
+    latest_version = ""
     query_params = {
         key: value
         for key, value in vars(args).items()
         if key in valid_args and value is not None
     }
+
+    # removing version from query if it is 'latest', updating flag
+    if args.version == "latest":
+        del query_params["version"]
+        latest_version = "latest"
+
     query_results = imap_data_access.query(**query_params)
+
+    # if latest version was included in search then filter returned query for largest.
+    if latest_version == "latest":
+        max_version = max(
+            extract_version_number(each_dict.get("version"))
+            for each_dict in query_results
+        )
+        query_results = [
+            each_dict
+            for each_dict in query_results
+            if extract_version_number(each_dict["version"]) >= max_version
+        ]
 
     if args.output_format == "table":
         _print_query_results_table(query_results)
