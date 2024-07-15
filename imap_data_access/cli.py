@@ -288,7 +288,9 @@ def main():  # noqa: PLR0915
         "--version",
         type=str,
         required=False,
-        help="Version of the product in the format 'v001'",
+        help="Version of the product in the format 'v001'."
+        " Must have one other parameter to run."
+        " Passing 'latest' will return latest version of a file",
     )
     query_parser.add_argument(
         "--extension", type=str, required=False, help="File extension (cdf, pkts)"
