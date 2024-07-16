@@ -18,7 +18,10 @@ Use
 import argparse
 import logging
 import os
+import sys
 from pathlib import Path
+
+from file_validation import ScienceFilePath
 
 import imap_data_access
 
@@ -103,6 +106,7 @@ def _query_parser(args: argparse.Namespace):
         "repointing",
         "version",
         "extension",
+        "filename",
     ]
     latest_version = ""
     query_params = {
@@ -110,6 +114,22 @@ def _query_parser(args: argparse.Namespace):
         for key, value in vars(args).items()
         if key in valid_args and value is not None
     }
+
+    # Checking to see if a filename was passed.
+    if args.filename is not None:
+        if len(sys.argv) > 4:  # I have doubts about this line
+            raise TypeError("Too many arguments, '--filename' should be ran by itself")
+
+        file_path = ScienceFilePath(args.filename)
+        query_params = {
+            "instrument": file_path.instrument,
+            "data_level": file_path.data_level,
+            "descriptor": file_path.descriptor,
+            "start_date": file_path.start_date,
+            "repointing": file_path.repointing,
+            "version": file_path.version,
+            "extension": file_path.extension,
+        }
 
     # removing version from query if it is 'latest', updating flag
     if args.version == "latest":
@@ -302,6 +322,9 @@ def main():  # noqa: PLR0915
         help="How to format the output, default is 'table'",
         choices=["table", "json"],
         default="table",
+    )
+    query_parser.add_argument(
+        "--filename", type=str, required=False, help="Name of a file to be searched for"
     )
     query_parser.set_defaults(func=_query_parser)
 
