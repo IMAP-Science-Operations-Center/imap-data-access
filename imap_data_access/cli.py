@@ -47,9 +47,9 @@ def _print_query_results_table(query_results: list[dict]):
     print(f"Found [{num_files}] matching files")
     if num_files == 0:
         return
-    format_string = "{:<10}|{:<10}|{:<10}|{:<10}|{:<10}|{:<7}|{:<50}|"
+    format_string = "| {:<10} | {:<10} | {:<15} | {:<10} | {:<10} | {:<7} | {:<50}|"
     # Add hyphens for a separator between header and data
-    hyphens = "-" * 113 + "|"
+    hyphens = "|" + "-" * 131 + "|"
     print(hyphens)
     header = [
         "Instrument",
