@@ -18,7 +18,6 @@ Use
 import argparse
 import logging
 import os
-import sys
 from pathlib import Path
 
 from file_validation import ScienceFilePath
@@ -108,7 +107,6 @@ def _query_parser(args: argparse.Namespace):
         "extension",
         "filename",
     ]
-    latest_version = ""
     query_params = {
         key: value
         for key, value in vars(args).items()
@@ -117,7 +115,8 @@ def _query_parser(args: argparse.Namespace):
 
     # Checking to see if a filename was passed.
     if args.filename is not None:
-        if len(sys.argv) > 4:  # I have doubts about this line
+        del query_params["filename"]
+        if query_params:
             raise TypeError("Too many arguments, '--filename' should be ran by itself")
 
         file_path = ScienceFilePath(args.filename)
@@ -131,24 +130,7 @@ def _query_parser(args: argparse.Namespace):
             "extension": file_path.extension,
         }
 
-    # removing version from query if it is 'latest', updating flag
-    if args.version == "latest":
-        del query_params["version"]
-        latest_version = "latest"
-
     query_results = imap_data_access.query(**query_params)
-
-    # if latest version was included in search then filter returned query for largest.
-    if latest_version == "latest":
-        max_version = max(
-            extract_version_number(each_dict.get("version"))
-            for each_dict in query_results
-        )
-        query_results = [
-            each_dict
-            for each_dict in query_results
-            if extract_version_number(each_dict["version"]) >= max_version
-        ]
 
     if args.output_format == "table":
         _print_query_results_table(query_results)
