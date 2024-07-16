@@ -141,6 +141,14 @@ def query(
     # locals() gives us the keyword arguments passed to the function
     # and allows us to filter out the None values
     query_params = {key: value for key, value in locals().items() if value is not None}
+
+    # removing version from query if it is 'latest',
+    # ensuring other parameters are passed
+    if version == "latest":
+        del query_params["version"]
+        if not query_params:
+            raise ValueError("One other parameter must be run with 'version'")
+
     if not query_params:
         raise ValueError(
             "At least one query parameter must be provided. "
@@ -158,6 +166,15 @@ def query(
         # Decode the JSON string into a list
         items = json.loads(items)
         logger.debug("Decoded JSON: %s", items)
+
+    # if latest version was included in search then filter returned query for largest.
+    if version == "latest":
+        max_version = max(int(each_dict.get("version")[1:4]) for each_dict in items)
+        items = [
+            each_dict
+            for each_dict in items
+            if int(each_dict["version"][1:4]) == max_version
+        ]
     return items
 
 
