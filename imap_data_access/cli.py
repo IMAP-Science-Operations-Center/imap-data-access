@@ -261,7 +261,7 @@ def main():  # noqa: PLR0915
         "--end-date",
         type=str,
         required=False,
-        help="End date for a range of file start dates in YYYYMMDD format",
+        help="End date for a range of file timestamps in YYYYMMDD format",
     )
     query_parser.add_argument(
         "--repointing", type=int, required=False, help="Repointing number (int)"
