@@ -112,6 +112,11 @@ def query(
 ) -> list[dict[str, str]]:
     """Query the data archive for files matching the parameters.
 
+    Before running the query it will be checked if a version 'latest' command
+    was passed and that at least one other parameter was passed. After the
+    query is run, if a 'latest' was passed then the query results will be
+    filtered before being returned.
+
     Parameters
     ----------
     instrument : str, optional
@@ -129,7 +134,7 @@ def query(
     repointing : int, optional
         Repointing number
     version : str, optional
-        Data version in the format ``vXXX``
+        Data version in the format ``vXXX`` or 'latest'.
     extension : str, optional
         File extension (``cdf``, ``pkts``)
 
