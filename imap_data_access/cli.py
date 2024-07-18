@@ -313,7 +313,12 @@ def main():  # noqa: PLR0915
         default="table",
     )
     query_parser.add_argument(
-        "--filename", type=str, required=False, help="Name of a file to be searched for"
+        "--filename",
+        type=str,
+        required=False,
+        help="Name of a file to be searched for. For convention standards see https://imap-"
+        "processing.readthedocs.io/en/latest/development-guide/style-guide/naming-conventions"
+        ".html#data-product-file-naming-conventions",
     )
     query_parser.set_defaults(func=_query_parser)
 
