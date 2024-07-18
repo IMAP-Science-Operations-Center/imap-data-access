@@ -107,6 +107,7 @@ def _query_parser(args: argparse.Namespace):
         "extension",
         "filename",
     ]
+
     query_params = {
         key: value
         for key, value in vars(args).items()
@@ -278,10 +279,16 @@ def main():  # noqa: PLR0915
         help="Descriptor of the product (raw, burst, etc.)",
     )
     query_parser.add_argument(
-        "--start-date", type=str, required=False, help="Start date in YYYYMMDD format"
+        "--start-date",
+        type=str,
+        required=False,
+        help="Start date for files in YYYYMMDD format",
     )
     query_parser.add_argument(
-        "--end-date", type=str, required=False, help="End date in YYYYMMDD format"
+        "--end-date",
+        type=str,
+        required=False,
+        help="End date for a range of file timestamps in YYYYMMDD format",
     )
     query_parser.add_argument(
         "--repointing", type=int, required=False, help="Repointing number (int)"
