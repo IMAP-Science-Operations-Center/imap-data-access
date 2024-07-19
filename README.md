@@ -5,7 +5,7 @@
 
 This lightweight  Python package allows users to download, query, and upload data from the IMAP Science Data Center (SDC).
 
-For more information and detailed instructions see https://imap-processing.readthedocs.io/en/latest/data-access-api/index.html
+For more information see the [detailed instructions](https://imap-processing.readthedocs.io/en/latest/data-access-api/index.html).
 
 ## Command Line Utility
 
@@ -22,7 +22,7 @@ $ imap-data-access query # or
 $ imap-data-access download # or
 $ imap-data-access upload
 ```
-Run '-h' with any base command for more information
+Add the '-h' help flag with any base command for more information
 
 ### Query / Search for data
 
@@ -51,7 +51,8 @@ $ imap-data-access query --start-date 20240101 --end-date 20241231 --output-form
 
 Download a level 0 SWE file on 2024/01/05
 
-Note: Make sure the directory configuration is correct, see Data Directory section for more information.
+> [!NOTE]
+> Make sure the directory configuration is correct, see the [Data Directory section](https://github.com/IMAP-Science-Operations-Center/imap-data-access#data-directory) for more information.
 
 ```bash
 $ imap-data-access download imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_v001.pkts
