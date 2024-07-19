@@ -18,9 +18,9 @@ imap-data-access -h
 
 ### Base Command Arguments
 ```bash
-$ imap-data-access query #or
-$ imap-data-access download #or
-$ imap-data-access upload  
+$ imap-data-access query # or
+$ imap-data-access download # or
+$ imap-data-access upload
 ```
 Run '-h' with any base command for more information
 
