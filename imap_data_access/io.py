@@ -173,7 +173,7 @@ def query(
         logger.debug("Decoded JSON: %s", items)
 
     # if latest version was included in search then filter returned query for largest.
-    if version == "latest":
+    if (version == "latest") and items:
         max_version = max(int(each_dict.get("version")[1:4]) for each_dict in items)
         items = [
             each_dict
