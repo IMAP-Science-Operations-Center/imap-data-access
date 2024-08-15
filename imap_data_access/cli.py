@@ -128,6 +128,11 @@ def _print_query_results_table(query_results: list[dict]):
     print(hyphens)
 
 
+def extract_version_number(str_version: str) -> int:
+    """Take a version string 'vXXX' and return and int 'XXX'."""
+    return int(str_version[1:4])
+
+
 def _query_parser(args: argparse.Namespace):
     """Query the IMAP SDC.
 
