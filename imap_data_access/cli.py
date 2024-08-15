@@ -20,6 +20,8 @@ import logging
 import os
 from pathlib import Path
 
+from file_validation import ScienceFilePath
+
 import imap_data_access
 
 
@@ -47,11 +49,9 @@ def _print_query_results_table(query_results: list[dict]):
     print(f"Found [{num_files}] matching files")
     if num_files == 0:
         return
-    format_string = "| {:<10} | {:<10} | {:<15} | {:<10} | {:<10} | {:<7} | {:<50}|"
-    # Add hyphens for a separator between header and data
-    hyphens = "|" + "-" * 131 + "|"
-    print(hyphens)
-    header = [
+
+    # Use the keys of the first item in query_results for the header
+    headers = [
         "Instrument",
         "Data Level",
         "Descriptor",
@@ -60,22 +60,70 @@ def _print_query_results_table(query_results: list[dict]):
         "Version",
         "Filename",
     ]
-    print(format_string.format(*header))
+
+    # Calculate the maximum width for each column based on the header and the data
+    column_widths = {
+        "Instrument": max(
+            len("Instrument"),
+            *(len(str(item.get("instrument", ""))) for item in query_results),
+        ),
+        "Data Level": max(
+            len("Data Level"),
+            *(len(str(item.get("data_level", ""))) for item in query_results),
+        ),
+        "Descriptor": max(
+            len("Descriptor"),
+            *(len(str(item.get("descriptor", ""))) for item in query_results),
+        ),
+        "Start Date": max(
+            len("Start Date"),
+            *(len(str(item.get("start_date", ""))) for item in query_results),
+        ),
+        "Repointing": max(
+            len("Repointing"),
+            *(len(str(item.get("repointing", ""))) for item in query_results),
+        ),
+        "Version": max(
+            len("Version"),
+            *(len(str(item.get("version", ""))) for item in query_results),
+        ),
+        "Filename": max(
+            len("Filename"),
+            *(
+                len(os.path.basename(item.get("file_path", "")))
+                for item in query_results
+            ),
+        ),
+    }
+
+    # Create the format string dynamically based on the number of columns
+    format_string = (
+        "| "
+        + " | ".join([f"{{:<{column_widths[header]}}}" for header in headers])
+        + " |"
+    )
+
+    # Add hyphens for a separator between header and data
+    hyphens = "|" + "-" * (sum(column_widths.values()) + 3 * len(headers) - 1) + "|"
+    print(hyphens)
+
+    # Print header
+    print(format_string.format(*headers))
     print(hyphens)
 
     # Print data
     for item in query_results:
         values = [
-            item["instrument"],
-            item["data_level"],
-            item["descriptor"],
-            item["start_date"],
-            # Repointing is optional, so use an empty string if not present
-            item["repointing"] or "",
-            item["version"],
-            os.path.basename(item["file_path"]),
+            str(item.get("instrument", "")),
+            str(item.get("data_level", "")),
+            str(item.get("descriptor", "")),
+            str(item.get("start_date", "")),
+            str(item.get("repointing", "")) or "",
+            str(item.get("version", "")),
+            os.path.basename(item.get("file_path", "")),
         ]
         print(format_string.format(*values))
+
     # Close the table
     print(hyphens)
 
@@ -98,6 +146,8 @@ def _query_parser(args: argparse.Namespace):
         "repointing",
         "version",
         "extension",
+        "filename",
+        "days_ago",
     ]
 
     query_params = {
@@ -105,6 +155,23 @@ def _query_parser(args: argparse.Namespace):
         for key, value in vars(args).items()
         if key in valid_args and value is not None
     }
+
+    # Checking to see if a filename was passed.
+    if args.filename is not None:
+        del query_params["filename"]
+        if query_params:
+            raise TypeError("Too many arguments, '--filename' should be ran by itself")
+
+        file_path = ScienceFilePath(args.filename)
+        query_params = {
+            "instrument": file_path.instrument,
+            "data_level": file_path.data_level,
+            "descriptor": file_path.descriptor,
+            "start_date": file_path.start_date,
+            "repointing": file_path.repointing,
+            "version": file_path.version,
+            "extension": file_path.extension,
+        }
 
     query_results = imap_data_access.query(**query_params)
 
@@ -286,6 +353,21 @@ def main():  # noqa: PLR0915
         help="How to format the output, default is 'table'",
         choices=["table", "json"],
         default="table",
+    )
+    query_parser.add_argument(
+        "--filename",
+        type=str,
+        required=False,
+        help="Name of a file to be searched for. For convention standards see https://imap-"
+        "processing.readthedocs.io/en/latest/development-guide/style-guide/naming-conventions"
+        ".html#data-product-file-naming-conventions",
+    )
+    query_parser.add_argument(
+        "--days_ago",
+        type=str,
+        required=False,
+        help="Search for files added to the database 'X' days ago. Pass in a number for"
+        " amount of days or 'today' for last 24 hours",
     )
     query_parser.set_defaults(func=_query_parser)
 

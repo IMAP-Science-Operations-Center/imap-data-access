@@ -7,6 +7,7 @@ import contextlib
 import json
 import logging
 import urllib.request
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Union
 from urllib.error import HTTPError, URLError
@@ -109,6 +110,7 @@ def query(
     repointing: Optional[int] = None,
     version: Optional[str] = None,
     extension: Optional[str] = None,
+    days_ago: Optional[str] = None,
 ) -> list[dict[str, str]]:
     """Query the data archive for files matching the parameters.
 
@@ -137,15 +139,43 @@ def query(
         Data version in the format ``vXXX`` or 'latest'.
     extension : str, optional
         File extension (``cdf``, ``pkts``)
+    days_ago : str, optional
+        File search for 24 hours "today" and "X" days ago
 
     Returns
     -------
     list
         List of files matching the query
     """
+    if days_ago:
+        today = datetime.now()
+        if days_ago == "today":
+            start_date = today.strftime("%Y%m%d")
+            end_date = today.strftime("%Y%m%d")
+            print(start_date, end_date)  # remove
+        else:
+            try:
+                days_ago_int = int(days_ago)
+            except ValueError:
+                raise ValueError(
+                    "days_ago should be 'today' or an integer representing the "
+                    "number of days ago."
+                ) from None
+
+            end_date = today.strftime("%Y%m%d")
+            start_date = (today - timedelta(days=int(days_ago))).strftime("%Y%m%d")
+            print(start_date, end_date)
+
     # locals() gives us the keyword arguments passed to the function
     # and allows us to filter out the None values
-    query_params = {key: value for key, value in locals().items() if value is not None}
+    query_params = {
+        key: value
+        for key, value in locals().items()
+        if value is not None and key not in ["today"]
+    }
+    del query_params["days_ago"]
+    del query_params["days_ago_int"]
+    print(query_params)
 
     # removing version from query if it is 'latest',
     # ensuring other parameters are passed
