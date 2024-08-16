@@ -62,39 +62,21 @@ def _print_query_results_table(query_results: list[dict]):
     ]
 
     # Calculate the maximum width for each column based on the header and the data
-    column_widths = {
-        "Instrument": max(
-            len("Instrument"),
-            *(len(str(item.get("instrument", ""))) for item in query_results),
-        ),
-        "Data Level": max(
-            len("Data Level"),
-            *(len(str(item.get("data_level", ""))) for item in query_results),
-        ),
-        "Descriptor": max(
-            len("Descriptor"),
-            *(len(str(item.get("descriptor", ""))) for item in query_results),
-        ),
-        "Start Date": max(
-            len("Start Date"),
-            *(len(str(item.get("start_date", ""))) for item in query_results),
-        ),
-        "Repointing": max(
-            len("Repointing"),
-            *(len(str(item.get("repointing", ""))) for item in query_results),
-        ),
-        "Version": max(
-            len("Version"),
-            *(len(str(item.get("version", ""))) for item in query_results),
-        ),
-        "Filename": max(
+    column_widths = {}
+    for header in headers[:-1]:
+        column_widths[header] = max(
+            len(header),
+            *(len(str(item.get(header.lower(), ""))) for item in query_results),
+        )
+        # Calculate the maximum width for each column based on the header and the data
+
+        column_widths["Filename"] = max(
             len("Filename"),
             *(
                 len(os.path.basename(item.get("file_path", "")))
                 for item in query_results
             ),
-        ),
-    }
+        )
 
     # Create the format string dynamically based on the number of columns
     format_string = (
