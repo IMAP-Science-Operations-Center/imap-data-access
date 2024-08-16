@@ -20,9 +20,8 @@ import logging
 import os
 from pathlib import Path
 
-from file_validation import ScienceFilePath
-
 import imap_data_access
+from imap_data_access.file_validation import ScienceFilePath
 
 
 def _download_parser(args: argparse.Namespace):
