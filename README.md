@@ -5,6 +5,8 @@
 
 This lightweight  Python package allows users to download, query, and upload data from the IMAP Science Data Center (SDC).
 
+For more information see the [detailed instructions](https://imap-processing.readthedocs.io/en/latest/data-access-api/index.html).
+
 ## Command Line Utility
 
 ### To install
@@ -14,19 +16,28 @@ pip install imap-data-access
 imap-data-access -h
 ```
 
+### Base Command Arguments
+```bash
+$ imap-data-access query # or
+$ imap-data-access download # or
+$ imap-data-access upload
+```
+Add the '-h' help flag with any base command for more information
+
 ### Query / Search for data
 
 Find all files from the SWE instrument
 
 ```bash
 $ imap-data-access query --instrument swe
-Found [2] matching files
----------------------------------------------------------------------------------------------------------------|
-Instrument|Data Level|Descriptor|Start Date|Repointing|Version|Filename                                          |
----------------------------------------------------------------------------------------------------------------|
-swe       |l0        |sci       |20240105  |          |v001 |imap_swe_l0_sci_20240105_v001.pkts     |
-swe       |l0        |sci       |20240105  |          |v001 |imap_swe_l0_sci_20240105_v001.pkts     |
----------------------------------------------------------------------------------------------------------------|
+Found [3] matching files
+|-----------------------------------------------------------------------------------------------------------------------------------|
+| Instrument | Data Level | Descriptor      | Start Date | Repointing | Version | Filename                                          |
+|-----------------------------------------------------------------------------------------------------------------------------------|
+| swe        | l0         | raw             | 20240510   |            | v022    | imap_swe_l0_raw_20240510_v022.pkts                |
+| swe        | l1a        | sci             | 20240510   |            | v022    | imap_swe_l1a_sci_20240510_v022.cdf                |
+| swe        | l1b        | sci             | 20240510   |            | v022    | imap_swe_l1b_sci_20240510_v022.cdf                |
+|-----------------------------------------------------------------------------------------------------------------------------------|
 ```
 
 Find all files during the year 2024 and return the response as raw json
@@ -39,6 +50,9 @@ $ imap-data-access query --start-date 20240101 --end-date 20241231 --output-form
 ### Download a file
 
 Download a level 0 SWE file on 2024/01/05
+
+> [!NOTE]
+> Make sure the directory configuration is correct, see the [Data Directory section](https://github.com/IMAP-Science-Operations-Center/imap-data-access#data-directory) for more information.
 
 ```bash
 $ imap-data-access download imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_v001.pkts
