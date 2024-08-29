@@ -12,6 +12,8 @@ from typing import Optional, Union
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 
+import pandas as pd
+
 import imap_data_access
 
 logger = logging.getLogger(__name__)
@@ -110,7 +112,7 @@ def query(
     version: Optional[str] = None,
     extension: Optional[str] = None,
     return_type: Optional[str] = None,
-) -> list[dict[str, str]]:
+) -> Union[pd.dataframe, list[dict[str, str]]]:
     """Query the data archive for files matching the parameters.
 
     Before running the query it will be checked if a version 'latest' command
