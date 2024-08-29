@@ -109,6 +109,7 @@ def query(
     repointing: Optional[int] = None,
     version: Optional[str] = None,
     extension: Optional[str] = None,
+    return_type: Optional[str] = None,
 ) -> list[dict[str, str]]:
     """Query the data archive for files matching the parameters.
 
@@ -137,6 +138,9 @@ def query(
         Data version in the format ``vXXX`` or 'latest'.
     extension : str, optional
         File extension (``cdf``, ``pkts``)
+    return_type : str, optional
+        Dictates what the return type for the function should be. Default is
+        list[dict], 'df' will return pandas dataframe.
 
     Returns
     -------
