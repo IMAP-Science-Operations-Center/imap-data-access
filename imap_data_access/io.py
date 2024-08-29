@@ -159,6 +159,18 @@ def query(
             "At least one query parameter must be provided. "
             "Run 'query -h' for more information."
         )
+    print(query_params)
+    # print(query_params["data_level"])
+    # print(query_params["data_level"][0])
+    # Check data-level
+    # do an if statement that checks that data_level was passed in,
+    # then check it against all options, l0, l1a, l1b, l2, l3 etc.
+
+    # Check start-date
+    # Check end-date
+    # Check version
+    # Check filename
+
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
     url += f"/query?{urlencode(query_params)}"
 
