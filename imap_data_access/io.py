@@ -112,13 +112,15 @@ def query(
     version: Optional[str] = None,
     extension: Optional[str] = None,
     return_type: Optional[str] = None,
-) -> Union[pd.dataframe, list[dict[str, str]]]:
+) -> Union[pd.DataFrame, list[dict[str, str]]]:
     """Query the data archive for files matching the parameters.
 
     Before running the query it will be checked if a version 'latest' command
     was passed and that at least one other parameter was passed. After the
     query is run, if a 'latest' was passed then the query results will be
-    filtered before being returned.
+    filtered before being returned. Before Returning the function will check
+    what output type is requested, default is list[dict] with option to change
+    to pandas.dataframe.
 
     Parameters
     ----------
@@ -146,7 +148,7 @@ def query(
 
     Returns
     -------
-    list
+    List | pandas.DataFrame
         List of files matching the query
     """
     # locals() gives us the keyword arguments passed to the function
@@ -186,7 +188,17 @@ def query(
             for each_dict in items
             if int(each_dict["version"][1:4]) == max_version
         ]
-    return items
+    # Checking return type
+    if return_type == "df":
+        # convert list to pandas.DataFrame
+        dataframe_items = pd.DataFrame(items)
+        return dataframe_items
+    elif return_type is None:
+        return items
+    else:
+        raise ValueError(
+            "Not a valid return_type. Options are pandas.Dataframe [pd] or default."
+        )
 
 
 def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> None:
