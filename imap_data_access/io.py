@@ -164,6 +164,9 @@ def query(
     # print(query_params["data_level"][0])
     # Check data-level
     # do an if statement that checks that data_level was passed in,
+    if data_level is not None:
+        if data_level not in ("l0", "l1a", "l1b", "l2", ""):
+            raise ValueError("Not a valid data level, choose from .......")
     # then check it against all options, l0, l1a, l1b, l2, l3 etc.
 
     # Check start-date
