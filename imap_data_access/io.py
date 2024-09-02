@@ -159,20 +159,25 @@ def query(
             "At least one query parameter must be provided. "
             "Run 'query -h' for more information."
         )
-    print(query_params)
-    # print(query_params["data_level"])
-    # print(query_params["data_level"][0])
     # Check data-level
     # do an if statement that checks that data_level was passed in,
-    if data_level is not None:
-        if data_level not in ("l0", "l1a", "l1b", "l2", ""):
-            raise ValueError("Not a valid data level, choose from .......")
     # then check it against all options, l0, l1a, l1b, l2, l3 etc.
+    if data_level is not None:
+        if data_level not in ("l0", "l1a", "l1b", "l2", "l3"):
+            raise ValueError(
+                "Not a valid data level, choose from 'l0', 'l1a', 'l1b', 'l2', 'l3'."
+            )
+    # will need all options for data-levels
 
     # Check start-date
+    if start_date is not None:
+        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
     # Check end-date
+    if end_date is not None:
+        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
     # Check version
-    # Check filename
+    if version is not None:
+        raise ValueError("Not a valid version, use format 'vXXX'.")
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
     url += f"/query?{urlencode(query_params)}"
