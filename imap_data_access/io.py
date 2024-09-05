@@ -7,6 +7,7 @@ import contextlib
 import json
 import logging
 import urllib.request
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 from urllib.error import HTTPError, URLError
@@ -171,10 +172,18 @@ def query(
 
     # Check start-date
     if start_date is not None:
-        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+        try:
+            datetime.strptime(start_date, "%Y%m%d")
+        except ValueError as err:
+            raise ValueError("Not a valid start date, use format 'YYYYMMDD'.") from err
+
     # Check end-date
     if end_date is not None:
-        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+        try:
+            datetime.strptime(end_date, "%Y%m%d")
+        except ValueError as err:
+            raise ValueError("Not a valid end date, use format 'YYYYMMDD'.") from err
+
     # Check version
     if version is not None:
         raise ValueError("Not a valid version, use format 'vXXX'.")
