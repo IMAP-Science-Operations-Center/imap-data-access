@@ -186,7 +186,8 @@ def query(
 
     # Check version
     if version is not None:
-        raise ValueError("Not a valid version, use format 'vXXX'.")
+        if version[0] != "v" and len(version) != 4:
+            raise ValueError("Not a valid version, use format 'vXXX'.")
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
     url += f"/query?{urlencode(query_params)}"
