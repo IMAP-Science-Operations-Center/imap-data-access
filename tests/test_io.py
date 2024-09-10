@@ -159,7 +159,7 @@ def test_download_already_exists(mock_urlopen: unittest.mock.MagicMock):
             "start_date": "20100101",
             "end_date": "20100102",
             "repointing": "00001",
-            "version": "000",
+            "version": "v000",
             "extension": "pkts",
         },
         # Make sure not all query params are sent if they are missing
