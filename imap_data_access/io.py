@@ -184,9 +184,9 @@ def query(
         except ValueError as err:
             raise ValueError("Not a valid end date, use format 'YYYYMMDD'.") from err
 
-    # Check version
+    # Check version make sure to include 'latest'
     if version is not None:
-        if version[0] != "v" and len(version) != 4:
+        if version != "latest" and (version[0] != "v" and len(version) != 4):
             raise ValueError("Not a valid version, use format 'vXXX'.")
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
