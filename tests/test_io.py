@@ -7,7 +7,7 @@ import os
 import unittest
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request
@@ -15,6 +15,7 @@ from urllib.request import Request
 import pytest
 
 import imap_data_access
+from imap_data_access.io import _get_url_response
 
 test_science_filename = "imap_swe_l1_test-description_20100101_v000.cdf"
 test_science_path = "imap/swe/l1/2010/01/" + test_science_filename
@@ -48,6 +49,40 @@ def _set_mock_data(mock_urlopen: unittest.mock.MagicMock, data: bytes):
     """
     mock_response = mock_urlopen.return_value.__enter__.return_value
     mock_response.read.return_value = data
+
+
+@patch("urllib.request.urlopen")
+def test_redirect_followed(mock_urlopen):
+    """Verify that we follow a 307 redirect from newly created s3 buckets.
+
+    Fairly involved mocking of urlopen, but we need to add two responses to
+    the urlopen mock. The first response is a 307 redirect, which we need to
+    follow to get the final response. The second response is our good return.
+    Then verify that our second response was actually followed in the request
+    arguments.
+    """
+    # Mocking the first response (307 Redirect)
+    # Mock the first call to raise a 307 HTTPError
+    mock_error_response = HTTPError(
+        url="http://test-example.com",
+        code=307,
+        msg="Temporary Redirect",
+        hdrs={"Location": "http://followed-redirect.com"},
+        fp=None,
+    )
+
+    # Mocking the second response (200 OK)
+    mock_success_response = MagicMock()
+    mock_success_response.__enter__.return_value.getcode.return_value = 200
+
+    # Using side_effect to alternate between 307 and 200 responses
+    mock_urlopen.side_effect = [mock_error_response, mock_success_response]
+
+    with _get_url_response(Request("http://test-example.com")) as response:
+        assert mock_urlopen.call_count == 2
+        assert response.getcode() == 200
+        second_call_args = mock_urlopen.call_args_list[1]
+        assert second_call_args[0][0].full_url == "http://followed-redirect.com"
 
 
 def test_request_errors(mock_urlopen: unittest.mock.MagicMock):

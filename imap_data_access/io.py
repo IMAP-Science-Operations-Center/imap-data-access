@@ -37,11 +37,18 @@ def _get_url_response(request: urllib.request.Request):
             yield response
 
     except HTTPError as e:
-        message = (
-            f"HTTP Error: {e.code} - {e.reason}\n"
-            f"Server Message: {e.read().decode('utf-8')}"
-        )
-        raise IMAPDataAccessError(message) from e
+        if e.status == 307:
+            # If the server is redirecting us, we need to follow the redirect
+            request.full_url = e.headers["Location"]
+            with _get_url_response(request) as response:
+                yield response
+        else:
+            message = (
+                f"HTTP Error: {e.code} - {e.reason}\n"
+                f"Server Message: {e.read().decode('utf-8')}"
+            )
+            raise IMAPDataAccessError(message) from e
+
     except URLError as e:
         message = f"URL Error: {e.reason}"
         raise IMAPDataAccessError(message) from e
