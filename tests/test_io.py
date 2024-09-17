@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import unittest
 from io import BytesIO
 from pathlib import Path
@@ -158,7 +159,7 @@ def test_download_already_exists(mock_urlopen: unittest.mock.MagicMock):
             "descriptor": "test-description",
             "start_date": "20100101",
             "end_date": "20100102",
-            "repointing": "00001",
+            "repointing": "repoint00001",
             "version": "v000",
             "extension": "pkts",
         },
@@ -216,6 +217,67 @@ def test_query_bad_params(mock_urlopen: unittest.mock.MagicMock):
         imap_data_access.query(bad_param="test")
     # Should not have made any calls to urlopen
     assert mock_urlopen.call_count == 0
+
+
+@pytest.mark.parametrize(
+    ("query_flag", "query_input", "expected_output"),
+    [
+        # All parameters should  not send query
+        (
+            "instrument",
+            "badInput",
+            re.escape(
+                "Not a valid instrument, please choose from "
+                "('codice', 'glows', 'hi', 'hit', 'idex', 'lo',"
+                " 'mag', 'swapi', 'swe', 'ultra')"
+            ),
+        ),
+        (
+            "data_level",
+            "badInput",
+            re.escape(
+                "Not a valid data level, choose from "
+                "('l0','l1','l1a','l1b','l1c','l1ca','l1cb','l1d',"
+                "'l2','l2pre','l3','l3a','l3b','l3c','l3d')."
+            ),
+        ),
+        ("start_date", "badInput", "Not a valid start date, use format 'YYYYMMDD'."),
+        ("end_date", "badInput", "Not a valid end date, use format 'YYYYMMDD'."),
+        (
+            "repointing",
+            "badInput",
+            "Not a valid repointing, use format repointing<num>, "
+            "where <num> is a 5 digit integer.",
+        ),
+        ("version", "badInput", "Not a valid version, use format 'vXXX'."),
+        (
+            "extension",
+            "badInput",
+            re.escape("Not a valid extension, choose from ('pkts', 'cdf')."),
+        ),
+    ],
+)
+def test_bad_query_input(query_flag, query_input, expected_output):
+    """Test a function call to query with correct params but bad values.
+
+     Ensures correct error message is returned.
+
+    Parameters
+    ----------
+    query_flag : str
+        correct query flag.
+    query_input : str
+        incorrect query input.
+    expected_output : str
+        Output error expected to be given.
+    """
+    kwargs = {query_flag: query_input}
+
+    # Check if the ValueError is raised and contains the correct message
+    with pytest.raises(ValueError, match=expected_output):
+        imap_data_access.query(**kwargs)
+
+    # assert str(excinfo.value) == expected_output
 
 
 def test_upload_no_file(mock_urlopen: unittest.mock.MagicMock):

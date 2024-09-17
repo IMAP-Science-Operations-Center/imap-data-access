@@ -6,6 +6,7 @@
 import contextlib
 import json
 import logging
+import re
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -100,6 +101,8 @@ def download(file_path: Union[Path, str]) -> Path:
     return destination
 
 
+# Too many branches error
+# ruff: noqa: PLR0912
 def query(
     *,
     instrument: Optional[str] = None,
@@ -160,15 +163,52 @@ def query(
             "At least one query parameter must be provided. "
             "Run 'query -h' for more information."
         )
+    # Check instrument name
+    if instrument is not None:
+        if instrument not in (
+            "codice",
+            "glows",
+            "hi",
+            "hit",
+            "idex",
+            "lo",
+            "mag",
+            "swapi",
+            "swe",
+            "ultra",
+        ):
+            raise ValueError(
+                "Not a valid instrument, please choose from "
+                "('codice', 'glows', 'hi', 'hit', 'idex', "
+                "'lo', 'mag', 'swapi', 'swe', 'ultra')"
+            )
+
     # Check data-level
     # do an if statement that checks that data_level was passed in,
     # then check it against all options, l0, l1a, l1b, l2, l3 etc.
     if data_level is not None:
-        if data_level not in ("l0", "l1a", "l1b", "l2", "l3"):
+        if data_level not in (
+            "l0",
+            "l1",
+            "l1a",
+            "l1b",
+            "l1c",
+            "l1ca",
+            "l1cb",
+            "l1d",
+            "l2",
+            "l2pre",
+            "l3",
+            "l3a",
+            "l3b",
+            "l3c",
+            "l3d",
+        ):
             raise ValueError(
-                "Not a valid data level, choose from 'l0', 'l1a', 'l1b', 'l2', 'l3'."
+                "Not a valid data level, choose from "
+                "('l0','l1','l1a','l1b','l1c','l1ca','l1cb',"
+                "'l1d','l2','l2pre','l3','l3a','l3b','l3c','l3d')."
             )
-    # will need all options for data-levels
 
     # Check start-date
     if start_date is not None:
@@ -188,6 +228,19 @@ def query(
     if version is not None:
         if version != "latest" and (version[0] != "v" and len(version) != 4):
             raise ValueError("Not a valid version, use format 'vXXX'.")
+
+    # check repointing follows 'repoint00000' format
+    if repointing is not None:
+        if not re.fullmatch(r"repoint\d{5}", str(repointing)):
+            raise ValueError(
+                "Not a valid repointing, use format repointing<num>,"
+                " where <num> is a 5 digit integer."
+            )
+
+    # check extension
+    if extension is not None:
+        if extension not in ("pkts", "cdf"):
+            raise ValueError("Not a valid extension, choose from ('pkts', 'cdf').")
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
     url += f"/query?{urlencode(query_params)}"
