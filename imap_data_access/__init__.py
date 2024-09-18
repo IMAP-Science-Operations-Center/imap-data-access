@@ -67,7 +67,6 @@ VALID_DATALEVELS = {
     "l1cb",
     "l1d",
     "l2",
-    "l2pre",
     "l3",
     "l3a",
     "l3b",

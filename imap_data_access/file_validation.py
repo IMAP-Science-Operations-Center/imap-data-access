@@ -207,6 +207,46 @@ class ScienceFilePath:
         except ValueError:
             return False
 
+    @staticmethod
+    def is_valid_version(input_version: str) -> bool:
+        """Check input version string is in valid format 'vXXX' or 'latest'.
+
+        Parameters
+        ----------
+        input_version : str
+            Version to be checked.
+
+        Returns
+        -------
+        bool
+            Whether input version is valid or not.
+        """
+        if input_version != "latest" and (
+            input_version[0] != "v" and len(input_version) != 4
+        ):
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def is_valid_repointing(input_repointing: str) -> bool:
+        """Check input version string is in valid format 'vXXX' or 'latest'.
+
+        Parameters
+        ----------
+        input_repointing : str
+            Repointing to be checked.
+
+        Returns
+        -------
+        bool
+            Whether input repointing is valid or not.
+        """
+        if not re.fullmatch(r"repoint\d{5}", str(input_repointing)):
+            return False
+        else:
+            return True
+
     def construct_path(self) -> Path:
         """Construct valid path from class variables and data_dir.
 

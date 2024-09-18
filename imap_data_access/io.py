@@ -6,15 +6,14 @@
 import contextlib
 import json
 import logging
-import re
 import urllib.request
-from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 
 import imap_data_access
+from imap_data_access import file_validation
 
 logger = logging.getLogger(__name__)
 
@@ -165,73 +164,40 @@ def query(
         )
     # Check instrument name
     if instrument is not None:
-        if instrument not in (
-            "codice",
-            "glows",
-            "hi",
-            "hit",
-            "idex",
-            "lo",
-            "mag",
-            "swapi",
-            "swe",
-            "ultra",
-        ):
+        if instrument not in imap_data_access.VALID_INSTRUMENTS:
             raise ValueError(
                 "Not a valid instrument, please choose from "
-                "('codice', 'glows', 'hi', 'hit', 'idex', "
-                "'lo', 'mag', 'swapi', 'swe', 'ultra')"
+                + ", ".join(imap_data_access.VALID_INSTRUMENTS)
             )
 
     # Check data-level
     # do an if statement that checks that data_level was passed in,
     # then check it against all options, l0, l1a, l1b, l2, l3 etc.
     if data_level is not None:
-        if data_level not in (
-            "l0",
-            "l1",
-            "l1a",
-            "l1b",
-            "l1c",
-            "l1ca",
-            "l1cb",
-            "l1d",
-            "l2",
-            "l2pre",
-            "l3",
-            "l3a",
-            "l3b",
-            "l3c",
-            "l3d",
-        ):
+        if data_level not in imap_data_access.VALID_DATALEVELS:
             raise ValueError(
                 "Not a valid data level, choose from "
-                "('l0','l1','l1a','l1b','l1c','l1ca','l1cb',"
-                "'l1d','l2','l2pre','l3','l3a','l3b','l3c','l3d')."
+                + ", ".join(imap_data_access.VALID_DATALEVELS)
             )
 
     # Check start-date
     if start_date is not None:
-        try:
-            datetime.strptime(start_date, "%Y%m%d")
-        except ValueError as err:
-            raise ValueError("Not a valid start date, use format 'YYYYMMDD'.") from err
+        if not file_validation.ScienceFilePath.is_valid_date(start_date):
+            raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
 
     # Check end-date
     if end_date is not None:
-        try:
-            datetime.strptime(end_date, "%Y%m%d")
-        except ValueError as err:
-            raise ValueError("Not a valid end date, use format 'YYYYMMDD'.") from err
+        if not file_validation.ScienceFilePath.is_valid_date(end_date):
+            raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
 
     # Check version make sure to include 'latest'
     if version is not None:
-        if version != "latest" and (version[0] != "v" and len(version) != 4):
+        if not file_validation.ScienceFilePath.is_valid_version(version):
             raise ValueError("Not a valid version, use format 'vXXX'.")
 
     # check repointing follows 'repoint00000' format
     if repointing is not None:
-        if not re.fullmatch(r"repoint\d{5}", str(repointing)):
+        if not file_validation.ScienceFilePath.is_valid_repointing(repointing):
             raise ValueError(
                 "Not a valid repointing, use format repointing<num>,"
                 " where <num> is a 5 digit integer."
@@ -239,7 +205,7 @@ def query(
 
     # check extension
     if extension is not None:
-        if extension not in ("pkts", "cdf"):
+        if extension not in imap_data_access.VALID_FILE_EXTENSION:
             raise ValueError("Not a valid extension, choose from ('pkts', 'cdf').")
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"

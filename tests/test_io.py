@@ -226,20 +226,14 @@ def test_query_bad_params(mock_urlopen: unittest.mock.MagicMock):
         (
             "instrument",
             "badInput",
-            re.escape(
-                "Not a valid instrument, please choose from "
-                "('codice', 'glows', 'hi', 'hit', 'idex', 'lo',"
-                " 'mag', 'swapi', 'swe', 'ultra')"
-            ),
+            "Not a valid instrument, please choose from "
+            + ", ".join(imap_data_access.VALID_INSTRUMENTS),
         ),
         (
             "data_level",
             "badInput",
-            re.escape(
-                "Not a valid data level, choose from "
-                "('l0','l1','l1a','l1b','l1c','l1ca','l1cb','l1d',"
-                "'l2','l2pre','l3','l3a','l3b','l3c','l3d')."
-            ),
+            "Not a valid data level, choose from "
+            + ", ".join(imap_data_access.VALID_DATALEVELS),
         ),
         ("start_date", "badInput", "Not a valid start date, use format 'YYYYMMDD'."),
         ("end_date", "badInput", "Not a valid end date, use format 'YYYYMMDD'."),
