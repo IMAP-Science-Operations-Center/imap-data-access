@@ -237,10 +237,7 @@ class ScienceFilePath:
         bool
             Whether input repointing is valid or not.
         """
-        if not re.fullmatch(r"repoint\d{5}", str(input_repointing)):
-            return False
-        else:
-            return True
+        return re.fullmatch(r"repoint\d{5}", str(input_repointing))
 
     def construct_path(self) -> Path:
         """Construct valid path from class variables and data_dir.
