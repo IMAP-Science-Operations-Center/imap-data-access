@@ -163,8 +163,7 @@ def query(
             "Run 'query -h' for more information."
         )
     # Check instrument name
-    if instrument is not None:
-        if instrument not in imap_data_access.VALID_INSTRUMENTS:
+    if instrument is not None and instrument not in imap_data_access.VALID_INSTRUMENTS:
             raise ValueError(
                 "Not a valid instrument, please choose from "
                 + ", ".join(imap_data_access.VALID_INSTRUMENTS)
