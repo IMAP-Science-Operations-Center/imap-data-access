@@ -230,7 +230,7 @@ class ScienceFilePath:
 
     @staticmethod
     def is_valid_repointing(input_repointing: str) -> bool:
-        """Check input version string is in valid format 'vXXX' or 'latest'.
+        """Check input repointing string is in valid format 'repointingXXXXX'.
 
         Parameters
         ----------

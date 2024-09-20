@@ -271,8 +271,6 @@ def test_bad_query_input(query_flag, query_input, expected_output):
     with pytest.raises(ValueError, match=expected_output):
         imap_data_access.query(**kwargs)
 
-    # assert str(excinfo.value) == expected_output
-
 
 def test_upload_no_file(mock_urlopen: unittest.mock.MagicMock):
     """Test a call to the upload API that has no filename supplied.
