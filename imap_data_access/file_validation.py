@@ -221,12 +221,7 @@ class ScienceFilePath:
         bool
             Whether input version is valid or not.
         """
-        if input_version != "latest" and (
-            input_version[0] != "v" and len(input_version) != 4
-        ):
-            return False
-        else:
-            return True
+        return input_version == "latest" or re.fullmatch(r"v\d{3}")
 
     @staticmethod
     def is_valid_repointing(input_repointing: str) -> bool:
