@@ -175,7 +175,7 @@ def test_spice_file_path():
     """Tests the ``SPICEFilePath`` class."""
     file_path = SPICEFilePath("test.bc")
     assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "imap/spice/ck/test.bc"
+        "spice/ck/test.bc"
     )
 
     # Test a bad file extension too
