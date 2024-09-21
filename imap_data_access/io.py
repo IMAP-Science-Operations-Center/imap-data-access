@@ -202,7 +202,7 @@ def query(
         and not file_validation.ScienceFilePath.is_valid_repointing(repointing)
     ):
         raise ValueError(
-            "Not a valid repointing, use format repointing<num>,"
+            "Not a valid repointing, use format repoint<num>,"
             " where <num> is a 5 digit integer."
         )
 

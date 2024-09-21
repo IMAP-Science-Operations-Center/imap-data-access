@@ -240,7 +240,7 @@ def test_query_bad_params(mock_urlopen: unittest.mock.MagicMock):
         (
             "repointing",
             "badInput",
-            "Not a valid repointing, use format repointing<num>, "
+            "Not a valid repointing, use format repoint<num>, "
             "where <num> is a 5 digit integer.",
         ),
         ("version", "badInput", "Not a valid version, use format 'vXXX'."),
