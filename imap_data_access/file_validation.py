@@ -354,5 +354,5 @@ class SPICEFilePath:
         spice_dir = imap_data_access.config["DATA_DIR"] / "spice"
         subdir = _SPICE_DIR_MAPPING[self.filename.suffix]
         # Use the file suffix to determine the directory structure
-        # IMAP_DATA_DIR/imap/spice/<subdir>/filename
+        # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename
