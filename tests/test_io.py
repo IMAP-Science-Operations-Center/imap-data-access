@@ -22,7 +22,7 @@ test_science_filename = "imap_swe_l1_test-description_20100101_v000.cdf"
 test_science_path = "imap/swe/l1/2010/01/" + test_science_filename
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_urlopen():
     """Mock urlopen to return a file-like object.
 
