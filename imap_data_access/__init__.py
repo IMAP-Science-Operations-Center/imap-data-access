@@ -84,5 +84,5 @@ FILENAME_CONVENTION = (
 
 ANCILLARY_FILENAME_CONVENTION = (
     "<mission>_<instrument>_<ancillary_name>_"
-    "<start_date>_<end_date>_<version>.<extension>"
+    "<start_date>(-<end_date>)_<version>.<extension>"
 )
