@@ -416,43 +416,39 @@ class AncillaryFilePath:
         if self.error_message:
             raise self.InvalidAncillaryFileError(f"{self.error_message}")
 
-    """Changes needed below here."""
-
     @classmethod
     def generate_from_inputs(
         cls,
         instrument: str,
-        data_level: str,
-        descriptor: str,
-        start_time: str,
+        ancillary_name: str,
         version: str,
-        repointing: int | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
     ) -> AncillaryFilePath:
         """Generate filename from given inputs and return a AncillaryFilePath instance.
 
         This can be used instead of the __init__ method to make a new instance:
         ```
-        ancillary_file_path = AncillaryFilePath.generate_from_inputs("mag", "l0",
-            "test", "20240213", "v001")
+        ancillary_file_path = AncillaryFilePath.generate_from_inputs("mag",
+        "mag-rotation-matrices", "20240213", "v001")
         full_path = ancillary_file_path.construct_path()
         ```
-        *CHANGE BELOW
 
         Parameters
         ----------
-        descriptor : str
-            The descriptor for the filename
+        ancillary_name : str
+            The descriptor for the ancillary filename
         instrument : str
             The instrument for the filename
-        data_level : str
-            The data level for the filename
-        start_time: str
-            The start time for the filename
+        start_time: str, optional
+            The start time for the filename. If not provided
+            it is assumed to be valid for all times.
+        end_time: str, optional
+            The end time for the filename. If not provided,
+            the file is valid until a file with a later
+            start_date and no end_date.
         version : str
             The version of the data
-        repointing : int, optional
-            The repointing number for this file, optional field that
-            is not always present
 
         Returns
         -------
@@ -460,16 +456,19 @@ class AncillaryFilePath:
             The generated filename
         """
         extension = "cdf"
-        if data_level == "l0":
-            extension = "pkts"
-        time_field = start_time
-        if repointing:
-            time_field += f"-repoint{repointing:05d}"
-        filename = (
-            f"imap_{instrument}_{data_level}_{descriptor}_{time_field}_"
-            f"{version}.{extension}"
-        )
+        if start_time:
+            time_field = start_time
+            if end_time:
+                time_field += end_time  # I think...
+            filename = (
+                f"imap_{instrument}_{ancillary_name}_{time_field}_"
+                f"{version}.{extension}"
+            )
+        else:
+            filename = f"imap_{instrument}_{ancillary_name}_" f"{version}.{extension}"
         return cls(filename)
+
+    """Changes needed below here."""
 
     def validate_filename(self) -> str:
         """Validate the filename and populate the error message for wrong attributes.
