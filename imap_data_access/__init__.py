@@ -81,3 +81,8 @@ FILENAME_CONVENTION = (
     "<mission>_<instrument>_<datalevel>_<descriptor>_"
     "<startdate>(-<repointing>)_<version>.<extension>"
 )
+
+ANCILLARY_FILENAME_CONVENTION = (
+    "<mission>_<instrument>_<ancillary_name>_"
+    "<start_date>_<end_date>_<version>.<extension>"
+)
