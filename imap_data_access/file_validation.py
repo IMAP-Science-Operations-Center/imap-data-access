@@ -489,9 +489,7 @@ class AncillaryFilePath:
             for attr in [
                 self.mission,
                 self.instrument,
-                self.data_level,
-                self.descriptor,
-                self.start_date,
+                self.ancillary_name,
                 self.version,
                 self.extension,
             ]
@@ -509,27 +507,9 @@ class AncillaryFilePath:
                 f"from "
                 f"{imap_data_access.VALID_INSTRUMENTS} \n"
             )
-        if self.data_level not in imap_data_access.VALID_DATALEVELS:
-            error_message += (
-                f"Invalid data level {self.data_level}. Please choose "
-                f"from "
-                f"{imap_data_access.VALID_DATALEVELS} \n"
-            )
-        if not self.is_valid_date(self.start_date):
-            error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
-        if not bool(re.match(r"^v\d{3}$", self.version)):
-            error_message += "Invalid version format. Please use vXXX format. \n"
-        if self.repointing and not isinstance(self.repointing, int):
-            error_message += "The repointing number should be an integer.\n"
 
-        if self.extension not in imap_data_access.VALID_FILE_EXTENSION or (
-            (self.data_level == "l0" and self.extension != "pkts")
-            or (self.data_level != "l0" and self.extension != "cdf")
-        ):
-            error_message += (
-                "Invalid extension. Extension should be pkts for data "
-                "level l0 and cdf for data level higher than l0 \n"
-            )
+        if self.extension not in imap_data_access.VALID_FILE_EXTENSION:
+            error_message += "Invalid extension. Extension should be cdf. \n"
 
         return error_message
 
@@ -556,13 +536,15 @@ class AncillaryFilePath:
         except ValueError:
             return False
 
+    """Changes needed below here."""
+
     def construct_path(self) -> Path:
         """Construct valid path from class variables and data_dir.
 
         If data_dir is not None, it is prepended on the returned path.
 
         expected return:
-        <data_dir>/mission/instrument/data_level/startdate_month/startdate_day/filename
+        <data_dir>/mission/instrument/startdate_month/startdate_day/filename
 
         Returns
         -------
