@@ -13,6 +13,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 
 import imap_data_access
+from imap_data_access import file_validation
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,8 @@ def download(file_path: Union[Path, str]) -> Path:
     return destination
 
 
+# Too many branches error
+# ruff: noqa: PLR0912
 def query(
     *,
     instrument: Optional[str] = None,
@@ -166,6 +169,54 @@ def query(
             "At least one query parameter must be provided. "
             "Run 'query -h' for more information."
         )
+    # Check instrument name
+    if instrument is not None and instrument not in imap_data_access.VALID_INSTRUMENTS:
+        raise ValueError(
+            "Not a valid instrument, please choose from "
+            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
+        )
+
+    # Check data-level
+    # do an if statement that checks that data_level was passed in,
+    # then check it against all options, l0, l1a, l1b, l2, l3 etc.
+    if data_level is not None and data_level not in imap_data_access.VALID_DATALEVELS:
+        raise ValueError(
+            "Not a valid data level, choose from "
+            + ", ".join(imap_data_access.VALID_DATALEVELS)
+        )
+
+    # Check start-date
+    if start_date is not None and not file_validation.ScienceFilePath.is_valid_date(
+        start_date
+    ):
+        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+
+    # Check end-date
+    if end_date is not None and not file_validation.ScienceFilePath.is_valid_date(
+        end_date
+    ):
+        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+
+    # Check version make sure to include 'latest'
+    if version is not None and not file_validation.ScienceFilePath.is_valid_version(
+        version
+    ):
+        raise ValueError("Not a valid version, use format 'vXXX'.")
+
+    # check repointing follows 'repoint00000' format
+    if (
+        repointing is not None
+        and not file_validation.ScienceFilePath.is_valid_repointing(repointing)
+    ):
+        raise ValueError(
+            "Not a valid repointing, use format repoint<num>,"
+            " where <num> is a 5 digit integer."
+        )
+
+    # check extension
+    if extension is not None and extension not in imap_data_access.VALID_FILE_EXTENSION:
+        raise ValueError("Not a valid extension, choose from ('pkts', 'cdf').")
+
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
     url += f"/query?{urlencode(query_params)}"
 
