@@ -181,3 +181,14 @@ def test_spice_file_path():
     # Test a bad file extension too
     with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
         SPICEFilePath("test.txt")
+
+    # Test that spin and repoint goes into their own directories
+    spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
+    assert spin_file_path.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("spice/spin/imap_2025_122_2025_122_01.spin.csv")
+
+    spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.repointing.csv")
+    assert spin_file_path.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("spice/repointing/imap_2025_122_2025_122_01.repointing.csv")

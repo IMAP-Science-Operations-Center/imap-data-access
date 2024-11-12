@@ -318,6 +318,8 @@ _SPICE_DIR_MAPPING = {
     # ".bes": "ek",
     ".bpc": "pck",
     ".bsp": "spk",
+    ".repointing.csv": "repointing",
+    ".spin.csv": "spin",
     ".tf": "fk",
     # "ti": "ik",
     ".tls": "lsk",
@@ -365,8 +367,13 @@ class SPICEFilePath:
             SPICE data filename or file path.
         """
         self.filename = Path(filename)
+        if self.filename.suffix == ".csv":
+            all_suffixes = self.filename.suffixes  # Returns ['.spin', '.csv']
+            self.file_extension = "".join(all_suffixes)  # Returns '.spin.csv'
+        else:
+            self.file_extension = self.filename.suffix
 
-        if self.filename.suffix not in _SPICE_DIR_MAPPING:
+        if self.file_extension not in _SPICE_DIR_MAPPING:
             raise self.InvalidSPICEFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
                 f"extensions {list(_SPICE_DIR_MAPPING.keys())}"
@@ -384,7 +391,7 @@ class SPICEFilePath:
             Upload path
         """
         spice_dir = imap_data_access.config["DATA_DIR"] / "spice"
-        subdir = _SPICE_DIR_MAPPING[self.filename.suffix]
+        subdir = _SPICE_DIR_MAPPING[self.file_extension]
         # Use the file suffix to determine the directory structure
         # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename

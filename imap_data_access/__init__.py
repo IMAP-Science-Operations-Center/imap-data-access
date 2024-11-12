@@ -22,7 +22,8 @@ __all__ = [
     "VALID_FILE_EXTENSION",
     "FILENAME_CONVENTION",
 ]
-__version__ = "0.10.1"
+
+__version__ = "0.11.0"
 
 
 config = {
@@ -67,6 +68,8 @@ VALID_DATALEVELS = {
     "l1cb",
     "l1d",
     "l2",
+    "l2a",
+    "l2b",
     "l3",
     "l3a",
     "l3b",
