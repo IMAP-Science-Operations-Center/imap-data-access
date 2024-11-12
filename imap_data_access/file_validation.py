@@ -369,7 +369,7 @@ class SPICEFilePath:
         self.filename = Path(filename)
         if self.filename.suffix == ".csv":
             all_suffixes = self.filename.suffixes  # Returns ['.spin', '.csv']
-            self.file_extension = ''.join(all_suffixes)  # Returns '.spin.csv'
+            self.file_extension = "".join(all_suffixes)  # Returns '.spin.csv'
         else:
             self.file_extension = self.filename.suffix
 
