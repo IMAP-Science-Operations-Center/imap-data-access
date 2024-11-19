@@ -75,6 +75,7 @@ def download(file_path: Union[Path, str]) -> Path:
         path_obj = imap_data_access.SPICEFilePath(file_path.name)
     else:
         # Science
+        # TODO: hwo to check between Scince and Ancillary
         path_obj = imap_data_access.ScienceFilePath(file_path.name)
 
     destination = path_obj.construct_path()
