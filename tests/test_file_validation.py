@@ -192,3 +192,13 @@ def test_spice_file_path():
     assert spin_file_path.construct_path() == imap_data_access.config[
         "DATA_DIR"
     ] / Path("spice/repointing/imap_2025_122_2025_122_01.repointing.csv")
+
+    metakernel_file = SPICEFilePath("imap_yyyy_doy_e00.mk")
+    assert metakernel_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("spice/mk/imap_yyyy_doy_e00.mk")
+
+    thruster_file = SPICEFilePath("imap_yyyy_doy_hist_00.sff")
+    assert thruster_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("spice/activities/imap_yyyy_doy_hist_00.sff")
