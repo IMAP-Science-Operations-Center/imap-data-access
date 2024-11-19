@@ -199,6 +199,6 @@ def test_spice_file_path():
     ] / Path("spice/mk/imap_yyyy_doy_e00.mk")
 
     thruster_file = SPICEFilePath("imap_yyyy_doy_hist_00.sff")
-    assert thruster_file.construct_path() == imap_data_access.config[
-        "DATA_DIR"
-    ] / Path("spice/activities/imap_yyyy_doy_hist_00.sff")
+    assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "spice/activities/imap_yyyy_doy_hist_00.sff"
+    )
