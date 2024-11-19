@@ -455,8 +455,10 @@ class AncillaryFilePath:
         str
             The generated filename
         """
-        extension = "cdf"
-        if start_time:
+        extension = (
+            "cdf"  # TODO: double check what extensions will be, is there a list?
+        )
+        if start_time:  # TODO: are both start and end time optional in some instances?
             time_field = start_time
             if end_time:
                 time_field += end_time  # I think...
@@ -511,6 +513,11 @@ class AncillaryFilePath:
         if self.extension not in imap_data_access.VALID_FILE_EXTENSION:
             error_message += "Invalid extension. Extension should be cdf. \n"
 
+        if not self.is_valid_date(self.start_date):
+            error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
+        if not self.is_valid_date(self.end_date):
+            error_message += "Invalid end date format. Please use YYYYMMDD format. \n"
+
         return error_message
 
     @staticmethod
@@ -538,7 +545,9 @@ class AncillaryFilePath:
 
     """Changes needed below here."""
 
-    def construct_path(self) -> Path:
+    def construct_path(
+        self,
+    ) -> Path:  # TODO: how should this path look? Should it be different format?
         """Construct valid path from class variables and data_dir.
 
         If data_dir is not None, it is prepended on the returned path.
@@ -552,7 +561,7 @@ class AncillaryFilePath:
             Upload path
         """
         upload_path = Path(
-            f"{self.mission}/{self.instrument}/{self.data_level}/"
+            f"{self.mission}/{self.instrument}/"
             f"{self.start_date[:4]}/{self.start_date[4:6]}/{self.filename}"
         )
         if self.data_dir:
@@ -565,12 +574,12 @@ class AncillaryFilePath:
         """Extract all components from filename. Does not validate instrument or level.
 
         Will return a dictionary with the following keys:
-        { instrument, datalevel, descriptor, startdate, enddate, version, extension }
+        { instrument, ancillary_name, startdate, enddate, version, extension }
 
         If a match is not found, a ValueError will be raised.
 
         Generally, this method should not be used directly. Instead the class should
-        be used to make a `ScienceFilepath` object.
+        be used to make a `AncillaryFilepath` object.
 
         Parameters
         ----------
@@ -585,12 +594,11 @@ class AncillaryFilePath:
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
-            r"(?P<data_level>[^_]+)_"
-            r"(?P<descriptor>[^_]+)_"
-            r"(?P<start_date>\d{8})"
-            r"(-repoint(?P<repointing>\d{5}))?"  # Optional repointing field
+            r"(?P<ancillary_name>[^_]+)_"
+            r"(?P<start_date>\d{8})"  # may need to be changed to  optional
+            r"(-(?P<end_date>\d{8}))?"  # Optional end_date field
             r"_(?P<version>v\d{3})"
-            r"\.(?P<extension>cdf|pkts)$"
+            r"\.(?P<extension>cdf)$"
         )
         if isinstance(filename, Path):
             filename = filename.name
@@ -603,7 +611,4 @@ class AncillaryFilePath:
             )
 
         components = match.groupdict()
-        if components["repointing"]:
-            # We want the repointing number as an integer
-            components["repointing"] = int(components["repointing"])
         return components
