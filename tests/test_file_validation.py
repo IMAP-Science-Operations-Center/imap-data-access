@@ -175,9 +175,30 @@ def test_spice_file_path():
     """Tests the ``SPICEFilePath`` class."""
     file_path = SPICEFilePath("test.bc")
     assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "imap/spice/ck/test.bc"
+        "spice/ck/test.bc"
     )
 
     # Test a bad file extension too
     with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
         SPICEFilePath("test.txt")
+
+    # Test that spin and repoint goes into their own directories
+    spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
+    assert spin_file_path.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("spice/spin/imap_2025_122_2025_122_01.spin.csv")
+
+    spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.repointing.csv")
+    assert spin_file_path.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("spice/repointing/imap_2025_122_2025_122_01.repointing.csv")
+
+    metakernel_file = SPICEFilePath("imap_yyyy_doy_e00.mk")
+    assert metakernel_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("spice/mk/imap_yyyy_doy_e00.mk")
+
+    thruster_file = SPICEFilePath("imap_yyyy_doy_hist_00.sff")
+    assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "spice/activities/imap_yyyy_doy_hist_00.sff"
+    )
