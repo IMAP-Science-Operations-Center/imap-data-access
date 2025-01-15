@@ -75,9 +75,26 @@ def download(file_path: Union[Path, str]) -> Path:
         # SPICE
         path_obj = imap_data_access.SPICEFilePath(file_path.name)
     else:
-        # Science
-        # TODO: hwo to check between Scince and Ancillary
-        path_obj = imap_data_access.ScienceFilePath(file_path.name)
+        # Science and Ancillary
+        try:
+            path_obj = imap_data_access.ScienceFilePath(file_path.name)
+            logger.debug("Science file found: %s", path_obj.filename)
+        except imap_data_access.ScienceFilePath.InvalidScienceFileError:
+            # If Science file fails, then process as an Ancillary file
+            try:
+                path_obj = imap_data_access.AncillaryFilePath(file_path.name)
+                logger.debug("Ancillary file found: %s", path_obj.filename)
+            except imap_data_access.AncillaryFilePath.InvalidAncillaryFileError as e2:
+                # Matches neither file format
+                logger.error(
+                    "Invalid file type: %s. File does not match Science or "
+                    "Ancillary file formats.",
+                    file_path,
+                )
+                raise ValueError(
+                    f"Invalid file: {file_path}. It does not match Science or "
+                    f"Ancillary file formats."
+                ) from e2
 
     destination = path_obj.construct_path()
 

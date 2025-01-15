@@ -85,6 +85,8 @@ FILENAME_CONVENTION = (
 )
 
 ANCILLARY_FILENAME_CONVENTION = (
-    "<mission>_<instrument>_<ancillary_name>_"
+    "<mission>_<instrument>_<description>_"
     "<start_date>(-<end_date>)_<version>.<extension>"
 )
+
+VALID_ANCILLARY_FILE_EXTENSION = {"cdf", "csv", "json"}
