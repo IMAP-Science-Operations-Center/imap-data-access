@@ -319,7 +319,7 @@ _SPICE_DIR_MAPPING = {
     ".bpc": "pck",
     ".bsp": "spk",
     ".mk": "mk",
-    ".repointing.csv": "repointing",
+    ".repoint.csv": "repointing",
     ".sff": "activities",
     ".spin.csv": "spin",
     ".tf": "fk",

@@ -188,7 +188,7 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("spice/spin/imap_2025_122_2025_122_01.spin.csv")
 
-    spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.repointing.csv")
+    spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.repoint.csv")
     assert spin_file_path.construct_path() == imap_data_access.config[
         "DATA_DIR"
     ] / Path("spice/repointing/imap_2025_122_2025_122_01.repointing.csv")
