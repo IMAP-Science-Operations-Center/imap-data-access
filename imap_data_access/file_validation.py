@@ -423,7 +423,7 @@ class AncillaryFilePath(ScienceFilePath):
         <description>: A descriptive name for the ancillary file which
                        distinguishes between other ancillary files used by the
                        instrument.
-        <start_date>: startdate is the earliest date in the data, format: YYYYMMDD
+        <start_date>: startdate is the earliest date where the file is valid, format: YYYYMMDD
         <end_date>: The end time of the validity of the ancillary file,
                     in the format “YYYYMMDD”. This is optional for files, with the
                     understanding that if end_date is not provided, the file is valid
