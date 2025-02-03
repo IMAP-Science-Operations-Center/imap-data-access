@@ -500,12 +500,14 @@ class AncillaryFilePath(ScienceFilePath):
         str
             The generated filename
         """
-        time_field = start_time
         if end_time:
-            time_field += end_time  # I think...
-        filename = (
-            f"imap_{instrument}_{description}_{time_field}_" f"{version}.{extension}"
-        )
+            filename = (
+                f"imap_{instrument}_{description}_{start_time}-{end_time}_{version}.{extension}"
+            )
+        else:
+           filename = (
+                f"imap_{instrument}_{description}_{start_time}_{version}.{extension}"
+            )
         return cls(filename)
 
     def validate_filename(self) -> str:
