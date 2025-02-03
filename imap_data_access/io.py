@@ -84,11 +84,14 @@ def download(file_path: Union[Path, str]) -> Path:
             try:
                 path_obj = imap_data_access.AncillaryFilePath(file_path.name)
                 logger.debug("Ancillary file found: %s", path_obj.filename)
-            except imap_data_access.AncillaryFilePath.InvalidAncillaryFileError as error:
+            except imap_data_access.AncillaryFilePath.InvalidAncillaryFileError as e:
                 # Matches neither file format
-                error_message = f"Invalid file type for {file_path}. It does not match Science or Ancillary file formats"
+                error_message = (
+                    f"Invalid file type for {file_path}. It does not match"
+                    f" Science or Ancillary file formats"
+                )
                 logger.error(error_message)
-                raise ValueError(error_message) from e2
+                raise ValueError(error_message) from e
 
     destination = path_obj.construct_path()
 

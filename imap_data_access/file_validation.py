@@ -423,7 +423,8 @@ class AncillaryFilePath(ScienceFilePath):
         <description>: A descriptive name for the ancillary file which
                        distinguishes between other ancillary files used by the
                        instrument.
-        <start_date>: startdate is the earliest date where the file is valid, format: YYYYMMDD
+        <start_date>: startdate is the earliest date where the file is valid,
+                     format: YYYYMMDD
         <end_date>: The end time of the validity of the ancillary file,
                     in the format “YYYYMMDD”. This is optional for files, with the
                     understanding that if end_date is not provided, the file is valid
@@ -479,21 +480,21 @@ class AncillaryFilePath(ScienceFilePath):
 
         Parameters
         ----------
-        description : str
-            The descriptor for the ancillary filename.
         instrument : str
             The instrument for the filename.
-        start_time: str, optional
-            The start time for the filename. If not provided
-            it is assumed to be valid for all times.
-        end_time: str, optional
-            The end time for the filename. If not provided,
-            the file is valid until a file with a later
-            start_date and no end_date.
+        description : str
+            The descriptor for the ancillary filename.
         version : str
             The version of the data.
         extension : str
             The extension type of the file.
+        start_time: str
+            The start time for the filename. An updated
+            start time or the mission start time.
+        end_time: str, optional
+            The end time for the filename. If not provided,
+            the file is valid until a file with a later
+            start_date and no end_date.
 
         Returns
         -------
@@ -502,10 +503,11 @@ class AncillaryFilePath(ScienceFilePath):
         """
         if end_time:
             filename = (
-                f"imap_{instrument}_{description}_{start_time}-{end_time}_{version}.{extension}"
+                f"imap_{instrument}_{description}_{start_time}-{end_time}_"
+                f"{version}.{extension}"
             )
         else:
-           filename = (
+            filename = (
                 f"imap_{instrument}_{description}_{start_time}_{version}.{extension}"
             )
         return cls(filename)
@@ -547,7 +549,7 @@ class AncillaryFilePath(ScienceFilePath):
                 f"{imap_data_access.VALID_INSTRUMENTS} \n"
             )
 
-        if self.extension not in imap_data_access.VALID_FILE_EXTENSION:
+        if self.extension not in imap_data_access.VALID_ANCILLARY_FILE_EXTENSION:
             error_message += (
                 "Invalid extension. Extension should be cdf. \n"  # TODO: Change this
             )
