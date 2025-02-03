@@ -421,12 +421,13 @@ class AncillaryFilePath(ScienceFilePath):
         <mission>: imap
         <instrument>: codice, glows, hi, hit, idex, lo, mag, swapi, swe, ultra
         <description>: A descriptive name for the ancillary file which
-        distinguishes between other ancillary files used by the instrument.
+                       distinguishes between other ancillary files used by the
+                       instrument.
         <start_date>: startdate is the earliest date in the data, format: YYYYMMDD
         <end_date>: The end time of the validity of the ancillary file,
-        in the format “YYYYMMDD”. This is optional for files, with the understanding
-         that if end_date is not provided, the file is valid until a file with a
-         later start_date and no end_date.
+                    in the format “YYYYMMDD”. This is optional for files, with the
+                    understanding that if end_date is not provided, the file is valid
+                    until a file with a later start_date and no end_date.
         <version>: This stores the data version for this product, format: vXXX
 
         Parameters
