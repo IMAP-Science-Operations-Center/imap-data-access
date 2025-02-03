@@ -543,8 +543,7 @@ class AncillaryFilePath(ScienceFilePath):
 
         if self.instrument not in imap_data_access.VALID_INSTRUMENTS:
             error_message += (
-                f"Invalid instrument {self.instrument}. Please choose "
-                f"from "
+                f"Invalid instrument {self.instrument}. Please choose from "
                 f"{imap_data_access.VALID_INSTRUMENTS} \n"
             )
 
