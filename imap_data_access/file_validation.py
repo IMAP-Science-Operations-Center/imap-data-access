@@ -585,7 +585,7 @@ class AncillaryFilePath(ScienceFilePath):
         """Extract all components from filename. Does not validate instrument or level.
 
         Will return a dictionary with the following keys:
-        { instrument, ancillary_name, startdate, enddate, version, extension }
+        { instrument, description, start_date, end_date, version, extension }
 
         If a match is not found, a ValueError will be raised.
 
