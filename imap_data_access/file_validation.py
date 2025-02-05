@@ -207,6 +207,38 @@ class ScienceFilePath:
         except ValueError:
             return False
 
+    @staticmethod
+    def is_valid_version(input_version: str) -> bool:
+        """Check input version string is in valid format 'vXXX' or 'latest'.
+
+        Parameters
+        ----------
+        input_version : str
+            Version to be checked.
+
+        Returns
+        -------
+        bool
+            Whether input version is valid or not.
+        """
+        return input_version == "latest" or re.fullmatch(r"v\d{3}", input_version)
+
+    @staticmethod
+    def is_valid_repointing(input_repointing: str) -> bool:
+        """Check input repointing string is in valid format 'repointingXXXXX'.
+
+        Parameters
+        ----------
+        input_repointing : str
+            Repointing to be checked.
+
+        Returns
+        -------
+        bool
+            Whether input repointing is valid or not.
+        """
+        return re.fullmatch(r"repoint\d{5}", str(input_repointing))
+
     def construct_path(self) -> Path:
         """Construct valid path from class variables and data_dir.
 
@@ -286,6 +318,10 @@ _SPICE_DIR_MAPPING = {
     # ".bes": "ek",
     ".bpc": "pck",
     ".bsp": "spk",
+    ".mk": "mk",
+    ".repoint.csv": "repoint",
+    ".sff": "activities",
+    ".spin.csv": "spin",
     ".tf": "fk",
     # "ti": "ik",
     ".tls": "lsk",
@@ -333,8 +369,13 @@ class SPICEFilePath:
             SPICE data filename or file path.
         """
         self.filename = Path(filename)
+        if self.filename.suffix == ".csv":
+            all_suffixes = self.filename.suffixes  # Returns ['.spin', '.csv']
+            self.file_extension = "".join(all_suffixes)  # Returns '.spin.csv'
+        else:
+            self.file_extension = self.filename.suffix
 
-        if self.filename.suffix not in _SPICE_DIR_MAPPING:
+        if self.file_extension not in _SPICE_DIR_MAPPING:
             raise self.InvalidSPICEFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
                 f"extensions {list(_SPICE_DIR_MAPPING.keys())}"
@@ -351,8 +392,8 @@ class SPICEFilePath:
         Path
             Upload path
         """
-        spice_dir = imap_data_access.config["DATA_DIR"] / "imap/spice"
-        subdir = _SPICE_DIR_MAPPING[self.filename.suffix]
+        spice_dir = imap_data_access.config["DATA_DIR"] / "spice"
+        subdir = _SPICE_DIR_MAPPING[self.file_extension]
         # Use the file suffix to determine the directory structure
-        # IMAP_DATA_DIR/imap/spice/<subdir>/filename
+        # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename
