@@ -23,7 +23,7 @@ __all__ = [
     "FILENAME_CONVENTION",
 ]
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
 
 config = {
@@ -83,3 +83,10 @@ FILENAME_CONVENTION = (
     "<mission>_<instrument>_<datalevel>_<descriptor>_"
     "<startdate>(-<repointing>)_<version>.<extension>"
 )
+
+ANCILLARY_FILENAME_CONVENTION = (
+    "<mission>_<instrument>_<description>_"
+    "<start_date>(-<end_date>)_<version>.<extension>"
+)
+
+VALID_ANCILLARY_FILE_EXTENSION = {"cdf", "csv", "json"}

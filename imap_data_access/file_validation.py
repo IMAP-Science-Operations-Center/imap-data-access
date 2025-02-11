@@ -397,3 +397,231 @@ class SPICEFilePath:
         # Use the file suffix to determine the directory structure
         # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename
+
+
+class AncillaryFilePath(ScienceFilePath):
+    """Class for building and validating filepaths for Ancillary files."""
+
+    class InvalidAncillaryFileError(Exception):
+        """Indicates a bad file type."""
+
+        pass
+
+    def __init__(self, filename: str | Path):
+        """Class to store filepath and file management methods for Ancillary files.
+
+        If you have an instance of this class, you can be confident you have a valid
+        ancillary file and generate paths in the correct format. The parent of the file
+        path is set by the "IMAP_DATA_DIR" environment variable, or defaults to "data/"
+
+        Current filename convention:
+        "<mission>_<instrument>_<description>_<start_date>(-<end_date>)_
+        <version>.<extension>"
+
+        <mission>: imap
+        <instrument>: codice, glows, hi, hit, idex, lo, mag, swapi, swe, ultra
+        <description>: A descriptive name for the ancillary file which
+                       distinguishes between other ancillary files used by the
+                       instrument.
+        <start_date>: startdate is the earliest date where the file is valid,
+                     format: YYYYMMDD
+        <end_date>: The end time of the validity of the ancillary file,
+                    in the format “YYYYMMDD”. This is optional for files, with the
+                    understanding that if end_date is not provided, the file is valid
+                    until a file with a later start_date and no end_date.
+        <version>: This stores the data version for this product, format: vXXX
+
+        Parameters
+        ----------
+        filename : str | Path
+            Ancillary data filename or file path.
+        """
+        self.filename = Path(filename)
+        self.data_dir = imap_data_access.config["DATA_DIR"]
+
+        try:
+            split_filename = self.extract_filename_components(self.filename)
+        except ValueError as err:
+            raise self.InvalidAncillaryFileError(
+                f"Invalid filename. Expected file to match format: "
+                f"{imap_data_access.ANCILLARY_FILENAME_CONVENTION}"
+            ) from err
+
+        self.mission = split_filename["mission"]
+        self.instrument = split_filename["instrument"]
+        self.description = split_filename["description"]
+        self.start_date = split_filename["start_date"]
+        self.end_date = split_filename["end_date"]
+        self.version = split_filename["version"]
+        self.extension = split_filename["extension"]
+
+        self.error_message = self.validate_filename()
+        if self.error_message:
+            raise self.InvalidAncillaryFileError(f"{self.error_message}")
+
+    @classmethod
+    def generate_from_inputs(
+        cls,
+        instrument: str,
+        description: str,
+        version: str,
+        extension: str,
+        start_time: str,
+        end_time: str | None = None,
+    ) -> AncillaryFilePath:
+        """Generate filename from given inputs and return a AncillaryFilePath instance.
+
+        This can be used instead of the __init__ method to make a new instance:
+        ```
+        ancillary_file_path = AncillaryFilePath.generate_from_inputs("mag",
+        "mag-rotation-matrices", "20240213", "v001")
+        full_path = ancillary_file_path.construct_path()
+        ```
+
+        Parameters
+        ----------
+        instrument : str
+            The instrument for the filename.
+        description : str
+            The descriptor for the ancillary filename.
+        version : str
+            The version of the data.
+        extension : str
+            The extension type of the file.
+        start_time: str
+            The start time for the filename. An updated
+            start time or the mission start time.
+        end_time: str, optional
+            The end time for the filename. If not provided,
+            the file is valid until a file with a later
+            start_date and no end_date.
+
+        Returns
+        -------
+        str
+            The generated filename
+        """
+        if end_time:
+            filename = (
+                f"imap_{instrument}_{description}_{start_time}-{end_time}_"
+                f"{version}.{extension}"
+            )
+        else:
+            filename = (
+                f"imap_{instrument}_{description}_{start_time}_{version}.{extension}"
+            )
+        return cls(filename)
+
+    def validate_filename(self) -> str:
+        """Validate the filename and populate the error message for wrong attributes.
+
+        The error message will be an empty string if the filename is valid. Otherwise,
+        all errors with the filename will be put into the error message.
+
+        Returns
+        -------
+        error_message: str
+            Error message for specific missing attribute, or "" if the file name is
+            valid.
+        """
+        error_message = ""
+
+        if any(
+            attr is None or attr == ""
+            for attr in [
+                self.mission,
+                self.instrument,
+                self.description,
+                self.version,
+                self.extension,
+            ]
+        ):
+            error_message = (
+                f"Invalid filename, missing attribute. Filename "
+                f"convention is {imap_data_access.FILENAME_CONVENTION} \n"
+            )
+        if self.mission != "imap":
+            error_message += f"Invalid mission {self.mission}. Please use imap \n"
+
+        if self.instrument not in imap_data_access.VALID_INSTRUMENTS:
+            error_message += (
+                f"Invalid instrument {self.instrument}. Please choose from "
+                f"{imap_data_access.VALID_INSTRUMENTS} \n"
+            )
+
+        if self.extension not in imap_data_access.VALID_ANCILLARY_FILE_EXTENSION:
+            error_message += (
+                "Invalid extension. Extension should be cdf. \n"  # TODO: Change this
+            )
+
+        if not ScienceFilePath.is_valid_date(self.start_date):
+            error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
+        if not ScienceFilePath.is_valid_date(self.end_date):
+            error_message += "Invalid end date format. Please use YYYYMMDD format. \n"
+
+        return error_message
+
+    def construct_path(self) -> Path:
+        """Construct valid path from class variables and data_dir.
+
+        If data_dir is not None, it is prepended on the returned path.
+
+        expected return:
+        <data_dir>/mission/instrument/filename
+
+        Returns
+        -------
+        Path
+            Upload path
+        """
+        upload_path = Path(
+            f"{self.mission}/ancillary/{self.instrument}/{self.filename}"
+        )
+        if self.data_dir:
+            upload_path = self.data_dir / upload_path
+
+        return upload_path
+
+    @staticmethod
+    def extract_filename_components(filename: str | Path) -> dict:
+        """Extract all components from filename. Does not validate instrument or level.
+
+        Will return a dictionary with the following keys:
+        { instrument, description, start_date, end_date, version, extension }
+
+        If a match is not found, a ValueError will be raised.
+
+        Generally, this method should not be used directly. Instead the class should
+        be used to make a `AncillaryFilepath` object.
+
+        Parameters
+        ----------
+        filename : Path or str
+            Path of dependency data.
+
+        Returns
+        -------
+        components : dict
+            Dictionary containing components.
+        """
+        pattern = (
+            r"^(?P<mission>imap)_"
+            r"(?P<instrument>[^_]+)_"
+            r"(?P<description>[^_]+)_"
+            r"(?P<start_date>\d{8})"
+            r"(-(?P<end_date>\d{8}))?"  # Optional end_date field
+            r"_(?P<version>v\d{3})"
+            r"\.(?P<extension>cdf|cvs|json)$"
+        )
+        if isinstance(filename, Path):
+            filename = filename.name
+
+        match = re.match(pattern, filename)
+        if match is None:
+            raise AncillaryFilePath.InvalidAncillaryFileError(
+                f"Filename {filename} does not match expected pattern: "
+                f"{imap_data_access.ANCILLARY_FILENAME_CONVENTION}"
+            )
+
+        components = match.groupdict()
+        return components
