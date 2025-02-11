@@ -5,7 +5,7 @@
 
 This lightweight  Python package allows users to download, query, and upload data from the IMAP Science Data Center (SDC).
 
-For more information see the [detailed instructions](https://imap-processing.readthedocs.io/en/latest/data-access-api/index.html).
+For more information see the [detailed instructions](https://imap-processing.readthedocs.io/en/latest/data-access/index.html).
 
 ## Command Line Utility
 
