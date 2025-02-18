@@ -556,8 +556,12 @@ class AncillaryFilePath(ScienceFilePath):
 
         if not ScienceFilePath.is_valid_date(self.start_date):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
-        if not ScienceFilePath.is_valid_date(self.end_date):
-            error_message += "Invalid end date format. Please use YYYYMMDD format. \n"
+
+        if self.end_date:
+            if not ScienceFilePath.is_valid_date(self.end_date):
+                error_message += (
+                    "Invalid end date format. Please use YYYYMMDD format. \n"
+                )
 
         return error_message
 
@@ -624,4 +628,5 @@ class AncillaryFilePath(ScienceFilePath):
             )
 
         components = match.groupdict()
+
         return components
