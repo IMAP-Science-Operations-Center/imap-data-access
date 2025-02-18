@@ -628,5 +628,4 @@ class AncillaryFilePath(ScienceFilePath):
             )
 
         components = match.groupdict()
-
         return components
