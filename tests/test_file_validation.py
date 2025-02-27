@@ -36,7 +36,7 @@ def test_extract_filename_components():
         valid_filename
     ) == expected_output | {"repointing": 1}
 
-    # Add a multi-part hyphen description
+    # Add a multi-part hyphen descriptor
     valid_filename = "imap_mag_l1a_burst-1min_20210101_v001.pkts"
     assert ScienceFilePath.extract_filename_components(
         valid_filename
@@ -212,7 +212,7 @@ def test_ancillary_file_path_no_end_date():
     """Tests the ``construct_path`` method with no end_date provided."""
     anc_file = AncillaryFilePath.generate_from_inputs(
         instrument="mag",
-        description="test",
+        descriptor="test",
         start_time="20210101",
         version="v001",
         extension="cdf",

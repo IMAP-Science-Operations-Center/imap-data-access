@@ -415,12 +415,12 @@ class AncillaryFilePath(ScienceFilePath):
         path is set by the "IMAP_DATA_DIR" environment variable, or defaults to "data/"
 
         Current filename convention:
-        "<mission>_<instrument>_<description>_<start_date>(-<end_date>)_
+        "<mission>_<instrument>_<descriptor>_<start_date>(-<end_date>)_
         <version>.<extension>"
 
         <mission>: imap
         <instrument>: codice, glows, hi, hit, idex, lo, mag, swapi, swe, ultra
-        <description>: A descriptive name for the ancillary file which
+        <descriptor>: A descriptive name for the ancillary file which
                        distinguishes between other ancillary files used by the
                        instrument.
         <start_date>: startdate is the earliest date where the file is valid,
@@ -449,7 +449,7 @@ class AncillaryFilePath(ScienceFilePath):
 
         self.mission = split_filename["mission"]
         self.instrument = split_filename["instrument"]
-        self.description = split_filename["description"]
+        self.descriptor = split_filename["descriptor"]
         self.start_date = split_filename["start_date"]
         self.end_date = split_filename["end_date"]
         self.version = split_filename["version"]
@@ -463,7 +463,7 @@ class AncillaryFilePath(ScienceFilePath):
     def generate_from_inputs(
         cls,
         instrument: str,
-        description: str,
+        descriptor: str,
         version: str,
         extension: str,
         start_time: str,
@@ -482,7 +482,7 @@ class AncillaryFilePath(ScienceFilePath):
         ----------
         instrument : str
             The instrument for the filename.
-        description : str
+        descriptor : str
             The descriptor for the ancillary filename.
         version : str
             The version of the data.
@@ -503,12 +503,12 @@ class AncillaryFilePath(ScienceFilePath):
         """
         if end_time:
             filename = (
-                f"imap_{instrument}_{description}_{start_time}-{end_time}_"
+                f"imap_{instrument}_{descriptor}_{start_time}-{end_time}_"
                 f"{version}.{extension}"
             )
         else:
             filename = (
-                f"imap_{instrument}_{description}_{start_time}_{version}.{extension}"
+                f"imap_{instrument}_{descriptor}_{start_time}_{version}.{extension}"
             )
         return cls(filename)
 
@@ -531,7 +531,7 @@ class AncillaryFilePath(ScienceFilePath):
             for attr in [
                 self.mission,
                 self.instrument,
-                self.description,
+                self.descriptor,
                 self.version,
                 self.extension,
             ]
@@ -591,7 +591,7 @@ class AncillaryFilePath(ScienceFilePath):
         """Extract all components from filename. Does not validate instrument or level.
 
         Will return a dictionary with the following keys:
-        { instrument, description, start_date, end_date, version, extension }
+        { instrument, descriptor, start_date, end_date, version, extension }
 
         If a match is not found, a ValueError will be raised.
 
@@ -611,7 +611,7 @@ class AncillaryFilePath(ScienceFilePath):
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
-            r"(?P<description>[^_]+)_"
+            r"(?P<descriptor>[^_]+)_"
             r"(?P<start_date>\d{8})"
             r"(-(?P<end_date>\d{8}))?"  # Optional end_date field
             r"_(?P<version>v\d{3})"
