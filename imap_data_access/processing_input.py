@@ -27,6 +27,45 @@ class InputTypePathMapper(Enum):
     SPICE_FILE = SPICEFilePath
 
 
+def generate_processing_input(filenames: list[str]) -> ProcessingInput:
+    """Generate a ProcessingInput object from a list of filenames.
+
+    This method determines if the filenames are SPICE, Science, or Ancillary files and
+    returns a SPICEInput, ScienceInput, or AncillaryInput object respectively.
+
+    Parameters
+    ----------
+    filenames : list[str]
+        The filenames to generate a ProcessingInput for.
+
+    Returns
+    -------
+    A FilePath object
+    """
+    # Science and Ancillary
+    try:
+        input_obj = ScienceInput(*filenames)
+    except ScienceFilePath.InvalidScienceFileError:
+        # If Science input fails, then process as an Ancillary input
+        try:
+            input_obj = AncillaryInput(*filenames)
+        except AncillaryFilePath.InvalidAncillaryFileError as e:
+            # TODO: uncomment SPICE INPUT when implemented
+            # try:
+            #     # SPICE
+            #     input_obj = SPICEInput(*filenames)
+            # except SPICEFilePath.InvalidSPICEFileError:
+
+            # Matches neither input type
+            error_message = (
+                f"Invalid processing inputs for {filenames}. All files much match "
+                f"either SPICE science or ancillary input formats."
+            )
+            raise ValueError(error_message) from e
+
+    return input_obj
+
+
 @dataclass
 class ProcessingInput(ABC):
     """Interface for input file management and serialization.

@@ -3,7 +3,10 @@ from datetime import datetime
 import pytest
 
 from imap_data_access import processing_input
-from imap_data_access.processing_input import ProcessingInputType
+from imap_data_access.processing_input import (
+    ProcessingInputType,
+    generate_processing_input,
+)
 
 
 def test_create_science_files():
@@ -124,3 +127,48 @@ def test_get_time_range():
 
     assert start == datetime.strptime("20250101", "%Y%m%d")
     assert end == datetime.strptime("20250104", "%Y%m%d")
+
+
+@pytest.mark.parametrize(
+    ("file_list", "expected_class"),
+    [
+        (
+            [
+                "imap_mag_l1b-cal_20250101_v001.cdf",
+                "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
+            ],
+            processing_input.AncillaryInput,
+        ),
+        (
+            [
+                "imap_mag_l1a_burst-magi_20240312_v000.cdf",
+                "imap_mag_l1a_burst-magi_20240310_v000.cdf",
+            ],
+            processing_input.ScienceInput,
+        ),
+        pytest.param(
+            ["test.bc", "test2.bc"],
+            processing_input.SPICEInput,
+            marks=pytest.mark.xfail(
+                reason="SPICE input handling not fully implemented yet"
+            ),
+        ),
+    ],
+)
+def test_generate_processing_input(file_list, expected_class):
+    # Test with one file
+    processing_input_one = generate_processing_input(file_list[0:1])
+    assert isinstance(processing_input_one, expected_class)
+    # Test with two files
+    processing_input_two = generate_processing_input(file_list)
+    assert isinstance(processing_input_two, expected_class)
+
+
+def test_generate_processing_input_different_types():
+    with pytest.raises(ValueError, match="Invalid processing inputs for"):
+        generate_processing_input(
+            [
+                "imap_mag_l1b-cal_20250101_v001.cdf",
+                "imap_mag_l1a_norm-magi_20240312_v001.cdf",
+            ]
+        )
