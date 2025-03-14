@@ -1,5 +1,4 @@
 from datetime import datetime
-
 import pytest
 
 from imap_data_access import (

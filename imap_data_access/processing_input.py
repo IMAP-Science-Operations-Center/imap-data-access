@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 
 from imap_data_access import (
     AncillaryFilePath,
@@ -61,6 +62,7 @@ class ProcessingInput(ABC):
         A descriptor for the file, for example, "burst" or "cal".
     """
 
+    # List of filenames
     filename_list: list[str] = None
     imap_file_paths: list[ImapFilePath] = None
     input_type: ProcessingInputType = None
