@@ -1,8 +1,7 @@
 from datetime import datetime
-
 import pytest
 
-from imap_data_access import processing_input
+from imap_data_access import processing_input, ScienceFilePath
 from imap_data_access.processing_input import ProcessingInputType
 
 
@@ -13,16 +12,20 @@ def test_create_science_files():
         "imap_mag_l1a_burst-magi_20240310_v000.cdf",
     )
 
-    assert one_file.file_path_list == ["imap_mag_l1a_norm-magi_20240312_v000.cdf"]
+    one_file_path = ScienceFilePath("imap_mag_l1a_norm-magi_20240312_v000.cdf")
+
+    assert one_file.filename_list == ["imap_mag_l1a_norm-magi_20240312_v000.cdf"]
+    assert one_file.file_path_list == [one_file_path.construct_path()]
     assert one_file.input_type == ProcessingInputType.SCIENCE_FILE
     assert one_file.source == "mag"
     assert one_file.descriptor == "norm-magi"
     assert one_file.data_type == "l1a"
 
-    assert two_files.file_path_list == [
+    assert two_files.filename_list == [
         "imap_mag_l1a_burst-magi_20240312_v000.cdf",
         "imap_mag_l1a_burst-magi_20240310_v000.cdf",
     ]
+    assert len(two_files.file_path_list) == 2
     assert two_files.input_type == ProcessingInputType.SCIENCE_FILE
     assert two_files.source == "mag"
     assert two_files.descriptor == "burst-magi"
@@ -42,16 +45,18 @@ def test_create_ancillary_files():
         "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
     )
 
-    assert one_file.file_path_list == ["imap_mag_l1b-cal_20250101_v001.cdf"]
+    assert one_file.filename_list == ["imap_mag_l1b-cal_20250101_v001.cdf"]
+    assert len(one_file.file_path_list) == 1
     assert one_file.input_type == ProcessingInputType.ANCILLARY_FILE
     assert one_file.source == "mag"
     assert one_file.descriptor == "l1b-cal"
     assert one_file.data_type == "ancillary"
 
-    assert two_files.file_path_list == [
+    assert two_files.filename_list == [
         "imap_mag_l1b-cal_20250101_v001.cdf",
         "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
     ]
+    assert len(two_files.file_path_list) == 2
     assert two_files.input_type == ProcessingInputType.ANCILLARY_FILE
     assert two_files.source == "mag"
     assert two_files.descriptor == "l1b-cal"
@@ -69,7 +74,7 @@ def test_create_ancillary_files():
 def test_create_spice_files():
     one_file = processing_input.SPICEInput("test.bc")
 
-    assert one_file.file_path_list == ["test.bc"]
+    assert one_file.filename_list == ["test.bc"]
     assert one_file.input_type == ProcessingInputType.SPICE_FILE
     assert one_file.source == "spice"
 

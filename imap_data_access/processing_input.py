@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 
 from imap_data_access import AncillaryFilePath, ScienceFilePath, SPICEFilePath
 
@@ -54,7 +55,10 @@ class ProcessingInput(ABC):
         A descriptor for the file, for example, "burst" or "cal".
     """
 
+    # List of filenames
     filename_list: list[str] = None
+    # List of download paths
+    file_path_list: list[Path] = None
     input_type: ProcessingInputType = None
     # Following three are retrieved from dependency check.
     # But they can also come from the filename.
@@ -122,7 +126,8 @@ class ProcessingInput(ABC):
             else:
                 data_type.add(self.input_type.value)
             descriptor.add(path_validator.descriptor)
-            file_path_list.append(str(path_validator.filename))
+            # Store download path. This gets used in `imap_processing` cli
+            file_path_list.append(path_validator.construct_path())
 
         if len(source) != 1 or len(data_type) != 1 or len(descriptor) != 1:
             raise ValueError(
@@ -148,14 +153,7 @@ class ScienceInput(ProcessingInput):
 
     The class can contain multiple files, but they must have the same source, data type,
      and descriptor.
-
-    Attributes
-    ----------
-    science_file_paths : list[ScienceFilePath]
-        A list of ScienceFilePath objects.
     """
-
-    science_file_paths: list[ScienceFilePath] = None
 
     def __init__(self, *args):
         """Set the processing type to ScienceFile and then calls super().
