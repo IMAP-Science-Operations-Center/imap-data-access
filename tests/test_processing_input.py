@@ -1,7 +1,8 @@
 from datetime import datetime
+
 import pytest
 
-from imap_data_access import processing_input, ScienceFilePath
+from imap_data_access import ScienceFilePath, processing_input
 from imap_data_access.processing_input import ProcessingInputType
 
 
