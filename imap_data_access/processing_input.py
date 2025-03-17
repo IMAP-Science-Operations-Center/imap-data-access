@@ -122,7 +122,7 @@ class ProcessingInput(ABC):
             else:
                 data_type.add(self.input_type.value)
             descriptor.add(path_validator.descriptor)
-            file_path_list.append(str(path_validator.filename))
+            file_path_list.append(str(path_validator.name))
 
         if len(source) != 1 or len(data_type) != 1 or len(descriptor) != 1:
             raise ValueError(

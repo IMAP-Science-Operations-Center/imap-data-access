@@ -70,10 +70,9 @@ def download(file_path: Union[Path, str]) -> Path:
         Path to the downloaded file
     """
     # Create the proper file path object based on the extension and filename
-    file_path = Path(file_path)
-    path_obj = generate_imap_file_path(file_path.name)
-
-    destination = path_obj.construct_path()
+    # We need a raw Path object for the relative_to() call below to not
+    # validate our Paths against the expected naming convention
+    destination = Path(generate_imap_file_path(Path(file_path).name))
 
     # Update the file_path with the full path for the download below
     file_path = destination.relative_to(imap_data_access.config["DATA_DIR"]).as_posix()

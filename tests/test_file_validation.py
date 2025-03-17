@@ -133,7 +133,8 @@ def test_construct_upload_path():
         "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_v001.cdf"
     )
 
-    assert sfm.construct_path() == expected_output
+    with pytest.warns(DeprecationWarning):
+        assert sfm.construct_path() == expected_output
 
 
 def test_generate_from_inputs():
@@ -145,7 +146,7 @@ def test_generate_from_inputs():
         "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_v001.cdf"
     )
 
-    assert sfm.construct_path() == expected_output
+    assert sfm == expected_output
     assert sfm.instrument == "mag"
     assert sfm.data_level == "l1a"
     assert sfm.descriptor == "burst"
@@ -159,7 +160,7 @@ def test_generate_from_inputs():
         "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101_v001.pkts"
     )
 
-    assert sfm.construct_path() == expected_output
+    assert sfm == expected_output
 
     sfm = ScienceFilePath.generate_from_inputs(
         "mag",
@@ -172,15 +173,13 @@ def test_generate_from_inputs():
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
         "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101-repoint00001_v001.pkts"
     )
-    assert sfm.construct_path() == expected_output
+    assert sfm == expected_output
 
 
 def test_spice_file_path():
     """Tests the ``SPICEFilePath`` class."""
     file_path = SPICEFilePath("test.bc")
-    assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/ck/test.bc"
-    )
+    assert file_path == imap_data_access.config["DATA_DIR"] / Path("spice/ck/test.bc")
 
     # Test a bad file extension too
     with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
@@ -188,28 +187,28 @@ def test_spice_file_path():
 
     # Test that spin and repoint goes into their own directories
     spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
-    assert spin_file_path.construct_path() == imap_data_access.config[
-        "DATA_DIR"
-    ] / Path("spice/spin/imap_2025_122_2025_122_01.spin.csv")
+    assert spin_file_path == imap_data_access.config["DATA_DIR"] / Path(
+        "spice/spin/imap_2025_122_2025_122_01.spin.csv"
+    )
 
     repoint_file_path = SPICEFilePath("imap_2025_122_2025_122_01.repoint.csv")
-    assert repoint_file_path.construct_path() == imap_data_access.config[
-        "DATA_DIR"
-    ] / Path("spice/repoint/imap_2025_122_2025_122_01.repoint.csv")
+    assert repoint_file_path == imap_data_access.config["DATA_DIR"] / Path(
+        "spice/repoint/imap_2025_122_2025_122_01.repoint.csv"
+    )
 
     metakernel_file = SPICEFilePath("imap_yyyy_doy_e00.mk")
-    assert metakernel_file.construct_path() == imap_data_access.config[
-        "DATA_DIR"
-    ] / Path("spice/mk/imap_yyyy_doy_e00.mk")
+    assert metakernel_file == imap_data_access.config["DATA_DIR"] / Path(
+        "spice/mk/imap_yyyy_doy_e00.mk"
+    )
 
     thruster_file = SPICEFilePath("imap_yyyy_doy_hist_00.sff")
-    assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+    assert thruster_file == imap_data_access.config["DATA_DIR"] / Path(
         "spice/activities/imap_yyyy_doy_hist_00.sff"
     )
 
 
 def test_ancillary_file_path_no_end_date():
-    """Tests the ``construct_path`` method with no end_date provided."""
+    """Tests the ancillary input with no end_date provided."""
     anc_file = AncillaryFilePath.generate_from_inputs(
         instrument="mag",
         descriptor="test",
@@ -222,4 +221,4 @@ def test_ancillary_file_path_no_end_date():
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
         "imap/ancillary/mag/imap_mag_test_20210101_v001.cdf"
     )
-    assert anc_file.construct_path() == expected_output
+    assert anc_file == expected_output
