@@ -2,7 +2,12 @@ from datetime import datetime
 
 import pytest
 
-from imap_data_access import AncillaryFilePath, ScienceFilePath, SPICEFilePath, processing_input
+from imap_data_access import (
+    AncillaryFilePath,
+    ScienceFilePath,
+    SPICEFilePath,
+    processing_input,
+)
 from imap_data_access.processing_input import ProcessingInputType
 
 
@@ -59,7 +64,9 @@ def test_create_ancillary_files():
         "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
     ]
     assert len(two_files.imap_file_paths) == 2
-    assert all([isinstance(obj, AncillaryFilePath) for obj in two_files.imap_file_paths])
+    assert all(
+        [isinstance(obj, AncillaryFilePath) for obj in two_files.imap_file_paths]
+    )
     assert two_files.input_type == ProcessingInputType.ANCILLARY_FILE
     assert two_files.source == "mag"
     assert two_files.descriptor == "l1b-cal"

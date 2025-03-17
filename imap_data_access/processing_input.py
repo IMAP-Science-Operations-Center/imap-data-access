@@ -7,9 +7,13 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
 
-from imap_data_access import AncillaryFilePath, ImapFilePath, ScienceFilePath, SPICEFilePath
+from imap_data_access import (
+    AncillaryFilePath,
+    ImapFilePath,
+    ScienceFilePath,
+    SPICEFilePath,
+)
 
 
 class ProcessingInputType(Enum):
