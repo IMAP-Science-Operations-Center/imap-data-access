@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
-from imap_data_access import AncillaryFilePath, ScienceFilePath, SPICEFilePath
+from imap_data_access import AncillaryFilePath, ImapFilePath, ScienceFilePath, SPICEFilePath
 
 
 class ProcessingInputType(Enum):
@@ -44,7 +44,7 @@ class ProcessingInput(ABC):
     ----------
     filename_list : list[str]
         A list of filename(s).
-    file_obj_list : list[AncillaryFilePath, ScienceFilePath, SPICEFilePath]
+    imap_file_paths: list[ImapFilePath]
         A list of file objects, one for each filename.
     input_type : ProcessingInputType
         The type of input file.
@@ -58,7 +58,7 @@ class ProcessingInput(ABC):
     """
 
     filename_list: list[str] = None
-    file_obj_list: list[AncillaryFilePath, ScienceFilePath, SPICEFilePath] = None
+    imap_file_paths: list[ImapFilePath] = None
     input_type: ProcessingInputType = None
     # Following three are retrieved from dependency check.
     # But they can also come from the filename.

@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-import numpy as np
 
 from imap_data_access import AncillaryFilePath, ScienceFilePath, SPICEFilePath, processing_input
 from imap_data_access.processing_input import ProcessingInputType
@@ -26,7 +25,7 @@ def test_create_science_files():
         "imap_mag_l1a_burst-magi_20240312_v000.cdf",
         "imap_mag_l1a_burst-magi_20240310_v000.cdf",
     ]
-    assert np.all([isinstance(obj, ScienceFilePath) for obj in two_files.file_obj_list])
+    assert all([isinstance(obj, ScienceFilePath) for obj in two_files.file_obj_list])
     assert len(two_files.file_obj_list) == 2
     assert two_files.input_type == ProcessingInputType.SCIENCE_FILE
     assert two_files.source == "mag"
@@ -60,7 +59,7 @@ def test_create_ancillary_files():
         "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
     ]
     assert len(two_files.file_obj_list) == 2
-    assert np.all([isinstance(obj, AncillaryFilePath) for obj in two_files.file_obj_list])
+    assert all([isinstance(obj, AncillaryFilePath) for obj in two_files.file_obj_list])
     assert two_files.input_type == ProcessingInputType.ANCILLARY_FILE
     assert two_files.source == "mag"
     assert two_files.descriptor == "l1b-cal"
