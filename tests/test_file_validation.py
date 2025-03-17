@@ -211,6 +211,16 @@ def test_spice_file_path():
 def test_ancillary_file_path():
     """Tests the ``AncillaryFilePath`` class for different scenarios."""
 
+    # Test for an invalid ancillary file (incorrect instrument type)
+    with pytest.raises(AncillaryFilePath.InvalidAncillaryFileError):
+        AncillaryFilePath.generate_from_inputs(
+            instrument="invalid_instrument",  # Invalid instrument
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="cdf",
+        )
+
     # Test with start_time and end_time
     ancillary_file_all_params = AncillaryFilePath.generate_from_inputs(
         instrument="mag",
