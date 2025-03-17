@@ -10,6 +10,7 @@ from pathlib import Path
 
 from imap_data_access.file_validation import (
     AncillaryFilePath,
+    ImapFilePath,
     ScienceFilePath,
     SPICEFilePath,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "query",
     "download",
     "upload",
+    "ImapFilePath",
     "ScienceFilePath",
     "SPICEFilePath",
     "AncillaryFilePath",

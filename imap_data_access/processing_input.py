@@ -136,7 +136,7 @@ class ProcessingInput(ABC):
         self.source = source.pop()
         self.data_type = data_type.pop()
         self.descriptor = descriptor.pop()
-        self.file_obj_list = file_obj_list
+        self.imap_file_paths = file_obj_list
 
     def construct_json_output(self):
         """Construct a JSON output.
