@@ -208,6 +208,58 @@ def test_spice_file_path():
     )
 
 
+def test_ancillary_file_path_all_parameters():
+    """Tests the ``construct_path`` method with no end_date provided."""
+    anc_file = AncillaryFilePath.generate_from_inputs(
+        instrument="mag",
+        descriptor="test",
+        start_time="20210101",
+        end_time="20210102",
+        version="v001",
+        extension="cdf",
+    )
+
+    assert anc_file.validate_filename() == ""
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/ancillary/mag/imap_mag_test_20210101-10210102_v001.cdf"
+    )
+    assert anc_file.construct_path() == expected_output
+
+
+def test_ancillary_file_path_diff_extension1():
+    """Tests the ``construct_path`` method with no end_date provided."""
+    anc_file = AncillaryFilePath.generate_from_inputs(
+        instrument="mag",
+        descriptor="test",
+        start_time="20210101",
+        version="v001",
+        extension="json",
+    )
+
+    assert anc_file.validate_filename() == ""
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/ancillary/mag/imap_mag_test_20210101_v001.json"
+    )
+    assert anc_file.construct_path() == expected_output
+
+
+def test_ancillary_file_path_diff_extension2():
+    """Tests the ``construct_path`` method with no end_date provided."""
+    anc_file = AncillaryFilePath.generate_from_inputs(
+        instrument="mag",
+        descriptor="test",
+        start_time="20210101",
+        version="v001",
+        extension="csv",
+    )
+
+    assert anc_file.validate_filename() == ""
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/ancillary/mag/imap_mag_test_20210101_v001.csv"
+    )
+    assert anc_file.construct_path() == expected_output
+
+
 def test_ancillary_file_path_no_end_date():
     """Tests the ``construct_path`` method with no end_date provided."""
     anc_file = AncillaryFilePath.generate_from_inputs(
