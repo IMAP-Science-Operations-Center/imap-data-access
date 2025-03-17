@@ -1,8 +1,9 @@
 from datetime import datetime
 
 import pytest
+import numpy as np
 
-from imap_data_access import ScienceFilePath, processing_input
+from imap_data_access import AncillaryFilePath, ScienceFilePath, SPICEFilePath, processing_input
 from imap_data_access.processing_input import ProcessingInputType
 
 
@@ -16,7 +17,8 @@ def test_create_science_files():
     one_file_path = ScienceFilePath("imap_mag_l1a_norm-magi_20240312_v000.cdf")
 
     assert one_file.filename_list == ["imap_mag_l1a_norm-magi_20240312_v000.cdf"]
-    assert one_file.file_path_list == [one_file_path.construct_path()]
+    assert len(one_file.file_obj_list) == 1
+    assert isinstance(one_file.file_obj_list[0], ScienceFilePath)
     assert one_file.input_type == ProcessingInputType.SCIENCE_FILE
     assert one_file.source == "mag"
     assert one_file.descriptor == "norm-magi"
@@ -26,7 +28,8 @@ def test_create_science_files():
         "imap_mag_l1a_burst-magi_20240312_v000.cdf",
         "imap_mag_l1a_burst-magi_20240310_v000.cdf",
     ]
-    assert len(two_files.file_path_list) == 2
+    assert np.all([isinstance(obj, ScienceFilePath) for obj in two_files.file_obj_list])
+    assert len(two_files.file_obj_list) == 2
     assert two_files.input_type == ProcessingInputType.SCIENCE_FILE
     assert two_files.source == "mag"
     assert two_files.descriptor == "burst-magi"
@@ -47,7 +50,8 @@ def test_create_ancillary_files():
     )
 
     assert one_file.filename_list == ["imap_mag_l1b-cal_20250101_v001.cdf"]
-    assert len(one_file.file_path_list) == 1
+    assert len(one_file.file_obj_list) == 1
+    assert isinstance(one_file.file_obj_list[0], AncillaryFilePath)
     assert one_file.input_type == ProcessingInputType.ANCILLARY_FILE
     assert one_file.source == "mag"
     assert one_file.descriptor == "l1b-cal"
@@ -57,7 +61,8 @@ def test_create_ancillary_files():
         "imap_mag_l1b-cal_20250101_v001.cdf",
         "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
     ]
-    assert len(two_files.file_path_list) == 2
+    assert len(two_files.file_obj_list) == 2
+    assert np.all([isinstance(obj, AncillaryFilePath) for obj in two_files.file_obj_list])
     assert two_files.input_type == ProcessingInputType.ANCILLARY_FILE
     assert two_files.source == "mag"
     assert two_files.descriptor == "l1b-cal"
@@ -76,6 +81,8 @@ def test_create_spice_files():
     one_file = processing_input.SPICEInput("test.bc")
 
     assert one_file.filename_list == ["test.bc"]
+    assert len(one_file.file_obj_list) == 1
+    assert isinstance(one_file.file_obj_list[0], SPICEFilePath)
     assert one_file.input_type == ProcessingInputType.SPICE_FILE
     assert one_file.source == "spice"
 
@@ -116,8 +123,8 @@ def test_create_collection():
     assert len(science_files) == 2
     assert science_files[0].descriptor == "norm-magi"
     assert science_files[1].descriptor == "hist"
-    assert len(science_files[0].file_path_list) == 2
-    assert len(science_files[1].file_path_list) == 1
+    assert len(science_files[0].file_obj_list) == 2
+    assert len(science_files[1].file_obj_list) == 1
 
 
 def test_get_time_range():

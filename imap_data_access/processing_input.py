@@ -58,7 +58,7 @@ class ProcessingInput(ABC):
     # List of filenames
     filename_list: list[str] = None
     # List of download paths
-    file_path_list: list[Path] = None
+    file_obj_list: list[AncillaryFilePath, ScienceFilePath, SPICEFilePath] = None
     input_type: ProcessingInputType = None
     # Following three are retrieved from dependency check.
     # But they can also come from the filename.
@@ -110,13 +110,13 @@ class ProcessingInput(ABC):
         This method is called by the constructor and can be overridden by subclasses.
         It works for ScienceFilePaths and AncillaryFilePaths, but not SPICEFilePaths.
 
-        This sets source, datatype, descriptor, and file_path_list attributes.
+        This sets source, datatype, descriptor, and file_obj_list attributes.
         """
         # For science and ancillary files
         source = set()
         data_type = set()
         descriptor = set()
-        file_path_list = []
+        file_obj_list = []
         for file in self.filename_list:
             path_validator = InputTypePathMapper[self.input_type.name].value(file)
 
@@ -126,8 +126,7 @@ class ProcessingInput(ABC):
             else:
                 data_type.add(self.input_type.value)
             descriptor.add(path_validator.descriptor)
-            # Store download path. This gets used in `imap_processing` cli
-            file_path_list.append(path_validator.construct_path())
+            file_obj_list.append(path_validator)
 
         if len(source) != 1 or len(data_type) != 1 or len(descriptor) != 1:
             raise ValueError(
@@ -137,7 +136,7 @@ class ProcessingInput(ABC):
         self.source = source.pop()
         self.data_type = data_type.pop()
         self.descriptor = descriptor.pop()
-        self.file_path_list = file_path_list
+        self.file_obj_list = file_obj_list
 
     def construct_json_output(self):
         """Construct a JSON output.
