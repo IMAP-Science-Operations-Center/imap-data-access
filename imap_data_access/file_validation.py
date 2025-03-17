@@ -666,7 +666,7 @@ class AncillaryFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             r"(-(?P<end_date>\d{8}))?"  # Optional end_date field
             r"_(?P<version>v\d{3})"
-            r"\.(?P<extension>cdf|cvs|json)$"
+            r"\.(?P<extension>cdf|csv|json)$"
         )
         if isinstance(filename, Path):
             filename = filename.name
