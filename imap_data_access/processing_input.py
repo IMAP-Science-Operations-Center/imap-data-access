@@ -42,8 +42,10 @@ class ProcessingInput(ABC):
 
     Attributes
     ----------
-    filepath_list : list[str]
-        A list of filepaths.
+    filename_list : list[str]
+        A list of filename(s).
+    file_obj_list : list[AncillaryFilePath, ScienceFilePath, SPICEFilePath]
+        A list of file objects, one for each filename.
     input_type : ProcessingInputType
         The type of input file.
     source : str
@@ -55,9 +57,7 @@ class ProcessingInput(ABC):
         A descriptor for the file, for example, "burst" or "cal".
     """
 
-    # List of filenames
     filename_list: list[str] = None
-    # List of download paths
     file_obj_list: list[AncillaryFilePath, ScienceFilePath, SPICEFilePath] = None
     input_type: ProcessingInputType = None
     # Following three are retrieved from dependency check.

@@ -14,8 +14,6 @@ def test_create_science_files():
         "imap_mag_l1a_burst-magi_20240310_v000.cdf",
     )
 
-    one_file_path = ScienceFilePath("imap_mag_l1a_norm-magi_20240312_v000.cdf")
-
     assert one_file.filename_list == ["imap_mag_l1a_norm-magi_20240312_v000.cdf"]
     assert len(one_file.file_obj_list) == 1
     assert isinstance(one_file.file_obj_list[0], ScienceFilePath)
