@@ -51,6 +51,8 @@ class ProcessingInput(ABC):
         A list of filename(s).
     imap_file_paths: list[ImapFilePath]
         A list of file objects, one for each filename.
+    download_paths : list[Path]
+        A list of downloaded paths for each filename.
     input_type : ProcessingInputType
         The type of input file.
     source : str
@@ -65,6 +67,7 @@ class ProcessingInput(ABC):
     # List of filenames
     filename_list: list[str] = None
     imap_file_paths: list[ImapFilePath] = None
+    download_paths: list[Path] = None
     input_type: ProcessingInputType = None
     # Following three are retrieved from dependency check.
     # But they can also come from the filename.
@@ -123,6 +126,7 @@ class ProcessingInput(ABC):
         data_type = set()
         descriptor = set()
         file_obj_list = []
+        files_path = []
         for file in self.filename_list:
             path_validator = InputTypePathMapper[self.input_type.name].value(file)
 
@@ -133,6 +137,7 @@ class ProcessingInput(ABC):
                 data_type.add(self.input_type.value)
             descriptor.add(path_validator.descriptor)
             file_obj_list.append(path_validator)
+            files_path.append(path_validator.construct_path())
 
         if len(source) != 1 or len(data_type) != 1 or len(descriptor) != 1:
             raise ValueError(
@@ -143,6 +148,7 @@ class ProcessingInput(ABC):
         self.data_type = data_type.pop()
         self.descriptor = descriptor.pop()
         self.imap_file_paths = file_obj_list
+        self.download_paths = files_path
 
     def construct_json_output(self):
         """Construct a JSON output.
