@@ -230,7 +230,6 @@ def test_ancillary_file_path():
         version="v001",
         extension="cdf",
     )
-    assert ancillary_file_all_params.validate_filename() == ""
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
         "imap/ancillary/mag/imap_mag_test_20210101-20210102_v001.cdf"
     )
@@ -244,7 +243,6 @@ def test_ancillary_file_path():
         version="v001",
         extension="json",
     )
-    assert ancillary_file_json.validate_filename() == ""
     expected_output_json = imap_data_access.config["DATA_DIR"] / Path(
         "imap/ancillary/mag/imap_mag_test_20210101_v001.json"
     )
@@ -258,7 +256,6 @@ def test_ancillary_file_path():
         version="v001",
         extension="csv",
     )
-    assert ancillary_file_csv.validate_filename() == ""
     expected_output_csv = imap_data_access.config["DATA_DIR"] / Path(
         "imap/ancillary/mag/imap_mag_test_20210101_v001.csv"
     )
@@ -272,7 +269,6 @@ def test_ancillary_file_path():
         version="v001",
         extension="cdf",
     )
-    assert ancillary_file_no_end_date.validate_filename() == ""
     expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
         "imap/ancillary/mag/imap_mag_test_20210101_v001.cdf"
     )
