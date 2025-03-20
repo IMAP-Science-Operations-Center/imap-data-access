@@ -231,7 +231,7 @@ def test_ancillary_file_path():
         extension="cdf",
     )
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/ancillary/mag/imap_mag_test_20210101-20210102_v001.cdf"
+        "imap/ancillary/mag/imap_mag_test_20210101_20210102_v001.cdf"
     )
     assert ancillary_file_all_params.construct_path() == expected_output
 
@@ -273,3 +273,9 @@ def test_ancillary_file_path():
         "imap/ancillary/mag/imap_mag_test_20210101_v001.cdf"
     )
     assert ancillary_file_no_end_date.construct_path() == expected_output_no_end_date
+
+    # Test by passing the file
+    anc_file = "imap_mag_test_20210101_20210102_v001.csv"
+    ancillary_file = AncillaryFilePath(anc_file)
+    assert ancillary_file.instrument == "mag"
+    assert ancillary_file.end_date == "20210102"
