@@ -466,7 +466,7 @@ class AncillaryFilePath(ImapFilePath):
         path is set by the "IMAP_DATA_DIR" environment variable, or defaults to "data/"
 
         Current filename convention:
-        "<mission>_<instrument>_<descriptor>_<start_date>(-<end_date>)_
+        "<mission>_<instrument>_<descriptor>_<start_date>(_<end_date>)_
         <version>.<extension>"
 
         <mission>: imap
