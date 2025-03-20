@@ -48,7 +48,7 @@ def test_create_ancillary_files():
     one_file = processing_input.AncillaryInput("imap_mag_l1b-cal_20250101_v001.cdf")
     two_files = processing_input.AncillaryInput(
         "imap_mag_l1b-cal_20250101_v001.cdf",
-        "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
+        "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
     )
 
     assert one_file.filename_list == ["imap_mag_l1b-cal_20250101_v001.cdf"]
@@ -61,7 +61,7 @@ def test_create_ancillary_files():
 
     assert two_files.filename_list == [
         "imap_mag_l1b-cal_20250101_v001.cdf",
-        "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
+        "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
     ]
     assert len(two_files.imap_file_paths) == 2
     assert all(
@@ -75,7 +75,7 @@ def test_create_ancillary_files():
     with pytest.raises(ValueError, match="same source"):
         processing_input.AncillaryInput(
             "imap_mag_l1b-cal_20250101_v001.cdf",
-            "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
+            "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
             "imap_mag_l1a-cal_20250105_v003.cdf",
         )
 
@@ -94,7 +94,7 @@ def test_create_spice_files():
 def test_create_collection():
     ancillary = processing_input.AncillaryInput(
         "imap_mag_l1b-cal_20250101_v001.cdf",
-        "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
+        "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
     )
     science = processing_input.ScienceInput(
         "imap_mag_l1a_norm-magi_20240312_v000.cdf",
@@ -134,7 +134,7 @@ def test_create_collection():
 def test_get_time_range():
     ancillary = processing_input.AncillaryInput(
         "imap_mag_l1b-cal_20250101_v001.cdf",
-        "imap_mag_l1b-cal_20250103-20250104_v002.cdf",
+        "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
     )
 
     start, end = ancillary.get_time_range()
