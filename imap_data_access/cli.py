@@ -275,18 +275,7 @@ def main():  # noqa: PLR0915
         type=str,
         required=False,
         help="Name of the instrument",
-        choices=[
-            "codice",
-            "glows",
-            "hi",
-            "hit",
-            "idex",
-            "lo",
-            "mag",
-            "swapi",
-            "swe",
-            "ultra",
-        ],
+        choices=imap_data_access.VALID_INSTRUMENTS,
     )
     query_parser.add_argument(
         "--data-level",
