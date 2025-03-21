@@ -52,14 +52,18 @@ API_KEY : This is the API key used to authenticate with the data access API.
 """
 
 
+# NOTE: ialirt and spacecraft aren't actual instruments, but they are
+#       additional data sources for packet definitions and processing
 VALID_INSTRUMENTS = {
     "codice",
     "glows",
     "hit",
     "hi",
+    "ialirt",
     "idex",
     "lo",
     "mag",
+    "spacecraft",
     "swapi",
     "swe",
     "ultra",
