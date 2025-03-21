@@ -1,8 +1,5 @@
 """Input/output capabilities for the IMAP data processing pipeline."""
 
-# ruff: noqa: PLR0913 S310
-# too many arguments, but we want all of these explicitly listed
-# potentially unsafe usage of urlopen, but we aren't concerned here
 import contextlib
 import json
 import logging
