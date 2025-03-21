@@ -22,22 +22,6 @@ test_science_filename = "imap_swe_l1_test-description_20100101_v000.cdf"
 test_science_path = "imap/swe/l1/2010/01/" + test_science_filename
 
 
-@pytest.fixture
-def mock_urlopen():
-    """Mock urlopen to return a file-like object.
-
-    Yields
-    ------
-    mock_urlopen : unittest.mock.MagicMock
-        Mock object for ``urlopen``
-    """
-    mock_data = b"Mock file content"
-    with patch("urllib.request.urlopen") as mock_urlopen:
-        mock_response = mock_urlopen.return_value.__enter__.return_value
-        mock_response.read.return_value = mock_data
-        yield mock_urlopen
-
-
 def _set_mock_data(mock_urlopen: unittest.mock.MagicMock, data: bytes):
     """Set the data returned by the mock urlopen.
 
@@ -335,6 +319,7 @@ def test_upload(
     upload_file_path: str | Path,
     api_key: str | None,
     expected_header: dict,
+    monkeypatch,
 ):
     """Test a basic call to the upload API.
 
@@ -349,6 +334,7 @@ def test_upload(
     expected_header : dict
         The expected header to be sent with the request
     """
+    monkeypatch.setitem(imap_data_access.config, "API_KEY", None)
     _set_mock_data(mock_urlopen, b'"https://s3-test-bucket.com"')
     # Call the upload function
     file_to_upload = imap_data_access.config["DATA_DIR"] / upload_file_path

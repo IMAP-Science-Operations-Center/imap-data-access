@@ -16,12 +16,14 @@ Use
 """
 
 import argparse
+import datetime
 import logging
 import os
 from pathlib import Path
 
 import imap_data_access
 from imap_data_access.file_validation import ScienceFilePath
+from imap_data_access.webpoda import download_daily_data
 
 
 def _download_parser(args: argparse.Namespace):
@@ -174,6 +176,29 @@ def _upload_parser(args: argparse.Namespace):
     print("Successfully uploaded the file to the IMAP SDC")
 
 
+def _webpoda_parser(args: argparse.Namespace):
+    """Download raw packet data from IMAP.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        An object containing the parsed arguments and their values
+    """
+    if args.end_date:
+        end_time = args.end_date
+    else:
+        end_time = args.start_date
+    # Now push that out to 23:59:59
+    end_time = datetime.datetime.combine(end_time, datetime.time.max)
+
+    download_daily_data(
+        instrument=args.instrument,
+        start_time=args.start_date,
+        end_time=end_time,
+    )
+    print("Successfully downloaded the data from webpoda.")
+
+
 # PLR0915: too many statements
 def main():  # noqa: PLR0915
     """Parse the command line arguments.
@@ -184,6 +209,11 @@ def main():  # noqa: PLR0915
         "API key to authenticate with the IMAP SDC. "
         "This can also be set using the IMAP_API_KEY environment variable. "
         "It is only necessary for uploading files."
+    )
+    webpoda_token_help = (
+        "Used to authenticate with the IMAP Project. "  # noqa: S105
+        "This can also be set using the IMAP_WEBPODA_TOKEN environment variable. "
+        "It is only necessary for downloading binary packet data."
     )
     data_dir_help = (
         "Directory to use for reading and writing IMAP data. "
@@ -238,6 +268,9 @@ def main():  # noqa: PLR0915
         help="Show programs version number and exit. No other parameters needed.",
     )
     parser.add_argument("--api-key", type=str, required=False, help=api_key_help)
+    parser.add_argument(
+        "--webpoda-token", type=str, required=False, help=webpoda_token_help
+    )
     parser.add_argument("--data-dir", type=Path, required=False, help=data_dir_help)
     parser.add_argument("--url", type=str, required=False, help=url_help)
     # Logging level
@@ -340,6 +373,34 @@ def main():  # noqa: PLR0915
     parser_upload.add_argument("file_path", type=Path, help=file_path_help)
     parser_upload.set_defaults(func=_upload_parser)
 
+    # Webpoda command
+    parser_webpoda = subparsers.add_parser(
+        "webpoda", help="Raw packet data download per instrument"
+    )
+    parser_webpoda.add_argument(
+        "--instrument",
+        type=str,
+        required=True,
+        help="Name of the instrument",
+        choices=imap_data_access.VALID_INSTRUMENTS,
+    )
+    parser_webpoda.add_argument(
+        "--start-date",
+        type=lambda d: datetime.datetime.strptime(d, "%Y%m%d"),
+        required=True,
+        help="Start date for the query in YYYYMMDD format. "
+        "The query uses Earth Received Time (ERT).",
+    )
+    parser_webpoda.add_argument(
+        "--end-date",
+        type=lambda d: datetime.datetime.strptime(d, "%Y%m%d"),
+        required=False,
+        help="End date for the query in YYYYMMDD format. "
+        "The query uses Earth Received Time (ERT). If not provided "
+        "the query will be for the start date only.",
+    )
+    parser_webpoda.set_defaults(func=_webpoda_parser)
+
     # Parse the arguments and set the values
     try:
         args = parser.parse_args()
@@ -367,6 +428,10 @@ def main():  # noqa: PLR0915
     if args.api_key:
         # We got an explicit api key from the command line
         imap_data_access.config["API_KEY"] = args.api_key
+
+    if args.webpoda_token:
+        # We got an explicit webpoda token from the command line
+        imap_data_access.config["WEBPODA_TOKEN"] = args.webpoda_token
 
     # Now process through the respective function for the invoked command
     # (set with set_defaults on the subparsers above)

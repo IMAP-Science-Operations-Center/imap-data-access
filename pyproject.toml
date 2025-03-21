@@ -62,3 +62,5 @@ lint.ignore = ["D104", "D203", "D213", "D413", "PLR2004"]
 # S101: Use of assert detected
 "tests/*" = ["S101", "D"]
 "*.ipynb" = ["E501"]
+"imap_data_access/io.py" = ["PLR0913", "S310"]
+"imap_data_access/webpoda.py" = ["S310"]
