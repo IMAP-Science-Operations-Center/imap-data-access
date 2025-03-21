@@ -38,6 +38,9 @@ config = {
     or "https://api.dev.imap-mission.com",
     "DATA_DIR": Path(os.getenv("IMAP_DATA_DIR") or Path.cwd() / "data"),
     "API_KEY": os.getenv("IMAP_API_KEY"),
+    # Create a base64 encoded string for the username and password
+    # echo -n 'username:password' | base64
+    "WEBPODA_TOKEN": os.getenv("IMAP_WEBPODA_TOKEN"),
 }
 """Settings configuration dictionary.
 
@@ -49,6 +52,10 @@ DATA_DIR : This is where the file data is stored and organized by instrument and
 API_KEY : This is the API key used to authenticate with the data access API.
     It can be set on the command line using the --api-key option, or through the
     environment variable IMAP_API_KEY. It is only necessary for uploading files.
+WEBPODA_TOKEN : This is the token used to authenticate with the webpoda API.
+    It can be set on the command line using the --webpoda-token option, or through
+    the environment variable IMAP_WEBPODA_TOKEN. It is only necessary for downloading
+    packet data.
 """
 
 
