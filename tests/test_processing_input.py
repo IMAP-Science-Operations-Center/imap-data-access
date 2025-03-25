@@ -8,7 +8,11 @@ from imap_data_access import (
     SPICEFilePath,
     processing_input,
 )
-from imap_data_access.processing_input import ProcessingInputType, ScienceInput, AncillaryInput
+from imap_data_access.processing_input import (
+    AncillaryInput,
+    ProcessingInputType,
+    ScienceInput,
+)
 
 
 def test_create_science_files():
@@ -135,6 +139,7 @@ def test_get_time_range():
     assert start == datetime.strptime("20250101", "%Y%m%d")
     assert end == datetime.strptime("20250104", "%Y%m%d")
 
+
 def test_get_files():
     # This example is fake example where we are processing HIT L2
     # and it has three dependencies, one primary dependent (HIT l1b)
@@ -150,13 +155,17 @@ def test_get_files():
         "imap_hit_l1b_sci_20240312_v000.cdf",
     )
 
-    input_collection = processing_input.ProcessingInputCollection(mag_sci_anc, hit_anc, hit_sci)
+    input_collection = processing_input.ProcessingInputCollection(
+        mag_sci_anc, hit_anc, hit_sci
+    )
     hit_sci_files = input_collection.get_files("hit", "sci")
     assert len(hit_sci_files) == 1
 
     hit_anc_files = input_collection.get_files("hit", "l1b-cal")
     assert len(hit_anc_files) == 1
-    expected_path = AncillaryFilePath("imap_hit_l1b-cal_20240312_v000.cdf").construct_path()
+    expected_path = AncillaryFilePath(
+        "imap_hit_l1b-cal_20240312_v000.cdf"
+    ).construct_path()
     assert hit_anc_files[0] == expected_path
 
     mag_sci_files = input_collection.get_files("mag", "norm-magi")

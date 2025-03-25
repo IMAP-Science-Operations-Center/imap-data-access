@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 import logging
-from urllib.error import HTTPError
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from urllib.error import HTTPError
 
 from imap_data_access import (
     AncillaryFilePath,
@@ -393,7 +393,7 @@ class ProcessingInputCollection:
 
     def donwload(self):
         """Download all the dependencies for the processing input."""
-        # Go through science or ancillary or SPICE dependencies 
+        # Go through science or ancillary or SPICE dependencies
         # processing input list and download all files
         for dependency in self.processing_input:
             for filepath in dependency.imap_file_paths:
