@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
+from urllib.error import HTTPError
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 
 from imap_data_access import (
     AncillaryFilePath,
@@ -14,6 +17,9 @@ from imap_data_access import (
     ScienceFilePath,
     SPICEFilePath,
 )
+from imap_data_access.io import download
+
+logger = logging.getLogger(__name__)
 
 
 class ProcessingInputType(Enum):
@@ -370,17 +376,30 @@ class ProcessingInputCollection:
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
 
-    def get_science_files(self) -> list[ProcessingInput]:
-        """Return just the science files from the collection.
+    def get_files(self, instrument, descriptor) -> list[Path]:
+        """Get the dependency files path from the collection.
 
         Returns
         -------
-        out : list[ProcessingInput]
+        out : list[Path]
             list of ScienceInput files contained in the collection.
         """
         out = []
         for file in self.processing_input:
-            if file.input_type == ProcessingInputType.SCIENCE_FILE:
-                out.append(file)
-
+            if file.source == instrument and file.descriptor == descriptor:
+                for obj in file.imap_file_paths:
+                    out.append(obj.construct_path())
         return out
+
+    def donwload(self):
+        """Download all the dependencies for the processing input."""
+        # Go through science or ancillary or SPICE dependencies 
+        # processing input list and download all files
+        for dependency in self.processing_input:
+            for filepath in dependency.imap_file_paths:
+                try:
+                    download_path = filepath.construct_path()
+                    logger.info(f"Downloading {download_path}")
+                    download(download_path)
+                except HTTPError as e:
+                    raise ValueError(f"Unable to download {filepath} file") from e

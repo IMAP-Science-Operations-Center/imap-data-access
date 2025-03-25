@@ -8,7 +8,7 @@ from imap_data_access import (
     SPICEFilePath,
     processing_input,
 )
-from imap_data_access.processing_input import ProcessingInputType
+from imap_data_access.processing_input import ProcessingInputType, ScienceInput, AncillaryInput
 
 
 def test_create_science_files():
@@ -123,13 +123,6 @@ def test_create_collection():
     assert len(deser.processing_input) == 3
     assert deser.processing_input[2].descriptor == "hist"
 
-    science_files = deser.get_science_files()
-    assert len(science_files) == 2
-    assert science_files[0].descriptor == "norm-magi"
-    assert science_files[1].descriptor == "hist"
-    assert len(science_files[0].imap_file_paths) == 2
-    assert len(science_files[1].imap_file_paths) == 1
-
 
 def test_get_time_range():
     ancillary = processing_input.AncillaryInput(
@@ -141,3 +134,30 @@ def test_get_time_range():
 
     assert start == datetime.strptime("20250101", "%Y%m%d")
     assert end == datetime.strptime("20250104", "%Y%m%d")
+
+def test_get_files():
+    # This example is fake example where we are processing HIT L2
+    # and it has three dependencies, one primary dependent (HIT l1b)
+    # and two ancillary dependents, MAG l1a and HIT ancillary.
+    mag_sci_anc = ScienceInput(
+        "imap_mag_l1a_norm-magi_20240312_v000.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v001.cdf",
+    )
+    hit_anc = AncillaryInput(
+        "imap_hit_l1b-cal_20240312_v000.cdf",
+    )
+    hit_sci = ScienceInput(
+        "imap_hit_l1b_sci_20240312_v000.cdf",
+    )
+
+    input_collection = processing_input.ProcessingInputCollection(mag_sci_anc, hit_anc, hit_sci)
+    hit_sci_files = input_collection.get_files("hit", "sci")
+    assert len(hit_sci_files) == 1
+
+    hit_anc_files = input_collection.get_files("hit", "l1b-cal")
+    assert len(hit_anc_files) == 1
+    expected_path = AncillaryFilePath("imap_hit_l1b-cal_20240312_v000.cdf").construct_path()
+    assert hit_anc_files[0] == expected_path
+
+    mag_sci_files = input_collection.get_files("mag", "norm-magi")
+    assert len(mag_sci_files) == 2
