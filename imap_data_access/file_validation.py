@@ -400,6 +400,75 @@ https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
 class SPICEFilePath(ImapFilePath):
     """Class for building and validating filepaths for SPICE files."""
 
+    #Covers:
+    # Historical Attitude (type: ah.bc)
+    # Predicted Attitude (type: ap.bc)
+    attitude_file_pattern = (r'(?P<{0}>imap)_'
+                            r'(?P<{1}>[\d]{{4}})_'
+                            r'(?P<{2}>[\d]{{3}})_'
+                            r'(?P<{3}>[\d]{{4}})_'
+                            r'(?P<{4}>[\d]{{3}})_'
+                            r'(?P<{5}>[a-zA-Z0-9\-_]+)\.'
+                            r'(?P<{6}>ah.bc|ap.bc)').format('mission',
+                                                            'year_start', 
+                                                            'doy_start',
+                                                            'year_end',
+                                                            'doy_end',
+                                                            'version',
+                                                            'type')
+    attitude_file_regex = re.compile(attitude_file_pattern)
+
+    #Covers:
+    # Reconstructed (type: recon)
+    # Nominal (type: nom)
+    # Predict (type: pred)
+    # 90 Day Predict (type: 90days)
+    # Long Term Predict (type: long)
+    # Launch Predict (type: launch)
+    spacecraft_ephemeris_file_pattern = (r'(?P<{0}>imap)_'
+                                        r'(?P<{1}>[a-zA-Z0-9\-]+)_'
+                                        r'(?P<{2}>[\d]{{8}})_'
+                                        r'(?P<{3}>[\d]{{8}})'
+                                        r'(?:|_v(?P<{4}>[\d]*))\.'
+                                        r'(?P<{5}>bsp)').format('mission',
+                                                                'type',
+                                                                'date_start',
+                                                                'date_end',
+                                                                'version',
+                                                                'extension')
+    spacecraft_ephemeris_regex = re.compile(spacecraft_ephemeris_file_pattern)
+
+    #Covers: 
+    # Planetary Ephemeris (type: "de")
+    # Planetary Constants (type: "pck")
+    # Leapsecond kernel (type: "naif")
+    # Spacecraft clock kernel (type: "imapsclk_")
+    spice_prod_ver_pattern = (r'(?P<{0}>[a-zA-Z\-_]+)'
+                            r'(?P<{1}>[\d]+)\.'
+                            r'(?P<{2}>tls|tpc|bsp|tsc)').format('type',
+                                                                'version',
+                                                                'extension')
+    spice_prod_ver_regex = re.compile(spice_prod_ver_pattern)
+
+    #Covers:
+    # Frame: (type: 'tf')
+    spice_frame_pattern = (r'(?P<{0}>imap)_'
+                                r'(?P<{1}>[\d]+)\.'
+                                r'(?P<{2}>tf)').format('mission',
+                                                       'version',
+                                                       'type')
+    spice_frame_regex = re.compile(spice_frame_pattern)
+
+    mk_filename_pattern = (r'(?P<{0}>imap)_'
+                            r'(?P<{1}>[\d]{{4}})_'
+                            r'v(?P<{2}>[\d]{{3}})\.'
+                            r'(?P<{3}>tm)').format('mission',
+                                                    'year',
+                                                    'version',
+                                                    'type')
+
+    mk_filename_regex = re.compile(mk_filename_pattern)
+
     class InvalidSPICEFileError(Exception):
         """Indicates a bad file type."""
 
@@ -426,7 +495,12 @@ class SPICEFilePath(ImapFilePath):
         else:
             self.file_extension = self.filename.suffix
 
-        if self.file_extension not in _SPICE_DIR_MAPPING:
+        self.valid_spice_regexes = [SPICEFilePath.attitude_file_regex, 
+                                    SPICEFilePath.spacecraft_ephemeris_regex, 
+                                    SPICEFilePath.spice_frame_regex, 
+                                    SPICEFilePath.spice_prod_ver_regex]
+        self.regex_match = self._matches_on_group(filename.name.lower())
+        if self.regex_match is None:
             raise self.InvalidSPICEFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
                 f"extensions {list(_SPICE_DIR_MAPPING.keys())}"
@@ -448,7 +522,119 @@ class SPICEFilePath(ImapFilePath):
         # Use the file suffix to determine the directory structure
         # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename
+    
+    def _matches_on_group(regex_list: list, string_to_parse: str)->re.Match:
+        '''
+        Method used to determine the first regular expression (in regex_list) that matches the provided string_to_parse
 
+        Arguments
+        ---------
+            regex_list - A list of compiled regular expressions to be applied in order
+            string_to_parse - The string to check against the provided regular expressions
+
+        Returns
+        -------
+            The first match that satisfies a regular expression found in regex_list
+        '''
+        for regex in regex_list:
+            m = regex.match(string_to_parse)
+            if m is not None:
+                return m
+        return None
+
+    def _extract_parts(self, parts: list[str], 
+                       transforms: dict | None =None, 
+                       handle_missing_parts: bool = False):
+        '''
+        Method used to extract the groups provided in order or None if no provided regular expressions match
+        Arguments
+        ---------
+            regex_list - A list of compiled regular expressions to be applied in order
+            string_to_parse - The string to check against the provided regular expressions
+            parts - A list of groups to be extracted
+            transforms - A dictionary of group->function (that takes 1 string) to transform the string into some other type
+            handle_missing_parts - If True, missing parts won't raise an exception and the result set will contain None
+                                for the missing part.  If False, an IndexError is raised
+        Returns
+        -------
+            A tuple of the groups that were requested in parts or None if there were no matches for the provided regex_list
+        '''
+
+        ret_val = {}
+        for part in parts:
+            try:
+                if transforms is not None and part in transforms:
+                    ret_val[part] = transforms[part](self.regex_match.group(part))
+                else:
+                    ret_val[part] = self.regex_match.group(part)
+            except IndexError as ie:
+                if handle_missing_parts:
+                    if transforms is not None and part in transforms:
+                        ret_val[part] = transforms[part](None)
+                    else:
+                        ret_val[part] = None
+                else:
+                    ret_val[part] = None
+
+        return ret_val
+    
+    @staticmethod
+    def _spice_type_name_transform(type: str) -> str:
+        """Converts the type extracted from the filename to a more readable name.
+
+        Arguments
+        ---------
+            type: str
+                The type of file as retrieved from the file name
+        Returns
+        -------
+            spice_type: str
+                A human-readable file type
+        """
+        IMAP_TYPE_MAPPING = {"ah.bc": "attitude_history",
+                             "ap.bc": "attitude_predict",
+                             "recon": "ephemeris_reconstructed",
+                             "nom": "ephemeris_nominal",
+                             "pred": "ephemeris_predicted",
+                             "90days": "ephemeris_90days",
+                             "long": "ephemeris_long",
+                             "launch": "ephemeris_launch",
+                             "de": "planetary_ephermeris",
+                             "pck": "planetary_constants",
+                             "naif": "leapseconds",
+                             "imapsclk_": "spacecraft_clock",
+                             "tf": "frames"}
+        if type in IMAP_TYPE_MAPPING:
+            return IMAP_TYPE_MAPPING[type]
+        else:
+            return type
+
+    def extract_filename_components(self) -> dict:
+        """Extract all components from filename.
+
+        Will return a dictionary with the following keys:
+        { type, version }
+
+        If a match is not found, a ValueError will be raised.
+
+        Returns
+        -------
+        components : dict
+            Dictionary containing components.
+        """
+        if isinstance(filename, Path):
+            filename = filename.name
+
+        spice_metadata = self._extract_parts(['type', 'version'],
+                                             transforms={'type': 
+                                                         SPICEFilePath._spice_type_name_transform})
+
+        if spice_metadata is None:
+            raise SPICEFilePath.InvalidSPICEFileError(
+                f"Filename {filename} does not match expected pattern"
+            )
+
+        return spice_metadata
 
 class AncillaryFilePath(ImapFilePath):
     """Class for building and validating filepaths for Ancillary files."""
