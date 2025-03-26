@@ -31,8 +31,7 @@ __all__ = [
     "FILENAME_CONVENTION",
 ]
 
-__version__ = importlib.metadata.version("imap_data_access")
-
+__version__ = importlib.metadata.version("imap-data-access")
 
 config = {
     "DATA_ACCESS_URL": os.getenv("IMAP_DATA_ACCESS_URL")
