@@ -372,6 +372,20 @@ class ProcessingInputCollection:
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
 
+    def get_science_files(self) -> list[ProcessingInput]:
+        """Return just the science files from the collection.
+        
+        Returns
+        -------
+        out : list[ProcessingInput]
+            List of ScienceInput files contained in the collection.
+        """
+        out = []
+        for file in self.processing_input:
+            if file.input_type == ProcessingInputType.SCIENCE_FILE:
+                out.append(file)
+        return out
+
     def get_files(
         self,
         source: str | None = None,

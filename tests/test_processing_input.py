@@ -127,6 +127,12 @@ def test_create_collection():
     assert len(deser.processing_input) == 3
     assert deser.processing_input[2].descriptor == "hist"
 
+    science_files = deser.get_science_files()
+    assert len(science_files) == 2
+    assert science_files[0].descriptor == "norm-magi"
+    assert science_files[1].descriptor == "hist"
+    assert len(science_files[0].imap_file_paths) == 2
+    assert len(science_files[1].imap_file_paths) == 1
 
 def test_get_time_range():
     ancillary = processing_input.AncillaryInput(
