@@ -436,7 +436,7 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<start_doy>[\d]{3})_"
         r"(?P<end_year>[\d]{4})_"
         r"(?P<end_doy>[\d]{3})_"
-        r"(?P<version>[a-zA-Z0-9\-_]+)\."
+        r"(?P<version>[\d]+)\."
         r"(?P<type>ah.bc|ap.bc|spin.csv|repoint.csv)"
     )
     # Covers:

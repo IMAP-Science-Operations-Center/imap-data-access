@@ -247,7 +247,7 @@ def test_spice_extract_parts():
     # Test repoint
     file_path = SPICEFilePath("imap_2025_230_2025_230_01.repoint.csv")
     assert file_path.spice_metadata["version"] == 1
-    assert file_path.spice_metadata["type"] == "repointing"
+    assert file_path.spice_metadata["type"] == "repoint"
 
 
 def test_spice_extract_parts_static_method():
