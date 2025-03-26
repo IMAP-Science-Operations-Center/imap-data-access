@@ -207,46 +207,47 @@ def test_spice_file_path():
         "spice/activities/imap_0000_000_hist_00.sff"
     )
 
+
 def test_spice_extract_parts():
     # Test spin
     file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
-    assert file_path.spice_metadata['version'] == 1
-    assert file_path.spice_metadata['type'] == 'spin'
+    assert file_path.spice_metadata["version"] == 1
+    assert file_path.spice_metadata["type"] == "spin"
 
     # Test metakernel
     file_path = SPICEFilePath("imap_2025_v100.tm")
-    assert file_path.spice_metadata['version'] == 100
-    assert file_path.spice_metadata['type'] == 'metakernel'
+    assert file_path.spice_metadata["version"] == 100
+    assert file_path.spice_metadata["type"] == "metakernel"
 
     # Test attitude
     file_path = SPICEFilePath("imap_2025_032_2025_034_003.ah.bc")
-    assert file_path.spice_metadata['version'] == 3
-    assert file_path.spice_metadata['type'] == 'attitude_history'
+    assert file_path.spice_metadata["version"] == 3
+    assert file_path.spice_metadata["type"] == "attitude_history"
 
     # Test leapsecond
     file_path = SPICEFilePath("naif0012.tls")
-    assert file_path.spice_metadata['version'] == 12
-    assert file_path.spice_metadata['type'] == 'leapseconds'
+    assert file_path.spice_metadata["version"] == 12
+    assert file_path.spice_metadata["type"] == "leapseconds"
 
     # Test planetary ephemeris
     file_path = SPICEFilePath("de440.bsp")
-    assert file_path.spice_metadata['version'] == 440
-    assert file_path.spice_metadata['type'] == 'planetary_ephemeris'
+    assert file_path.spice_metadata["version"] == 440
+    assert file_path.spice_metadata["type"] == "planetary_ephemeris"
 
     # Test planetary constants
     file_path = SPICEFilePath("pck00010.tpc")
-    assert file_path.spice_metadata['version'] == 10
-    assert file_path.spice_metadata['type'] == 'planetary_constants'
+    assert file_path.spice_metadata["version"] == 10
+    assert file_path.spice_metadata["type"] == "planetary_constants"
 
-    # Test spacecraft ephemeris 
+    # Test spacecraft ephemeris
     file_path = SPICEFilePath("imap_90days_20251120_20260220_v01.bsp")
-    assert file_path.spice_metadata['version'] == 1
-    assert file_path.spice_metadata['type'] == 'ephemeris_90days'
+    assert file_path.spice_metadata["version"] == 1
+    assert file_path.spice_metadata["type"] == "ephemeris_90days"
 
     # Test repoint
     file_path = SPICEFilePath("imap_2025_230_2025_230_01.repoint.csv")
-    assert file_path.spice_metadata['version'] == 1
-    assert file_path.spice_metadata['type'] == 'repointing'
+    assert file_path.spice_metadata["version"] == 1
+    assert file_path.spice_metadata["type"] == "repointing"
 
 
 def test_ancillary_file_path():

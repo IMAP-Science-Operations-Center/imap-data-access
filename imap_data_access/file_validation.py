@@ -365,41 +365,44 @@ class ScienceFilePath(ImapFilePath):
 # Commented out mappings are not being used on IMAP
 
 
-_SPICE_TYPE_MAPPING = {"ah.bc": "attitude_history",
-                        "ap.bc": "attitude_predict",
-                        "spin.csv": "spin",
-                        "repoint.csv": "repointing",
-                        "recon": "ephemeris_reconstructed",
-                        "nom": "ephemeris_nominal",
-                        "pred": "ephemeris_predicted",
-                        "90days": "ephemeris_90days",
-                        "long": "ephemeris_long",
-                        "launch": "ephemeris_launch",
-                        "de": "planetary_ephemeris",
-                        "pck": "planetary_constants",
-                        "naif": "leapseconds",
-                        "imapsclk_": "spacecraft_clock",
-                        "tf": "frames",
-                        "tm": "metakernel",
-                        "sff": "thruster"}
+_SPICE_TYPE_MAPPING = {
+    "ah.bc": "attitude_history",
+    "ap.bc": "attitude_predict",
+    "spin.csv": "spin",
+    "repoint.csv": "repointing",
+    "recon": "ephemeris_reconstructed",
+    "nom": "ephemeris_nominal",
+    "pred": "ephemeris_predicted",
+    "90days": "ephemeris_90days",
+    "long": "ephemeris_long",
+    "launch": "ephemeris_launch",
+    "de": "planetary_ephemeris",
+    "pck": "planetary_constants",
+    "naif": "leapseconds",
+    "imapsclk_": "spacecraft_clock",
+    "tf": "frames",
+    "tm": "metakernel",
+    "sff": "thruster",
+}
 
-_SPICE_DIR_MAPPING = {"attitude_history": "ck",
-                      "attitude_predict": "ck",
-                      "spin": "spin",
-                      "repointing": "repoint",
-                      "ephemeris_reconstructed": "spk",
-                      "ephemeris_nominal": "spk",
-                      "ephemeris_predicted": "spk",
-                      "ephemeris_90days": "spk",
-                      "ephemeris_long": "spk",
-                      "ephemeris_launch": "spk",
-                      "planetary_ephemeris": "spk",
-                      "planetary_constants": "pck",
-                      "leapseconds": "lsk",
-                      "spacecraft_clock": "sclk",
-                      "frames": "fk",
-                      "metakernel": "mk",
-                      "thruster": "activities"
+_SPICE_DIR_MAPPING = {
+    "attitude_history": "ck",
+    "attitude_predict": "ck",
+    "spin": "spin",
+    "repointing": "repoint",
+    "ephemeris_reconstructed": "spk",
+    "ephemeris_nominal": "spk",
+    "ephemeris_predicted": "spk",
+    "ephemeris_90days": "spk",
+    "ephemeris_long": "spk",
+    "ephemeris_launch": "spk",
+    "planetary_ephemeris": "spk",
+    "planetary_constants": "pck",
+    "leapseconds": "lsk",
+    "spacecraft_clock": "sclk",
+    "frames": "fk",
+    "metakernel": "mk",
+    "thruster": "activities",
 }
 """These are the valid extensions for SPICE files according to NAIF
 https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
@@ -421,94 +424,78 @@ https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
 class SPICEFilePath(ImapFilePath):
     """Class for building and validating filepaths for SPICE files."""
 
-    #Covers:
+    # Covers:
     # Historical Attitude (type: ah.bc)
     # Predicted Attitude (type: ap.bc)
     # Spin Files (type: spin.csv)
     # Repoint Files (type: repoint.csv)
-    attitude_file_pattern = (r'(?P<{0}>imap)_'
-                            r'(?P<{1}>[\d]{{4}})_'
-                            r'(?P<{2}>[\d]{{3}})_'
-                            r'(?P<{3}>[\d]{{4}})_'
-                            r'(?P<{4}>[\d]{{3}})_'
-                            r'(?P<{5}>[a-zA-Z0-9\-_]+)\.'
-                            r'(?P<{6}>ah.bc|ap.bc|spin.csv|repoint.csv)').format('mission',
-                                                                                'year_start', 
-                                                                                'doy_start',
-                                                                                'year_end',
-                                                                                'doy_end',
-                                                                                'version',
-                                                                                'type')
-    
-    #Covers:
+    attitude_file_pattern = (
+        r"(?P<{0}>imap)_"
+        r"(?P<{1}>[\d]{{4}})_"
+        r"(?P<{2}>[\d]{{3}})_"
+        r"(?P<{3}>[\d]{{4}})_"
+        r"(?P<{4}>[\d]{{3}})_"
+        r"(?P<{5}>[a-zA-Z0-9\-_]+)\."
+        r"(?P<{6}>ah.bc|ap.bc|spin.csv|repoint.csv)"
+    ).format(
+        "mission", "year_start", "doy_start", "year_end", "doy_end", "version", "type"
+    )
+
+    # Covers:
     # Reconstructed (type: recon)
     # Nominal (type: nom)
     # Predict (type: pred)
     # 90 Day Predict (type: 90days)
     # Long Term Predict (type: long)
     # Launch Predict (type: launch)
-    spacecraft_ephemeris_file_pattern = (r'(?P<{0}>imap)_'
-                                        r'(?P<{1}>[a-zA-Z0-9\-]+)_'
-                                        r'(?P<{2}>[\d]{{8}})_'
-                                        r'(?P<{3}>[\d]{{8}})'
-                                        r'(?:|_v(?P<{4}>[\d]*))\.'
-                                        r'(?P<{5}>bsp)').format('mission',
-                                                                'type',
-                                                                'date_start',
-                                                                'date_end',
-                                                                'version',
-                                                                'extension')
+    spacecraft_ephemeris_file_pattern = (
+        r"(?P<{0}>imap)_"
+        r"(?P<{1}>[a-zA-Z0-9\-]+)_"
+        r"(?P<{2}>[\d]{{8}})_"
+        r"(?P<{3}>[\d]{{8}})"
+        r"(?:|_v(?P<{4}>[\d]*))\."
+        r"(?P<{5}>bsp)"
+    ).format("mission", "type", "date_start", "date_end", "version", "extension")
 
-    #Covers: 
+    # Covers:
     # Planetary Ephemeris (type: "de")
     # Planetary Constants (type: "pck")
     # Leapsecond kernel (type: "naif")
     # Spacecraft clock kernel (type: "imapsclk_")
-    spice_prod_ver_pattern = (r'(?P<{0}>[a-zA-Z\-_]+)'
-                            r'(?P<{1}>[\d]+)\.'
-                            r'(?P<{2}>tls|tpc|bsp|tsc)').format('type',
-                                                                'version',
-                                                                'extension')
+    spice_prod_ver_pattern = (
+        r"(?P<{0}>[a-zA-Z\-_]+)" r"(?P<{1}>[\d]+)\." r"(?P<{2}>tls|tpc|bsp|tsc)"
+    ).format("type", "version", "extension")
 
-    #Covers:
+    # Covers:
     # Frame: (type: 'tf')
-    spice_frame_pattern = (r'(?P<{0}>imap)_'
-                                r'(?P<{1}>[\d]+)\.'
-                                r'(?P<{2}>tf)').format('mission',
-                                                       'version',
-                                                       'type')
+    spice_frame_pattern = (r"(?P<{0}>imap)_" r"(?P<{1}>[\d]+)\." r"(?P<{2}>tf)").format(
+        "mission", "version", "type"
+    )
 
-    #Covers:
+    # Covers:
     # Thruster files (type: sff)
-    sff_filename_pattern = (r'(?P<{0}>imap)_'
-                            r'(?P<{1}>[\d]{{4}})_'
-                            r'(?P<{2}>[\d]{{3}})_'
-                            r'(?P<{3}>[a-zA-Z0-9\-_]+)_'
-                            r'(?P<{4}>[\d]{{2}})\.'
-                            r'(?P<{5}>sff)').format('mission',
-                                                    'year',
-                                                    'doy_start',
-                                                    'mode',
-                                                    'version',
-                                                    'type')
+    sff_filename_pattern = (
+        r"(?P<{0}>imap)_"
+        r"(?P<{1}>[\d]{{4}})_"
+        r"(?P<{2}>[\d]{{3}})_"
+        r"(?P<{3}>[a-zA-Z0-9\-_]+)_"
+        r"(?P<{4}>[\d]{{2}})\."
+        r"(?P<{5}>sff)"
+    ).format("mission", "year", "doy_start", "mode", "version", "type")
 
-    #Covers:
+    # Covers:
     # Metakernels (type: 'tm')
-    mk_filename_pattern = (r'(?P<{0}>imap)_'
-                            r'(?P<{1}>[\d]{{4}})_'
-                            r'v(?P<{2}>[\d]{{3}})\.'
-                            r'(?P<{3}>tm)').format('mission',
-                                                    'year',
-                                                    'version',
-                                                    'type')
+    mk_filename_pattern = (
+        r"(?P<{0}>imap)_" r"(?P<{1}>[\d]{{4}})_" r"v(?P<{2}>[\d]{{3}})\." r"(?P<{3}>tm)"
+    ).format("mission", "year", "version", "type")
 
-    valid_spice_regexes = [re.compile(attitude_file_pattern),
-                           re.compile(spacecraft_ephemeris_file_pattern),
-                           re.compile(spice_prod_ver_pattern),
-                           re.compile(spice_frame_pattern),
-                           re.compile(sff_filename_pattern),
-                           re.compile(mk_filename_pattern),
-                           
+    valid_spice_regexes = [
+        re.compile(attitude_file_pattern),
+        re.compile(spacecraft_ephemeris_file_pattern),
+        re.compile(spice_prod_ver_pattern),
+        re.compile(spice_frame_pattern),
+        re.compile(sff_filename_pattern),
+        re.compile(mk_filename_pattern),
     ]
 
     class InvalidSPICEFileError(Exception):
@@ -551,36 +538,38 @@ class SPICEFilePath(ImapFilePath):
             Upload path
         """
         spice_dir = imap_data_access.config["DATA_DIR"] / "spice"
-        subdir = _SPICE_DIR_MAPPING[self.spice_metadata['type']]
+        subdir = _SPICE_DIR_MAPPING[self.spice_metadata["type"]]
         # Use the file suffix to determine the directory structure
         # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename
-    
-    def _matches_on_group(self, regex_list: list, string_to_parse: str)->re.Match:
-        '''
-        Method used to determine the first regular expression (in regex_list) that matches the provided string_to_parse
 
-        Arguments
+    def _matches_on_group(self, regex_list: list, string_to_parse: str) -> re.Match:
+        """Method used to determine the first regular expression (in regex_list) that matches the provided string_to_parse
+
+        Arguments:
         ---------
             regex_list - A list of compiled regular expressions to be applied in order
             string_to_parse - The string to check against the provided regular expressions
 
-        Returns
+        Returns:
         -------
             The first match that satisfies a regular expression found in regex_list
-        '''
+        """
         for regex in regex_list:
             m = regex.match(string_to_parse)
             if m is not None:
                 return m
         return None
 
-    def _extract_parts(self, parts: list[str], 
-                       transforms: dict | None =None, 
-                       handle_missing_parts: bool = False):
-        '''
-        Method used to extract the groups provided in order or None if no provided regular expressions match
-        Arguments
+    def _extract_parts(
+        self,
+        parts: list[str],
+        transforms: dict | None = None,
+        handle_missing_parts: bool = False,
+    ):
+        """Method used to extract the groups provided in order or None if no provided regular expressions match
+
+        Arguments:
         ---------
             regex_list - A list of compiled regular expressions to be applied in order
             string_to_parse - The string to check against the provided regular expressions
@@ -588,12 +577,14 @@ class SPICEFilePath(ImapFilePath):
             transforms - A dictionary of group->function (that takes 1 string) to transform the string into some other type
             handle_missing_parts - If True, missing parts won't raise an exception and the result set will contain None
                                 for the missing part.  If False, an IndexError is raised
-        Returns
+
+        Returns:
         -------
             A tuple of the groups that were requested in parts or None if there were no matches for the provided regex_list
-        '''
-        m = self._matches_on_group(SPICEFilePath.valid_spice_regexes, 
-                                   self.filename.name.lower())
+        """
+        m = self._matches_on_group(
+            SPICEFilePath.valid_spice_regexes, self.filename.name.lower()
+        )
         if not m:
             return None
         ret_val = {}
@@ -603,7 +594,7 @@ class SPICEFilePath(ImapFilePath):
                     ret_val[part] = transforms[part](m.group(part))
                 else:
                     ret_val[part] = m.group(part)
-            except IndexError as ie:
+            except IndexError:
                 if handle_missing_parts:
                     if transforms is not None and part in transforms:
                         ret_val[part] = transforms[part](None)
@@ -613,21 +604,21 @@ class SPICEFilePath(ImapFilePath):
                     ret_val[part] = None
 
         return ret_val
-    
+
     @staticmethod
     def _spice_type_name_transform(type: str) -> str:
         """Converts the type extracted from the filename to a more readable name.
 
-        Arguments
+        Arguments:
         ---------
             type: str
                 The type of file as retrieved from the file name
-        Returns
+
+        Returns:
         -------
             spice_type: str
                 A human-readable file type
         """
-        
         if type in _SPICE_TYPE_MAPPING:
             return _SPICE_TYPE_MAPPING[type]
         else:
@@ -646,13 +637,16 @@ class SPICEFilePath(ImapFilePath):
         components : dict
             Dictionary containing components.
         """
-
-        spice_metadata = self._extract_parts(['type', 'version'],
-                                             transforms={'type': 
-                                                         SPICEFilePath._spice_type_name_transform,
-                                                         'version': lambda x: int(x)})
+        spice_metadata = self._extract_parts(
+            ["type", "version"],
+            transforms={
+                "type": SPICEFilePath._spice_type_name_transform,
+                "version": lambda x: int(x),
+            },
+        )
 
         return spice_metadata
+
 
 class AncillaryFilePath(ImapFilePath):
     """Class for building and validating filepaths for Ancillary files."""
