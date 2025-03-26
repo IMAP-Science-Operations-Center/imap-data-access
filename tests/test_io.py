@@ -104,7 +104,7 @@ def test_request_errors(mock_urlopen: unittest.mock.MagicMock):
         # Pathlib.Path object
         (Path(test_science_path), test_science_path),
         # SPICE file
-        ("test.bc", "spice/ck/test.bc"),
+        ("imap_0000_000_0000_000_01.ap.bc", "spice/ck/imap_0000_000_0000_000_01.ap.bc"),
     ],
 )
 def test_download(
