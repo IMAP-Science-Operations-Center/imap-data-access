@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from imap_data_access import (
     AncillaryFilePath,
@@ -375,16 +374,16 @@ class ProcessingInputCollection:
 
     def get_files(
         self,
-        source: Optional[str] = None,
-        descriptor: Optional[str] = None,
+        source: str | None,
+        descriptor: str | None,
     ) -> list[Path]:
         """Get the dependency files path from the collection.
 
         Parameters
         ----------
-        source : str, Optional
+        source : str, optional
             Instrument name.
-        descriptor : str, Optional
+        descriptor : str, optional
             Descriptor for the file.
 
         Returns
