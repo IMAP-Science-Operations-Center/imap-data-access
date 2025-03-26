@@ -372,7 +372,7 @@ class ProcessingInputCollection:
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
 
-    def get_science_files(self) -> list[ProcessingInput]:
+    def get_science_inputs(self) -> list[ProcessingInput]:
         """Return just the science files from the collection.
 
         Returns
@@ -386,7 +386,7 @@ class ProcessingInputCollection:
                 out.append(file)
         return out
 
-    def get_files(
+    def get_file_paths(
         self,
         source: str | None = None,
         descriptor: str | None = None,
@@ -409,11 +409,11 @@ class ProcessingInputCollection:
         if source is None and descriptor is None:
             raise ValueError("At least source or descriptor must be provided.")
 
-        for file in self.processing_input:
-            matches_source = source is None or file.source == source
-            matches_descriptor = descriptor is None or file.descriptor == descriptor
+        for input_type in self.processing_input:
+            matches_source = source is None or input_type.source == source
+            matches_descriptor = descriptor is None or input_type.descriptor == descriptor
             if matches_source and matches_descriptor:
-                out.extend(obj.construct_path() for obj in file.imap_file_paths)
+                out.extend(file.construct_path() for file in input_type.imap_file_paths)
 
         return out
 

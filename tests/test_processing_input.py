@@ -127,7 +127,7 @@ def test_create_collection():
     assert len(deser.processing_input) == 3
     assert deser.processing_input[2].descriptor == "hist"
 
-    science_files = deser.get_science_files()
+    science_files = deser.get_science_inputs()
     assert len(science_files) == 2
     assert science_files[0].descriptor == "norm-magi"
     assert science_files[1].descriptor == "hist"
@@ -147,7 +147,7 @@ def test_get_time_range():
     assert end == datetime.strptime("20250104", "%Y%m%d")
 
 
-def test_get_files():
+def test_get_file_paths():
     # This example is fake example where we are processing HIT L2
     # and it has three dependencies, one primary dependent (HIT l1b)
     # and two ancillary dependents, MAG l1a and HIT ancillary.
@@ -165,21 +165,21 @@ def test_get_files():
     input_collection = processing_input.ProcessingInputCollection(
         mag_sci_anc, hit_anc, hit_sci
     )
-    hit_sci_files = input_collection.get_files("hit", "sci")
+    hit_sci_files = input_collection.get_file_paths("hit", "sci")
     assert len(hit_sci_files) == 1
 
-    hit_anc_files = input_collection.get_files("hit", "l1b-cal")
+    hit_anc_files = input_collection.get_file_paths("hit", "l1b-cal")
     assert len(hit_anc_files) == 1
     expected_path = AncillaryFilePath(
         "imap_hit_l1b-cal_20240312_v000.cdf"
     ).construct_path()
     assert hit_anc_files == [expected_path]
 
-    mag_sci_files = input_collection.get_files("mag", "norm-magi")
+    mag_sci_files = input_collection.get_file_paths("mag", "norm-magi")
     assert len(mag_sci_files) == 2
 
-    all_hit_files = input_collection.get_files("hit")
+    all_hit_files = input_collection.get_file_paths("hit")
     assert len(all_hit_files) == 2
 
-    all_mag_files = input_collection.get_files(descriptor="norm-magi")
+    all_mag_files = input_collection.get_file_paths(descriptor="norm-magi")
     assert len(all_mag_files) == 2
