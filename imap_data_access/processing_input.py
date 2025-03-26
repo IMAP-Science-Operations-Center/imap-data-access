@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from urllib.error import HTTPError
 
 from imap_data_access import (
     AncillaryFilePath,
@@ -373,7 +372,11 @@ class ProcessingInputCollection:
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
 
-    def get_files(self, source: str = None, descriptor: str = None,) -> list[Path]:
+    def get_files(
+        self,
+        source: str = None,
+        descriptor: str = None,
+    ) -> list[Path]:
         """Get the dependency files path from the collection.
 
         Parameters
@@ -382,7 +385,7 @@ class ProcessingInputCollection:
             Instrument name.
         descriptor : str, optional
             Descriptor for the file.
-        
+
         Returns
         -------
         out : list[Path]
@@ -397,7 +400,7 @@ class ProcessingInputCollection:
             matches_descriptor = descriptor is None or file.descriptor == descriptor
             if matches_source and matches_descriptor:
                 out.extend(obj.construct_path() for obj in file.imap_file_paths)
- 
+
         return out
 
     def download_all_files(self):
@@ -408,4 +411,3 @@ class ProcessingInputCollection:
             for filepath in dependency.imap_file_paths:
                 download_path = filepath.construct_path()
                 download(download_path)
-    
