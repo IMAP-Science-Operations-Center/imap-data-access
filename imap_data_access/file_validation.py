@@ -370,7 +370,7 @@ _SPICE_TYPE_MAPPING = {
     "ah.bc": "attitude_history",
     "ap.bc": "attitude_predict",
     "spin.csv": "spin",
-    "repoint.csv": "repointing",
+    "repoint.csv": "repoint",
     "recon": "ephemeris_reconstructed",
     "nom": "ephemeris_nominal",
     "pred": "ephemeris_predicted",
@@ -390,7 +390,7 @@ _SPICE_DIR_MAPPING = {
     "attitude_history": "ck",
     "attitude_predict": "ck",
     "spin": "spin",
-    "repointing": "repoint",
+    "repoint": "repoint",
     "ephemeris_reconstructed": "spk",
     "ephemeris_nominal": "spk",
     "ephemeris_predicted": "spk",
@@ -588,8 +588,7 @@ class SPICEFilePath(ImapFilePath):
             A dictionary of the parts that were requested or
             None if there were no matches found
         """
-        if isinstance(filename, Path):
-            filename = filename.name
+        filename = Path(filename).name
 
         m = SPICEFilePath._matches_on_group(
             SPICEFilePath.valid_spice_regexes, filename.lower()
