@@ -519,7 +519,7 @@ class SPICEFilePath(ImapFilePath):
             SPICE data filename or file path.
         """
         self.filename = Path(filename)
-        self.spice_metadata = self.extract_filename_components()
+        self.spice_metadata = SPICEFilePath.extract_filename_components(self.filename, ["type", "version"])
         if self.spice_metadata is None:
             raise self.InvalidSPICEFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
@@ -544,9 +544,9 @@ class SPICEFilePath(ImapFilePath):
         # Use the file suffix to determine the directory structure
         # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename
-
+    @staticmethod
     def _matches_on_group(
-        self, regex_list: Iterable[re.Pattern], string_to_parse: str
+        regex_list: Iterable[re.Pattern], string_to_parse: str
     ) -> re.Match:
         """Determine the first regular expression that matches the provided string.
 
@@ -566,9 +566,10 @@ class SPICEFilePath(ImapFilePath):
             if m is not None:
                 return m
         return None
-
+    
+    @staticmethod
     def _extract_parts(
-        self,
+        filename: Path | str,
         parts: list[str],
         transforms: dict | None = None,
         handle_missing_parts: bool = False,
@@ -577,6 +578,8 @@ class SPICEFilePath(ImapFilePath):
 
         Arguments:
         ---------
+            filename: Path | str
+                A filename to extract parts from
             parts: list[str]
                 A list of parts to be extracted from the filename
             transforms: dict[str: func]
@@ -592,8 +595,11 @@ class SPICEFilePath(ImapFilePath):
             A dictionary of the parts that were requested or
             None if there were no matches for the provided regex_list
         """
-        m = self._matches_on_group(
-            SPICEFilePath.valid_spice_regexes, self.filename.name.lower()
+        if isinstance(filename, Path):
+            filename = filename.name
+
+        m = SPICEFilePath._matches_on_group(
+            SPICEFilePath.valid_spice_regexes, filename.lower()
         )
         if not m:
             return None
@@ -615,7 +621,9 @@ class SPICEFilePath(ImapFilePath):
 
         return ret_val
 
-    def extract_filename_components(self) -> dict | None:
+    @staticmethod
+    def extract_filename_components(filename: Path | str,
+                                    parts: list[str] = ['type', 'version']) -> dict | None:
         """Extract all components from filename.
 
         Will return a dictionary with the following keys:
@@ -623,13 +631,21 @@ class SPICEFilePath(ImapFilePath):
 
         If a match is not found, None will be returned
 
+        Parameters
+        ----------
+            filename: Path | str
+                The filename to parse
+            parts: list[str]
+                The name of the sections to extract
+
         Returns
         -------
         components : dict
             Dictionary containing components.
         """
-        spice_metadata = self._extract_parts(
-            ["type", "version"],
+        spice_metadata = SPICEFilePath._extract_parts(
+            filename,
+            parts,
             transforms={
                 "type": lambda x: _SPICE_TYPE_MAPPING.get(x, None),
                 "version": lambda x: int(x),
