@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 from abc import abstractmethod
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 
@@ -430,15 +431,14 @@ class SPICEFilePath(ImapFilePath):
     # Spin Files (type: spin.csv)
     # Repoint Files (type: repoint.csv)
     attitude_file_pattern = (
-        r"(?P<{mission}>imap)_"
-        r"(?P<{start_year}>[\d]{{4}})_"
-        r"(?P<{start_doy}>[\d]{{3}})_"
-        r"(?P<{end_year}>[\d]{{4}})_"
-        r"(?P<{end_doy}>[\d]{{3}})_"
-        r"(?P<{version}>[a-zA-Z0-9\-_]+)\."
-        r"(?P<{type}>ah.bc|ap.bc|spin.csv|repoint.csv)"
+        r"(?P<mission>imap)_"
+        r"(?P<start_year>[\d]{4})_"
+        r"(?P<start_doy>[\d]{3})_"
+        r"(?P<end_year>[\d]{4})_"
+        r"(?P<end_doy>[\d]{3})_"
+        r"(?P<version>[a-zA-Z0-9\-_]+)\."
+        r"(?P<type>ah.bc|ap.bc|spin.csv|repoint.csv)"
     )
-
     # Covers:
     # Reconstructed (type: recon)
     # Nominal (type: nom)
@@ -447,12 +447,12 @@ class SPICEFilePath(ImapFilePath):
     # Long Term Predict (type: long)
     # Launch Predict (type: launch)
     spacecraft_ephemeris_file_pattern = (
-        r"(?P<{mission}>imap)_"
-        r"(?P<{type}>[a-zA-Z0-9\-]+)_"
-        r"(?P<{start_date}>[\d]{{8}})_"
-        r"(?P<{end_date}>[\d]{{8}})"
-        r"(?:|_v(?P<{version}>[\d]*))\."
-        r"(?P<{extension}>bsp)"
+        r"(?P<mission>imap)_"
+        r"(?P<type>[a-zA-Z0-9\-]+)_"
+        r"(?P<start_date>[\d]{8})_"
+        r"(?P<end_date>[\d]{8})"
+        r"(?:|_v(?P<version>[\d]*))\."
+        r"(?P<extension>bsp)"
     )
 
     # Covers:
@@ -461,48 +461,42 @@ class SPICEFilePath(ImapFilePath):
     # Leapsecond kernel (type: "naif")
     # Spacecraft clock kernel (type: "imapsclk_")
     spice_prod_ver_pattern = (
-        r"(?P<{type}>[a-zA-Z\-_]+)"
-        r"(?P<{version}>[\d]+)\."
-        r"(?P<{extension}>tls|tpc|bsp|tsc)"
+        r"(?P<type>[a-zA-Z\-_]+)"
+        r"(?P<version>[\d]+)\."
+        r"(?P<extension>tls|tpc|bsp|tsc)"
     )
 
     # Covers:
     # Frame: (type: 'tf')
-    spice_frame_pattern = (
-        r"(?P<{mission}>imap)_" r"(?P<{version}>[\d]+)\." r"(?P<{type}>tf)"
-    )
+    spice_frame_pattern = r"(?P<mission>imap)_" r"(?P<version>[\d]+)\." r"(?P<type>tf)"
 
     # Covers:
     # Thruster files (type: sff)
     sff_filename_pattern = (
-        r"(?P<{mission}>imap)_"
-        r"(?P<{start_year}>[\d]{{4}})_"
-        r"(?P<{start_doy}>[\d]{{3}})_"
-        r"(?P<{mode}>[a-zA-Z0-9\-_]+)_"
-        r"(?P<{version}>[\d]{{2}})\."
-        r"(?P<{type}>sff)"
+        r"(?P<mission>imap)_"
+        r"(?P<start_year>[\d]{4})_"
+        r"(?P<start_doy>[\d]{3})_"
+        r"(?P<mode>[a-zA-Z0-9\-_]+)_"
+        r"(?P<version>[\d]{2})\."
+        r"(?P<type>sff)"
     )
 
     # Covers:
     # Metakernels (type: 'tm')
     mk_filename_pattern = (
-        r"(?P<{mission}>imap)_"
-        r"(?P<{start_year}>[\d]{{4}})_"
-        r"v(?P<{version}>[\d]{{3}})\."
-        r"(?P<{type}>tm)"
+        r"(?P<mission>imap)_"
+        r"(?P<start_year>[\d]{4})_"
+        r"v(?P<version>[\d]{3})\."
+        r"(?P<type>tm)"
     )
 
-    valid_spice_regexes = re.compile(
-        "|".join(
-            [
-                attitude_file_pattern,
-                spacecraft_ephemeris_file_pattern,
-                spice_prod_ver_pattern,
-                spice_frame_pattern,
-                sff_filename_pattern,
-                mk_filename_pattern,
-            ]
-        )
+    valid_spice_regexes = (
+        re.compile(attitude_file_pattern),
+        re.compile(spacecraft_ephemeris_file_pattern),
+        re.compile(spice_prod_ver_pattern),
+        re.compile(spice_frame_pattern),
+        re.compile(sff_filename_pattern),
+        re.compile(mk_filename_pattern),
     )
 
     class InvalidSPICEFileError(Exception):
@@ -525,9 +519,7 @@ class SPICEFilePath(ImapFilePath):
             SPICE data filename or file path.
         """
         self.filename = Path(filename)
-        self.spice_metadata = SPICEFilePath.extract_filename_components(
-            self.filename, ["type", "version"]
-        )
+        self.spice_metadata = SPICEFilePath.extract_filename_components(self.filename)
         if self.spice_metadata is None:
             raise self.InvalidSPICEFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
@@ -554,6 +546,29 @@ class SPICEFilePath(ImapFilePath):
         return spice_dir / subdir / self.filename
 
     @staticmethod
+    def _matches_on_group(
+        regex_list: Iterable[re.Pattern], string_to_parse: str
+    ) -> re.Match:
+        """Determine the first regular expression that matches the provided string.
+
+        Parameters
+        ----------
+        regex_list: list
+            A list of compiled regular expressions to be applied in order
+        string_to_parse: str
+                The string to check against the provided regular expressions
+
+        Returns
+        -------
+            The first match that satisfies a regular expression found in regex_list
+        """
+        for regex in regex_list:
+            m = regex.match(string_to_parse)
+            if m is not None:
+                return m
+        return None
+
+    @staticmethod
     def _extract_parts(
         filename: Path | str,
         transforms: dict | None = None,
@@ -576,7 +591,9 @@ class SPICEFilePath(ImapFilePath):
         if isinstance(filename, Path):
             filename = filename.name
 
-        m = SPICEFilePath.valid_spice_regexes.match(filename.lower())
+        m = SPICEFilePath._matches_on_group(
+            SPICEFilePath.valid_spice_regexes, filename.lower()
+        )
         if m is None:
             return None
         ret_val = m.groupdict()

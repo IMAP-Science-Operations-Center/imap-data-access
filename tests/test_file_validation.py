@@ -253,7 +253,7 @@ def test_spice_extract_parts():
 def test_spice_extract_parts_static_method():
     # Test spin
     file_parts = SPICEFilePath.extract_filename_components(
-        "imap_2025_122_2025_122_01.spin.csv", parts=["mission"]
+        "imap_2025_122_2025_122_01.spin.csv"
     )
     assert file_parts["mission"] == "imap"
 
@@ -261,10 +261,10 @@ def test_spice_extract_parts_static_method():
         "imap_2025_032_2025_034_003.ah.bc",
     )
     assert file_parts["mission"] == "imap"
-    assert file_parts["year_start"] == "2025"
-    assert file_parts["doy_start"] == "032"
-    assert file_parts["year_end"] == "2025"
-    assert file_parts["doy_end"] == "034"
+    assert file_parts["start_year"] == "2025"
+    assert file_parts["start_doy"] == "032"
+    assert file_parts["end_year"] == "2025"
+    assert file_parts["end_doy"] == "034"
     assert file_parts["version"] == 3
     assert file_parts["type"] == "attitude_history"
 
