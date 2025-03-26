@@ -615,25 +615,6 @@ class SPICEFilePath(ImapFilePath):
 
         return ret_val
 
-    @staticmethod
-    def _spice_type_name_transform(type: str) -> str:
-        """Convert the type extracted from the filename to a more readable name.
-
-        Arguments:
-        ---------
-            type: str
-                The type of file as retrieved from the file name
-
-        Returns:
-        -------
-            spice_type: str
-                A human-readable file type
-        """
-        if type in _SPICE_TYPE_MAPPING:
-            return _SPICE_TYPE_MAPPING[type]
-        else:
-            return type
-
     def extract_filename_components(self) -> dict | None:
         """Extract all components from filename.
 
@@ -650,7 +631,7 @@ class SPICEFilePath(ImapFilePath):
         spice_metadata = self._extract_parts(
             ["type", "version"],
             transforms={
-                "type": SPICEFilePath._spice_type_name_transform,
+                "type": lambda x: _SPICE_TYPE_MAPPING.get(x, None),
                 "version": lambda x: int(x),
             },
         )
