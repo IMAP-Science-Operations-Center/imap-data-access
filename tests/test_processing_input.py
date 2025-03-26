@@ -183,3 +183,31 @@ def test_get_file_paths():
 
     all_mag_files = input_collection.get_file_paths(descriptor="norm-magi")
     assert len(all_mag_files) == 2
+
+    all_files = input_collection.get_file_paths()
+    assert len(all_files) == 4
+
+
+# Add a test for download()
+def test_download_all_files(mock_urlopen):
+    # This example is fake example where we are processing HIT L2
+    # and it has three dependencies, one primary dependent (HIT l1b)
+    # and two ancillary dependents, MAG l1a and HIT ancillary.
+    mag_sci_anc = ScienceInput(
+        "imap_mag_l1a_norm-magi_20240312_v000.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v001.cdf",
+    )
+    hit_anc = AncillaryInput(
+        "imap_hit_l1b-cal_20240312_v000.cdf",
+    )
+    hit_sci = ScienceInput(
+        "imap_hit_l1b_sci_20240312_v000.cdf",
+    )
+
+    input_collection = processing_input.ProcessingInputCollection(
+        mag_sci_anc, hit_anc, hit_sci
+    )
+    input_collection.download_all_files()
+    # Check that the files are downloaded
+    for file in input_collection.get_file_paths():
+        assert file.exists()

@@ -393,6 +393,9 @@ class ProcessingInputCollection:
     ) -> list[Path]:
         """Get the dependency files path from the collection.
 
+        Returns all file paths if no source or descriptor is provided. Otherwise,
+        it returns only the files that match the source and/or descriptor.
+
         Parameters
         ----------
         source : str, optional
