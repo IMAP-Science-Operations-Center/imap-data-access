@@ -259,15 +259,6 @@ def test_spice_extract_parts_static_method():
 
     file_parts = SPICEFilePath.extract_filename_components(
         "imap_2025_032_2025_034_003.ah.bc",
-        parts=[
-            "mission",
-            "year_start",
-            "doy_start",
-            "year_end",
-            "doy_end",
-            "version",
-            "type",
-        ],
     )
     assert file_parts["mission"] == "imap"
     assert file_parts["year_start"] == "2025"
