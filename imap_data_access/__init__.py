@@ -5,6 +5,7 @@ heliosphere. This package contains the data access tools for the IMAP mission. I
 provides a convenient way to query the IMAP data archive and download data files.
 """
 
+import importlib.metadata
 import os
 from pathlib import Path
 
@@ -30,7 +31,7 @@ __all__ = [
     "FILENAME_CONVENTION",
 ]
 
-__version__ = "0.15.1"
+__version__ = importlib.metadata.version("imap_data_access")
 
 
 config = {
