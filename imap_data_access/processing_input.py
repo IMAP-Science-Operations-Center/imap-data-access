@@ -374,8 +374,8 @@ class ProcessingInputCollection:
 
     def get_files(
         self,
-        source: str | None,
-        descriptor: str | None,
+        source: str | None = None,
+        descriptor: str | None = None,
     ) -> list[Path]:
         """Get the dependency files path from the collection.
 
