@@ -250,6 +250,34 @@ def test_spice_extract_parts():
     assert file_path.spice_metadata["type"] == "repointing"
 
 
+def test_spice_extract_parts_static_method():
+    # Test spin
+    file_parts = SPICEFilePath.extract_filename_components(
+        "imap_2025_122_2025_122_01.spin.csv", parts=["mission"]
+    )
+    assert file_parts["mission"] == "imap"
+
+    file_parts = SPICEFilePath.extract_filename_components(
+        "imap_2025_032_2025_034_003.ah.bc",
+        parts=[
+            "mission",
+            "year_start",
+            "doy_start",
+            "year_end",
+            "doy_end",
+            "version",
+            "type",
+        ],
+    )
+    assert file_parts["mission"] == "imap"
+    assert file_parts["year_start"] == "2025"
+    assert file_parts["doy_start"] == "032"
+    assert file_parts["year_end"] == "2025"
+    assert file_parts["doy_end"] == "034"
+    assert file_parts["version"] == 3
+    assert file_parts["type"] == "attitude_history"
+
+
 def test_ancillary_file_path():
     """Tests the ``AncillaryFilePath`` class for different scenarios."""
 
