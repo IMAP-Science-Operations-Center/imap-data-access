@@ -544,12 +544,15 @@ class SPICEFilePath(ImapFilePath):
         return spice_dir / subdir / self.filename
 
     def _matches_on_group(self, regex_list: list, string_to_parse: str) -> re.Match:
-        """Method used to determine the first regular expression (in regex_list) that matches the provided string_to_parse
+        """Determine the first regular expression (in regex_list) that matches
+           the provided string_to_parse.
 
         Arguments:
         ---------
-            regex_list - A list of compiled regular expressions to be applied in order
-            string_to_parse - The string to check against the provided regular expressions
+            regex_list: list
+                A list of compiled regular expressions to be applied in order
+            string_to_parse: str
+                The string to check against the provided regular expressions
 
         Returns:
         -------
@@ -566,21 +569,24 @@ class SPICEFilePath(ImapFilePath):
         parts: list[str],
         transforms: dict | None = None,
         handle_missing_parts: bool = False,
-    ):
-        """Method used to extract the groups provided in order or None if no provided regular expressions match
+    ) -> dict | None:
+        """Extract the parts of a file.
 
         Arguments:
         ---------
-            regex_list - A list of compiled regular expressions to be applied in order
-            string_to_parse - The string to check against the provided regular expressions
             parts - A list of groups to be extracted
-            transforms - A dictionary of group->function (that takes 1 string) to transform the string into some other type
-            handle_missing_parts - If True, missing parts won't raise an exception and the result set will contain None
-                                for the missing part.  If False, an IndexError is raised
+            transforms: dict[str: func]
+                A dictionary of group->function (that takes 1 string) to
+                transform the string into some other type
+            handle_missing_parts: bool
+                If True, missing parts won't raise an exception and the result
+                set will contain None for the missing part.
+                If False, an IndexError is raised
 
         Returns:
         -------
-            A tuple of the groups that were requested in parts or None if there were no matches for the provided regex_list
+            A dictionary of the parts that were requested or
+            None if there were no matches for the provided regex_list
         """
         m = self._matches_on_group(
             SPICEFilePath.valid_spice_regexes, self.filename.name.lower()
@@ -607,7 +613,7 @@ class SPICEFilePath(ImapFilePath):
 
     @staticmethod
     def _spice_type_name_transform(type: str) -> str:
-        """Converts the type extracted from the filename to a more readable name.
+        """Convert the type extracted from the filename to a more readable name.
 
         Arguments:
         ---------
@@ -624,13 +630,13 @@ class SPICEFilePath(ImapFilePath):
         else:
             return type
 
-    def extract_filename_components(self) -> dict:
+    def extract_filename_components(self) -> dict | None:
         """Extract all components from filename.
 
         Will return a dictionary with the following keys:
         { type, version }
 
-        If a match is not found, a ValueError will be raised.
+        If a match is not found, None will be returned
 
         Returns
         -------
