@@ -374,7 +374,7 @@ class ProcessingInputCollection:
 
     def get_science_files(self) -> list[ProcessingInput]:
         """Return just the science files from the collection.
-        
+
         Returns
         -------
         out : list[ProcessingInput]

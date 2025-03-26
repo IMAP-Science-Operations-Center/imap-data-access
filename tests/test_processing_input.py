@@ -134,6 +134,7 @@ def test_create_collection():
     assert len(science_files[0].imap_file_paths) == 2
     assert len(science_files[1].imap_file_paths) == 1
 
+
 def test_get_time_range():
     ancillary = processing_input.AncillaryInput(
         "imap_mag_l1b-cal_20250101_v001.cdf",
