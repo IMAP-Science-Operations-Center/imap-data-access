@@ -166,7 +166,13 @@ def test_get_files():
     expected_path = AncillaryFilePath(
         "imap_hit_l1b-cal_20240312_v000.cdf"
     ).construct_path()
-    assert hit_anc_files[0] == expected_path
+    assert hit_anc_files == [expected_path]
 
     mag_sci_files = input_collection.get_files("mag", "norm-magi")
     assert len(mag_sci_files) == 2
+
+    all_hit_files = input_collection.get_files("hit")
+    assert len(all_hit_files) == 2
+
+    all_mag_files = input_collection.get_files(descriptor="norm-magi")
+    assert len(all_mag_files) == 2

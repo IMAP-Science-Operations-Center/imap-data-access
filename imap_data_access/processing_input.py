@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -18,8 +17,6 @@ from imap_data_access import (
     SPICEFilePath,
 )
 from imap_data_access.io import download
-
-logger = logging.getLogger(__name__)
 
 
 class ProcessingInputType(Enum):
@@ -376,30 +373,39 @@ class ProcessingInputCollection:
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
 
-    def get_files(self, instrument, descriptor) -> list[Path]:
+    def get_files(self, source: str = None, descriptor: str = None,) -> list[Path]:
         """Get the dependency files path from the collection.
 
+        Parameters
+        ----------
+        source : str, optional
+            Instrument name.
+        descriptor : str, optional
+            Descriptor for the file.
+        
         Returns
         -------
         out : list[Path]
             list of ScienceInput files contained in the collection.
         """
         out = []
+        if source is None and descriptor is None:
+            raise ValueError("At least source or descriptor must be provided.")
+
         for file in self.processing_input:
-            if file.source == instrument and file.descriptor == descriptor:
-                for obj in file.imap_file_paths:
-                    out.append(obj.construct_path())
+            matches_source = source is None or file.source == source
+            matches_descriptor = descriptor is None or file.descriptor == descriptor
+            if matches_source and matches_descriptor:
+                out.extend(obj.construct_path() for obj in file.imap_file_paths)
+ 
         return out
 
-    def donwload(self):
+    def download_all_files(self):
         """Download all the dependencies for the processing input."""
         # Go through science or ancillary or SPICE dependencies
         # processing input list and download all files
         for dependency in self.processing_input:
             for filepath in dependency.imap_file_paths:
-                try:
-                    download_path = filepath.construct_path()
-                    logger.info(f"Downloading {download_path}")
-                    download(download_path)
-                except HTTPError as e:
-                    raise ValueError(f"Unable to download {filepath} file") from e
+                download_path = filepath.construct_path()
+                download(download_path)
+    
