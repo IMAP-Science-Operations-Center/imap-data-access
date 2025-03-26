@@ -553,14 +553,14 @@ class SPICEFilePath(ImapFilePath):
     ) -> re.Match:
         """Determine the first regular expression that matches the provided string.
 
-        Arguments:
-        ---------
-            regex_list: list
-                A list of compiled regular expressions to be applied in order
-            string_to_parse: str
+        Parameters
+        ----------
+        regex_list: list
+            A list of compiled regular expressions to be applied in order
+        string_to_parse: str
                 The string to check against the provided regular expressions
 
-        Returns:
+        Returns
         -------
             The first match that satisfies a regular expression found in regex_list
         """
@@ -579,21 +579,21 @@ class SPICEFilePath(ImapFilePath):
     ) -> dict | None:
         """Extract the parts of a file.
 
-        Arguments:
-        ---------
-            filename: Path | str
-                A filename to extract parts from
-            parts: list[str]
-                A list of parts to be extracted from the filename
-            transforms: dict[str: func]
-                A dictionary of group->function (that takes 1 string) to
-                transform the string into some other type
-            handle_missing_parts: bool
-                If True, missing parts won't raise an exception and the result
-                set will contain None for the missing part.
-                If False, an IndexError is raised
+        Parameters
+        ----------
+        filename: Path | str
+            A filename to extract parts from
+        parts: list[str]
+            A list of parts to be extracted from the filename
+        transforms: dict[str: func]
+            A dictionary of group->function (that takes 1 string) to
+            transform the string into some other type
+        handle_missing_parts: bool
+            If True, missing parts won't raise an exception and the result
+            set will contain None for the missing part.
+            If False, an IndexError is raised
 
-        Returns:
+        Returns
         -------
             A dictionary of the parts that were requested or
             None if there were no matches for the provided regex_list
@@ -626,7 +626,7 @@ class SPICEFilePath(ImapFilePath):
 
     @staticmethod
     def extract_filename_components(
-        filename: Path | str, parts: list[str] = ["type", "version"]
+        filename: Path | str, parts: list[str]
     ) -> dict | None:
         """Extract all components from filename.
 
@@ -637,10 +637,10 @@ class SPICEFilePath(ImapFilePath):
 
         Parameters
         ----------
-            filename: Path | str
-                The filename to parse
-            parts: list[str]
-                The name of the sections to extract
+        filename : Path | str
+            The filename to parse
+        parts : list[str]
+            The name of the sections to extract
 
         Returns
         -------
