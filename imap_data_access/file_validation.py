@@ -466,8 +466,8 @@ class SPICEFilePath(ImapFilePath):
     # Repoint Files (type: repoint.csv)
     repoint_file_pattern = (
         r"(?P<mission>imap)_"
-        r"(?P<start_year>[\d]{4})_"
-        r"(?P<start_doy>[\d]{3})_"
+        r"(?P<end_year>[\d]{4})_"
+        r"(?P<end_doy>[\d]{3})_"
         r"(?P<version>[\d]+)\."
         r"(?P<type>repoint.csv)"
     )
