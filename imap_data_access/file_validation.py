@@ -429,7 +429,6 @@ class SPICEFilePath(ImapFilePath):
     # Historical Attitude (type: ah.bc)
     # Predicted Attitude (type: ap.bc)
     # Spin Files (type: spin.csv)
-    # Repoint Files (type: repoint.csv)
     attitude_file_pattern = (
         r"(?P<mission>imap)_"
         r"(?P<start_year>[\d]{4})_"
@@ -437,7 +436,16 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<end_year>[\d]{4})_"
         r"(?P<end_doy>[\d]{3})_"
         r"(?P<version>[\d]+)\."
-        r"(?P<type>ah.bc|ap.bc|spin.csv|repoint.csv)"
+        r"(?P<type>ah.bc|ap.bc|spin.csv)"
+    )
+    # Covers:
+    # Repoint Files (type: repoint.csv)
+    repoint_file_pattern = (
+        r"(?P<mission>imap)_"
+        r"(?P<start_year>[\d]{4})_"
+        r"(?P<start_doy>[\d]{3})_"
+        r"(?P<version>[\d]+)\."
+        r"(?P<type>repoint.csv)"
     )
     # Covers:
     # Reconstructed (type: recon)
@@ -492,6 +500,7 @@ class SPICEFilePath(ImapFilePath):
 
     valid_spice_regexes = (
         re.compile(attitude_file_pattern),
+        re.compile(repoint_file_pattern),
         re.compile(spacecraft_ephemeris_file_pattern),
         re.compile(spice_prod_ver_pattern),
         re.compile(spice_frame_pattern),

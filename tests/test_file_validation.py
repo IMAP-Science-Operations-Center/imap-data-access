@@ -192,10 +192,10 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("spice/spin/imap_2025_122_2025_122_01.spin.csv")
 
-    repoint_file_path = SPICEFilePath("imap_2025_122_2025_122_01.repoint.csv")
+    repoint_file_path = SPICEFilePath("imap_2025_122_01.repoint.csv")
     assert repoint_file_path.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/repoint/imap_2025_122_2025_122_01.repoint.csv")
+    ] / Path("spice/repoint/imap_2025_122_01.repoint.csv")
 
     metakernel_file = SPICEFilePath("imap_0000_v000.tm")
     assert metakernel_file.construct_path() == imap_data_access.config[
@@ -213,45 +213,62 @@ def test_spice_extract_parts():
     file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "spin"
+    assert file_path.spice_metadata["start_year"] == "2025"
+    assert file_path.spice_metadata["end_year"] == "2025"
+    assert file_path.spice_metadata["start_doy"] == "122"
+    assert file_path.spice_metadata["end_doy"] == "122"
 
     # Test metakernel
     file_path = SPICEFilePath("imap_2025_v100.tm")
     assert file_path.spice_metadata["version"] == 100
     assert file_path.spice_metadata["type"] == "metakernel"
+    assert file_path.spice_metadata["start_year"] == "2025"
 
     # Test attitude
     file_path = SPICEFilePath("imap_2025_032_2025_034_003.ah.bc")
     assert file_path.spice_metadata["version"] == 3
     assert file_path.spice_metadata["type"] == "attitude_history"
+    assert file_path.spice_metadata["start_year"] == "2025"
+    assert file_path.spice_metadata["end_year"] == "2025"
+    assert file_path.spice_metadata["start_doy"] == "032"
+    assert file_path.spice_metadata["end_doy"] == "034"
 
     # Test leapsecond
     file_path = SPICEFilePath("naif0012.tls")
     assert file_path.spice_metadata["version"] == 12
     assert file_path.spice_metadata["type"] == "leapseconds"
+    assert file_path.spice_metadata["extension"] == "tls"
 
     # Test planetary ephemeris
     file_path = SPICEFilePath("de440.bsp")
     assert file_path.spice_metadata["version"] == 440
     assert file_path.spice_metadata["type"] == "planetary_ephemeris"
+    assert file_path.spice_metadata["extension"] == "bsp"
 
     # Test planetary constants
     file_path = SPICEFilePath("pck00010.tpc")
     assert file_path.spice_metadata["version"] == 10
     assert file_path.spice_metadata["type"] == "planetary_constants"
+    assert file_path.spice_metadata["extension"] == "tpc"
 
     # Test spacecraft ephemeris
     file_path = SPICEFilePath("imap_90days_20251120_20260220_v01.bsp")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "ephemeris_90days"
+    assert file_path.spice_metadata["start_date"] == "20251120"
+    assert file_path.spice_metadata["end_date"] == "20260220"
+    assert file_path.spice_metadata["extension"] == "bsp"
 
     # Test repoint
-    file_path = SPICEFilePath("imap_2025_230_2025_230_01.repoint.csv")
+    file_path = SPICEFilePath("imap_2025_230_01.repoint.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "repoint"
+    assert file_path.spice_metadata["start_year"] == "2025"
+    assert file_path.spice_metadata["start_doy"] == "230"
 
 
 def test_spice_extract_parts_static_method():
-    # Test spin
+    # Making sure the function works without an instance
     file_parts = SPICEFilePath.extract_filename_components(
         "imap_2025_122_2025_122_01.spin.csv"
     )
