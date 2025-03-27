@@ -275,15 +275,15 @@ def test_spice_extract_parts():
 def test_spice_invalid_dates():
     # Ensure the DOY is valid (DOY 410??)
     with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
-        file_path = SPICEFilePath("imap_2025_032_2025_410_003.ah.bc")
+        SPICEFilePath("imap_2025_032_2025_410_003.ah.bc")
 
     # Ensure dates are valid (Month 13??)
     with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
-        file_path = SPICEFilePath("imap_90days_20251320_20260220_v01.bsp")
+        SPICEFilePath("imap_90days_20251320_20260220_v01.bsp")
 
     # Ensure valid ephemeris type (type taco??)
     with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
-        file_path = SPICEFilePath("imap_taco_20251320_20260220_v01.bsp")
+        SPICEFilePath("imap_taco_20251320_20260220_v01.bsp")
 
 
 def test_spice_extract_parts_static_method():
