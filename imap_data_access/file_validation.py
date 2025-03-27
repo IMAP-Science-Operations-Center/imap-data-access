@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import re
 from abc import abstractmethod
-from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 
@@ -99,6 +98,31 @@ class ImapFilePath:
     def construct_path(self) -> Path:
         """Construct valid path from class variables and data_dir."""
         raise NotImplementedError
+
+    @staticmethod
+    def is_valid_doy(input_doy: str, input_year: str) -> bool:
+        """Check input day of year to ensure it is a valid one.
+
+        Parameters
+        ----------
+        input_doy : str
+            Date in '###' format.
+        input_year : str
+            Date in YYYY format.
+
+        Returns
+        -------
+        bool
+            Whether date input is valid or not
+        """
+        # Validate if it's a real date
+        try:
+            # This checks if date is in YYYYMMDD format.
+            # Sometimes, date is correct but not in the format we want
+            datetime(input_year, 1, 1) + datetime.timedelta(days=input_doy - 1)
+            return True
+        except ValueError:
+            return False
 
 
 class ScienceFilePath(ImapFilePath):
@@ -462,21 +486,20 @@ class SPICEFilePath(ImapFilePath):
         r"(?:|_v(?P<version>[\d]*))\."
         r"(?P<extension>bsp)"
     )
-
     # Covers:
     # Planetary Ephemeris (type: "de")
     # Planetary Constants (type: "pck")
     # Leapsecond kernel (type: "naif")
     # Spacecraft clock kernel (type: "imapsclk_")
     spice_prod_ver_pattern = (
-        r"(?P<type>[a-zA-Z\-_]+)"
+        r"(?P<type>[a-zA-Z\-]+)"
         r"(?P<version>[\d]+)\."
         r"(?P<extension>tls|tpc|bsp|tsc)"
     )
 
     # Covers:
     # Frame: (type: 'tf')
-    spice_frame_pattern = r"(?P<mission>imap)_" r"(?P<version>[\d]+)\." r"(?P<type>tf)"
+    spice_frame_pattern = r"(?P<mission>imap)_(?P<version>[\d]+)\.(?P<type>tf)"
 
     # Covers:
     # Thruster files (type: sff)
@@ -529,13 +552,6 @@ class SPICEFilePath(ImapFilePath):
         """
         self.filename = Path(filename)
         self.spice_metadata = SPICEFilePath.extract_filename_components(self.filename)
-        if self.spice_metadata is None:
-            raise self.InvalidSPICEFileError(
-                f"Invalid SPICE file. Expected file to have one of the following "
-                f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
-                f"the documentation to ensure the file has the "
-                f"proper naming convention "
-            )
 
     def construct_path(self) -> Path:
         """Construct valid path from the class variables and data_dir.
@@ -555,63 +571,47 @@ class SPICEFilePath(ImapFilePath):
         return spice_dir / subdir / self.filename
 
     @staticmethod
-    def _matches_on_group(
-        regex_list: Iterable[re.Pattern], string_to_parse: str
-    ) -> re.Match:
-        """Determine the first regular expression that matches the provided string.
+    def _spice_parts_handler(components):
+        """Validate and transform SPICE file compents.
 
         Parameters
         ----------
-        regex_list: list
-            A list of compiled regular expressions to be applied in order
-        string_to_parse: str
-                The string to check against the provided regular expressions
+        components : dict
+            Dictionary containing components of the file.
 
         Returns
         -------
-            The first match that satisfies a regular expression found in regex_list
+        components : dict
+            Dictionary containing components, validated and transformed.
         """
-        for regex in regex_list:
-            m = regex.match(string_to_parse)
-            if m is not None:
-                return m
-        return None
-
-    @staticmethod
-    def _extract_parts(
-        filename: Path | str,
-        transforms: dict | None = None,
-    ) -> dict | None:
-        """Extract the parts of a file.
-
-        Parameters
-        ----------
-        filename: Path | str
-            A filename to extract parts from
-        transforms: dict[str: func]
-            A dictionary of group->function (that takes 1 string) to
-            transform the string into some other type
-
-        Returns
-        -------
-            A dictionary of the parts that were requested or
-            None if there were no matches found
-        """
-        filename = Path(filename).name
-
-        m = SPICEFilePath._matches_on_group(
-            SPICEFilePath.valid_spice_regexes, filename.lower()
-        )
-        if m is None:
-            return None
-        ret_val = m.groupdict()
-        for part in ret_val:
-            if transforms is not None and part in transforms:
-                ret_val[part] = transforms[part](m.group(part))
+        error_message = None
+        for part in components:
+            if "doy" in part:
+                components[part] = int(components[part])
+                if components[part] > 366:
+                    error_message = "Day of year must be a valid value"
+            elif "date" in part:
+                try:
+                    components[part] = datetime.strptime(components[part], "%Y%m%d")
+                except ValueError:
+                    error_message = (
+                        "Invalid start date format. Please use YYYYMMDD format."
+                    )
+            elif part == "type":
+                try:
+                    components[part] = _SPICE_TYPE_MAPPING[components[part]]
+                except KeyError:
+                    error_message = f"""SPICE type {components[part]} not found in
+                                        list of approved SPICE types"""
+            elif "year" in part:
+                components[part] = int(components[part])
+            elif part == "version":
+                components[part] = int(components[part])
             else:
-                ret_val[part] = m.group(part)
-
-        return ret_val
+                components[part] = components[part]
+            if error_message:
+                raise SPICEFilePath.InvalidSPICEFileError(error_message)
+        return components
 
     @staticmethod
     def extract_filename_components(filename: Path | str) -> dict | None:
@@ -634,13 +634,21 @@ class SPICEFilePath(ImapFilePath):
         components : dict
             Dictionary containing components.
         """
-        spice_metadata = SPICEFilePath._extract_parts(
-            filename,
-            transforms={
-                "type": lambda x: _SPICE_TYPE_MAPPING.get(x, None),
-                "version": lambda x: int(x),
-            },
-        )
+        filename = Path(filename).name
+        spice_metadata = None
+        for regex in SPICEFilePath.valid_spice_regexes:
+            m = regex.match(filename.lower())
+            if m is not None:
+                spice_metadata = SPICEFilePath._spice_parts_handler(m.groupdict())
+                break
+
+        if spice_metadata is None:
+            raise SPICEFilePath.InvalidSPICEFileError(
+                f"Invalid SPICE file. Expected file to have one of the following "
+                f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
+                f"the documentation to ensure the file has the "
+                f"proper naming convention "
+            )
 
         return spice_metadata
 

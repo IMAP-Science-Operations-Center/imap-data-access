@@ -1,5 +1,6 @@
 """Tests for the ``file_validataion`` module."""
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -213,25 +214,25 @@ def test_spice_extract_parts():
     file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "spin"
-    assert file_path.spice_metadata["start_year"] == "2025"
-    assert file_path.spice_metadata["end_year"] == "2025"
-    assert file_path.spice_metadata["start_doy"] == "122"
-    assert file_path.spice_metadata["end_doy"] == "122"
+    assert file_path.spice_metadata["start_year"] == 2025
+    assert file_path.spice_metadata["end_year"] == 2025
+    assert file_path.spice_metadata["start_doy"] == 122
+    assert file_path.spice_metadata["end_doy"] == 122
 
     # Test metakernel
     file_path = SPICEFilePath("imap_2025_v100.tm")
     assert file_path.spice_metadata["version"] == 100
     assert file_path.spice_metadata["type"] == "metakernel"
-    assert file_path.spice_metadata["start_year"] == "2025"
+    assert file_path.spice_metadata["start_year"] == 2025
 
     # Test attitude
     file_path = SPICEFilePath("imap_2025_032_2025_034_003.ah.bc")
     assert file_path.spice_metadata["version"] == 3
     assert file_path.spice_metadata["type"] == "attitude_history"
-    assert file_path.spice_metadata["start_year"] == "2025"
-    assert file_path.spice_metadata["end_year"] == "2025"
-    assert file_path.spice_metadata["start_doy"] == "032"
-    assert file_path.spice_metadata["end_doy"] == "034"
+    assert file_path.spice_metadata["start_year"] == 2025
+    assert file_path.spice_metadata["end_year"] == 2025
+    assert file_path.spice_metadata["start_doy"] == 32
+    assert file_path.spice_metadata["end_doy"] == 34
 
     # Test leapsecond
     file_path = SPICEFilePath("naif0012.tls")
@@ -255,16 +256,20 @@ def test_spice_extract_parts():
     file_path = SPICEFilePath("imap_90days_20251120_20260220_v01.bsp")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "ephemeris_90days"
-    assert file_path.spice_metadata["start_date"] == "20251120"
-    assert file_path.spice_metadata["end_date"] == "20260220"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "20251120", "%Y%m%d"
+    )
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "20260220", "%Y%m%d"
+    )
     assert file_path.spice_metadata["extension"] == "bsp"
 
     # Test repoint
     file_path = SPICEFilePath("imap_2025_230_01.repoint.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "repoint"
-    assert file_path.spice_metadata["start_year"] == "2025"
-    assert file_path.spice_metadata["start_doy"] == "230"
+    assert file_path.spice_metadata["start_year"] == 2025
+    assert file_path.spice_metadata["start_doy"] == 230
 
 
 def test_spice_extract_parts_static_method():
@@ -278,10 +283,10 @@ def test_spice_extract_parts_static_method():
         "imap_2025_032_2025_034_003.ah.bc",
     )
     assert file_parts["mission"] == "imap"
-    assert file_parts["start_year"] == "2025"
-    assert file_parts["start_doy"] == "032"
-    assert file_parts["end_year"] == "2025"
-    assert file_parts["end_doy"] == "034"
+    assert file_parts["start_year"] == 2025
+    assert file_parts["start_doy"] == 32
+    assert file_parts["end_year"] == 2025
+    assert file_parts["end_doy"] == 34
     assert file_parts["version"] == 3
     assert file_parts["type"] == "attitude_history"
 
