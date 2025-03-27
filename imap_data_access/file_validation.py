@@ -119,7 +119,9 @@ class ImapFilePath:
         try:
             # This checks if date is in YYYYMMDD format.
             # Sometimes, date is correct but not in the format we want
-            datetime(int(input_year), 1, 1) + datetime.timedelta(days=int(input_doy) - 1)
+            datetime(int(input_year), 1, 1) + datetime.timedelta(
+                days=int(input_doy) - 1
+            )
             return True
         except ValueError:
             return False
