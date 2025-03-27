@@ -268,8 +268,8 @@ def test_spice_extract_parts():
     file_path = SPICEFilePath("imap_2025_230_01.repoint.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "repoint"
-    assert file_path.spice_metadata["start_year"] == 2025
-    assert file_path.spice_metadata["start_doy"] == 230
+    assert file_path.spice_metadata["end_year"] == 2025
+    assert file_path.spice_metadata["end_doy"] == 230
 
 
 def test_spice_invalid_dates():
