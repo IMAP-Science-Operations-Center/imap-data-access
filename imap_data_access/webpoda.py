@@ -21,10 +21,9 @@ import urllib.request
 import urllib.response
 
 import imap_data_access
-from imap_data_access.io import _get_url_response
+from imap_data_access.io import IMAPDataAccessError, _get_url_response
 
 logger = logging.getLogger(__name__)
-
 
 WEBPODA_APID_URL = "https://lasp.colorado.edu/ops/imap/poda/dap2/apids"
 # The system ID for the IMAP mission
@@ -55,12 +54,12 @@ INSTRUMENT_APIDS = {
         1173,
         1174,
     ],
-    "glows": [1445, 1448, 1449, 1480, 1481],
+    "glows": [1480, 1481],
     "hi": [754, 769, 770, 818, 833, 834, 818, 833, 834],
     "hit": [1251, 1252, 1253],
     "idex": [1377, 1420, 1424],
     "lo": [673, 676, 677, 705, 706, 707, 708],
-    "mag": [1000, 1036, 1052, 1063, 1064, 1068, 1082],
+    "mag": [1052, 1068],
     "swapi": [1184, 1188],
     "swe": [1330, 1334, 1344],
     "ultra": [
@@ -194,12 +193,20 @@ def get_packet_times_ert(
     )
 
     request = urllib.request.Request(query_range, method="GET")
+
     request = _add_webpoda_headers(request)
     # Returns a text file with the packet times
     # 2024-12-01T00:00:00
     # 2024-12-01T00:00:01
-    with _get_url_response(request) as response:
-        data = response.read().decode().split("\n")
+    try:
+        with _get_url_response(request) as response:
+            data = response.read().decode().split("\n")
+    except IMAPDataAccessError:
+        logger.error(
+            f"Failed to get packet times for apid [{apid}] between "
+            f"{start_time} and {end_time}"
+        )
+        data = []
 
     # Iterate over each line in the response, converting them to dates.
     # We first strip the line to remove any whitespace (\r) and skip any trailing lines
@@ -249,11 +256,19 @@ def get_packet_binary_data_sctime(
         # only the raw packet data
         + "&project(packet)"
     )
+
     request = urllib.request.Request(query_range, method="GET")
     request = _add_webpoda_headers(request)
 
-    with _get_url_response(request) as response:
-        return response.read()
+    try:
+        with _get_url_response(request) as response:
+            return response.read()
+    except IMAPDataAccessError:
+        logger.error(
+            f"Failed to get binary packet data for apid [{apid}] between "
+            f"{start_time} and {end_time}"
+        )
+        return b""
 
 
 def download_daily_data(
