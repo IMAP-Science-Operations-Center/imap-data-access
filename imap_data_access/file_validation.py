@@ -456,7 +456,7 @@ class SPICEFilePath(ImapFilePath):
     # Predicted Attitude (type: ap.bc)
     # Spin Files (type: spin.csv)
     attitude_file_pattern = (
-        r"(?P<mission>imap)_"
+        r"(imap)_"
         r"(?P<start_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<version>[\d]+)\."
@@ -465,7 +465,7 @@ class SPICEFilePath(ImapFilePath):
     # Covers:
     # Repoint Files (type: repoint.csv)
     repoint_file_pattern = (
-        r"(?P<mission>imap)_"
+        r"(imap)_"
         r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<version>[\d]+)\."
         r"(?P<type>repoint.csv)"
@@ -478,7 +478,7 @@ class SPICEFilePath(ImapFilePath):
     # Long Term Predict (type: long)
     # Launch Predict (type: launch)
     spacecraft_ephemeris_file_pattern = (
-        r"(?P<mission>imap)_"
+        r"(imap)_"
         r"(?P<type>[a-zA-Z0-9\-]+)_"
         r"(?P<start_date>[\d]{8})_"
         r"(?P<end_date>[\d]{8})"
@@ -498,14 +498,14 @@ class SPICEFilePath(ImapFilePath):
 
     # Covers:
     # Frame: (type: 'tf')
-    spice_frame_pattern = r"(?P<mission>imap)_(?P<version>[\d]+)\.(?P<type>tf)"
+    spice_frame_pattern = r"(imap)_(?P<version>[\d]+)\.(?P<type>tf)"
 
     # Covers:
     # Thruster files (type: sff)
     sff_filename_pattern = (
-        r"(?P<mission>imap)_"
+        r"(imap)_"
         r"(?P<start_year_doy>[\d]{4}_[\d]{3})_"
-        r"(?P<mode>[a-zA-Z0-9\-_]+)_"
+        r"([a-zA-Z0-9\-_]+)_"
         r"(?P<version>[\d]{2})\."
         r"(?P<type>sff)"
     )
@@ -513,7 +513,7 @@ class SPICEFilePath(ImapFilePath):
     # Covers:
     # Metakernels (type: 'tm')
     mk_filename_pattern = (
-        r"(?P<mission>imap)_"
+        r"(imap)_"
         r"(?P<start_year>[\d]{4})_"
         r"v(?P<version>[\d]{3})\."
         r"(?P<type>tm)"
@@ -528,6 +528,9 @@ class SPICEFilePath(ImapFilePath):
         re.compile(sff_filename_pattern),
         re.compile(mk_filename_pattern),
     )
+
+    EARLIEST_VALID_START_TIME = datetime(2023, 1, 1)
+    LATEST_VALID_END_TIME = datetime(2650, 1, 25)
 
     class InvalidSPICEFileError(Exception):
         """Indicates a bad file type."""
@@ -581,6 +584,7 @@ class SPICEFilePath(ImapFilePath):
             components["start_date"] = doy_as_datetime
         elif "end" in part:
             components["end_date"] = doy_as_datetime
+        del components[part]
 
     @staticmethod
     def _handle_date(part, components):
@@ -605,8 +609,12 @@ class SPICEFilePath(ImapFilePath):
         """Set the year and also computes a start_date of January 1 for that year."""
         value = components[part]
         year_int = int(value)
-        components[part] = year_int
-        components["start_date"] = datetime(year_int, 1, 1)
+        components[part] = int(year_int)
+        try:
+            components["start_date"] = datetime(year_int, 1, 1)
+        except ValueError:
+            return "Invalid year. Please ensure the year is not 0."
+        del components[part]
 
     @staticmethod
     def _handle_version(part, components):
@@ -652,10 +660,12 @@ class SPICEFilePath(ImapFilePath):
     def extract_filename_components(filename: Path | str) -> dict | None:
         """Extract all components from filename.
 
-        Will return a dictionary with the labels
-        "version", "type", and "extension".
-
-        If applicable, "start_date", and "end_date" will also be returned.
+        Will return a dictionary in the form:
+            version - int
+            type - string
+            extension - string
+            start_date - datetime
+            end_date - datetime
 
         If a match is not found, InvalidSPICEFileError will be raised.
 
@@ -676,6 +686,12 @@ class SPICEFilePath(ImapFilePath):
             if m is not None:
                 spice_metadata = SPICEFilePath._spice_parts_handler(m.groupdict())
                 spice_metadata["extension"] = filename.suffix[1:]
+                if "start_date" not in spice_metadata:
+                    spice_metadata["start_date"] = (
+                        SPICEFilePath.EARLIEST_VALID_START_TIME
+                    )
+                if "end_date" not in spice_metadata:
+                    spice_metadata["end_date"] = SPICEFilePath.LATEST_VALID_END_TIME
                 break
 
         if spice_metadata is None:
