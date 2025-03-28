@@ -178,9 +178,9 @@ def test_generate_from_inputs():
 
 def test_spice_file_path():
     """Tests the ``SPICEFilePath`` class."""
-    file_path = SPICEFilePath("imap_0000_000_0000_000_01.ap.bc")
+    file_path = SPICEFilePath("imap_1000_100_1000_100_01.ap.bc")
     assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/ck/imap_0000_000_0000_000_01.ap.bc"
+        "spice/ck/imap_1000_100_1000_100_01.ap.bc"
     )
 
     # Test a bad file extension too
@@ -198,14 +198,14 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("spice/repoint/imap_2025_122_01.repoint.csv")
 
-    metakernel_file = SPICEFilePath("imap_0000_v000.tm")
+    metakernel_file = SPICEFilePath("imap_1000_v000.tm")
     assert metakernel_file.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/mk/imap_0000_v000.tm")
+    ] / Path("spice/mk/imap_1000_v000.tm")
 
-    thruster_file = SPICEFilePath("imap_0000_000_hist_00.sff")
+    thruster_file = SPICEFilePath("imap_0001_001_hist_00.sff")
     assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/activities/imap_0000_000_hist_00.sff"
+        "spice/activities/imap_0001_001_hist_00.sff"
     )
 
 
@@ -214,10 +214,8 @@ def test_spice_extract_parts():
     file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "spin"
-    assert file_path.spice_metadata["start_year"] == 2025
-    assert file_path.spice_metadata["end_year"] == 2025
-    assert file_path.spice_metadata["start_doy"] == 122
-    assert file_path.spice_metadata["end_doy"] == 122
+    assert file_path.spice_metadata["start_year_doy"] == "2025_122"
+    assert file_path.spice_metadata["end_year_doy"] == "2025_122"
 
     # Test metakernel
     file_path = SPICEFilePath("imap_2025_v100.tm")
@@ -229,10 +227,8 @@ def test_spice_extract_parts():
     file_path = SPICEFilePath("imap_2025_032_2025_034_003.ah.bc")
     assert file_path.spice_metadata["version"] == 3
     assert file_path.spice_metadata["type"] == "attitude_history"
-    assert file_path.spice_metadata["start_year"] == 2025
-    assert file_path.spice_metadata["end_year"] == 2025
-    assert file_path.spice_metadata["start_doy"] == 32
-    assert file_path.spice_metadata["end_doy"] == 34
+    assert file_path.spice_metadata["start_year_doy"] == "2025_032"
+    assert file_path.spice_metadata["end_year_doy"] == "2025_034"
 
     # Test leapsecond
     file_path = SPICEFilePath("naif0012.tls")
@@ -268,8 +264,7 @@ def test_spice_extract_parts():
     file_path = SPICEFilePath("imap_2025_230_01.repoint.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "repoint"
-    assert file_path.spice_metadata["end_year"] == 2025
-    assert file_path.spice_metadata["end_doy"] == 230
+    assert file_path.spice_metadata["end_year_doy"] == "2025_230"
 
 
 def test_spice_invalid_dates():
@@ -297,10 +292,8 @@ def test_spice_extract_parts_static_method():
         "imap_2025_032_2025_034_003.ah.bc",
     )
     assert file_parts["mission"] == "imap"
-    assert file_parts["start_year"] == 2025
-    assert file_parts["start_doy"] == 32
-    assert file_parts["end_year"] == 2025
-    assert file_parts["end_doy"] == 34
+    assert file_parts["start_year_doy"] == "2025_032"
+    assert file_parts["end_year_doy"] == "2025_034"
     assert file_parts["version"] == 3
     assert file_parts["type"] == "attitude_history"
 
