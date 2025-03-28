@@ -216,12 +216,19 @@ def test_spice_extract_parts():
     assert file_path.spice_metadata["type"] == "spin"
     assert file_path.spice_metadata["start_year_doy"] == "2025_122"
     assert file_path.spice_metadata["end_year_doy"] == "2025_122"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "2025_122", "%Y_%j"
+    )
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "2025_122", "%Y_%j"
+    )
 
     # Test metakernel
     file_path = SPICEFilePath("imap_2025_v100.tm")
     assert file_path.spice_metadata["version"] == 100
     assert file_path.spice_metadata["type"] == "metakernel"
     assert file_path.spice_metadata["start_year"] == 2025
+    assert file_path.spice_metadata["start_date"] == datetime(2025, 1, 1)
 
     # Test attitude
     file_path = SPICEFilePath("imap_2025_032_2025_034_003.ah.bc")
@@ -229,6 +236,12 @@ def test_spice_extract_parts():
     assert file_path.spice_metadata["type"] == "attitude_history"
     assert file_path.spice_metadata["start_year_doy"] == "2025_032"
     assert file_path.spice_metadata["end_year_doy"] == "2025_034"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "2025_032", "%Y_%j"
+    )
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "2025_034", "%Y_%j"
+    )
 
     # Test leapsecond
     file_path = SPICEFilePath("naif0012.tls")
@@ -265,6 +278,9 @@ def test_spice_extract_parts():
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "repoint"
     assert file_path.spice_metadata["end_year_doy"] == "2025_230"
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "2025_230", "%Y_%j"
+    )
 
 
 def test_spice_invalid_dates():
