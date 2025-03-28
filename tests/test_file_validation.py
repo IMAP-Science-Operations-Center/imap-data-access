@@ -209,7 +209,7 @@ def test_spice_file_path():
     )
 
 
-def test_spice_extract_parts():
+def test_spice_extract_spin_parts():
     # Test spin
     file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
     assert file_path.spice_metadata["version"] == 1
@@ -221,13 +221,17 @@ def test_spice_extract_parts():
         "2025_122", "%Y_%j"
     )
     assert len(file_path.spice_metadata) == 5
-    # Test metakernel
+
+
+def test_spice_extract_metakernel_parts():
     file_path = SPICEFilePath("imap_2025_v100.tm")
     assert file_path.spice_metadata["version"] == 100
     assert file_path.spice_metadata["type"] == "metakernel"
     assert file_path.spice_metadata["start_date"] == datetime(2025, 1, 1)
     assert len(file_path.spice_metadata) == 5
-    # Test attitude
+
+
+def test_spice_extract_attitude_parts():
     file_path = SPICEFilePath("imap_2025_032_2025_034_003.ah.bc")
     assert file_path.spice_metadata["version"] == 3
     assert file_path.spice_metadata["type"] == "attitude_history"
@@ -238,25 +242,39 @@ def test_spice_extract_parts():
         "2025_034", "%Y_%j"
     )
     assert len(file_path.spice_metadata) == 5
-    # Test leapsecond
+
+
+def test_spice_extract_leapsecond_parts():
     file_path = SPICEFilePath("naif0012.tls")
     assert file_path.spice_metadata["version"] == 12
     assert file_path.spice_metadata["type"] == "leapseconds"
     assert file_path.spice_metadata["extension"] == "tls"
+    assert file_path.spice_metadata["start_date"] == SPICEFilePath.EARLIEST_VALID_TIME
+    assert file_path.spice_metadata["end_date"] == SPICEFilePath.LATEST_VALID_TIME
     assert len(file_path.spice_metadata) == 5
-    # Test planetary ephemeris
+
+
+def test_spice_extract_planetary_ephemeris_parts():
     file_path = SPICEFilePath("de440.bsp")
     assert file_path.spice_metadata["version"] == 440
     assert file_path.spice_metadata["type"] == "planetary_ephemeris"
     assert file_path.spice_metadata["extension"] == "bsp"
+    assert file_path.spice_metadata["start_date"] == SPICEFilePath.EARLIEST_VALID_TIME
+    assert file_path.spice_metadata["end_date"] == SPICEFilePath.LATEST_VALID_TIME
     assert len(file_path.spice_metadata) == 5
-    # Test planetary constants
+
+
+def test_spice_extract_pck_parts():
     file_path = SPICEFilePath("pck00010.tpc")
     assert file_path.spice_metadata["version"] == 10
     assert file_path.spice_metadata["type"] == "planetary_constants"
     assert file_path.spice_metadata["extension"] == "tpc"
+    assert file_path.spice_metadata["start_date"] == SPICEFilePath.EARLIEST_VALID_TIME
+    assert file_path.spice_metadata["end_date"] == SPICEFilePath.LATEST_VALID_TIME
     assert len(file_path.spice_metadata) == 5
-    # Test spacecraft ephemeris
+
+
+def test_spice_extract_ephemeris_parts():
     file_path = SPICEFilePath("imap_90days_20251120_20260220_v01.bsp")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "ephemeris_90days"
@@ -268,10 +286,13 @@ def test_spice_extract_parts():
     )
     assert file_path.spice_metadata["extension"] == "bsp"
     assert len(file_path.spice_metadata) == 5
-    # Test repoint
+
+
+def test_spice_extract_repoint_parts():
     file_path = SPICEFilePath("imap_2025_230_01.repoint.csv")
     assert file_path.spice_metadata["version"] == 1
     assert file_path.spice_metadata["type"] == "repoint"
+    assert file_path.spice_metadata["start_date"] == SPICEFilePath.EARLIEST_VALID_TIME
     assert file_path.spice_metadata["end_date"] == datetime.strptime(
         "2025_230", "%Y_%j"
     )
@@ -297,7 +318,7 @@ def test_spice_extract_parts_static_method():
     file_parts = SPICEFilePath.extract_filename_components(
         "imap_2025_122_2025_122_01.spin.csv"
     )
-
+    assert file_parts["version"] == 1
     file_parts = SPICEFilePath.extract_filename_components(
         "imap_2025_032_2025_034_003.ah.bc",
     )

@@ -529,8 +529,8 @@ class SPICEFilePath(ImapFilePath):
         re.compile(mk_filename_pattern),
     )
 
-    EARLIEST_VALID_START_TIME = datetime(2023, 1, 1)
-    LATEST_VALID_END_TIME = datetime(2650, 1, 25)
+    EARLIEST_VALID_TIME = datetime(2023, 1, 1)
+    LATEST_VALID_TIME = datetime(2650, 1, 25)
 
     class InvalidSPICEFileError(Exception):
         """Indicates a bad file type."""
@@ -687,11 +687,9 @@ class SPICEFilePath(ImapFilePath):
                 spice_metadata = SPICEFilePath._spice_parts_handler(m.groupdict())
                 spice_metadata["extension"] = filename.suffix[1:]
                 if "start_date" not in spice_metadata:
-                    spice_metadata["start_date"] = (
-                        SPICEFilePath.EARLIEST_VALID_START_TIME
-                    )
+                    spice_metadata["start_date"] = SPICEFilePath.EARLIEST_VALID_TIME
                 if "end_date" not in spice_metadata:
-                    spice_metadata["end_date"] = SPICEFilePath.LATEST_VALID_END_TIME
+                    spice_metadata["end_date"] = SPICEFilePath.LATEST_VALID_TIME
                 break
 
         if spice_metadata is None:
