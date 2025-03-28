@@ -99,33 +99,6 @@ class ImapFilePath:
         """Construct valid path from class variables and data_dir."""
         raise NotImplementedError
 
-    @staticmethod
-    def is_valid_doy(input_doy: str, input_year: str) -> bool:
-        """Check input day of year to ensure it is a valid one.
-
-        Parameters
-        ----------
-        input_doy : str
-            Date in '###' format.
-        input_year : str
-            Date in YYYY format.
-
-        Returns
-        -------
-        bool
-            Whether date input is valid or not
-        """
-        # Validate if it's a real date
-        try:
-            # This checks if date is in YYYYMMDD format.
-            # Sometimes, date is correct but not in the format we want
-            datetime(int(input_year), 1, 1) + datetime.timedelta(
-                days=int(input_doy) - 1
-            )
-            return True
-        except ValueError:
-            return False
-
 
 class ScienceFilePath(ImapFilePath):
     """Class for building and validating filepaths for science files."""
