@@ -86,9 +86,9 @@ def test_create_ancillary_files():
 
 @pytest.mark.xfail(reason="SPICE not completed")
 def test_create_spice_files():
-    one_file = processing_input.SPICEInput("test.bc")
+    one_file = processing_input.SPICEInput("imap_1000_100_1000_100_01.ap.bc")
 
-    assert one_file.filename_list == ["test.bc"]
+    assert one_file.filename_list == ["imap_1000_100_1000_100_01.ap.bc"]
     assert len(one_file.imap_file_paths) == 1
     assert isinstance(one_file.imap_file_paths[0], SPICEFilePath)
     assert one_file.input_type == ProcessingInputType.SPICE_FILE
