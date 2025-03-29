@@ -464,7 +464,7 @@ class SPICEFilePath(ImapFilePath):
     # Leapsecond kernel (type: "naif")
     # Spacecraft clock kernel (type: "imapsclk_")
     spice_prod_ver_pattern = (
-        r"(?P<type>[a-zA-Z\-]+)"
+        r"(?P<type>[a-zA-Z\-_]+)"
         r"(?P<version>[\d]+)\."
         r"(?P<extension>tls|tpc|bsp|tsc)"
     )
@@ -501,9 +501,6 @@ class SPICEFilePath(ImapFilePath):
         re.compile(sff_filename_pattern),
         re.compile(mk_filename_pattern),
     )
-
-    EARLIEST_VALID_TIME = datetime(2023, 1, 1)
-    LATEST_VALID_TIME = datetime(2650, 1, 25)
 
     class InvalidSPICEFileError(Exception):
         """Indicates a bad file type."""
@@ -545,57 +542,6 @@ class SPICEFilePath(ImapFilePath):
         return spice_dir / subdir / self.filename
 
     @staticmethod
-    def _handle_doy(part, components):
-        """Parse a YYYY_DOY string and assigns it to start_date or end_date."""
-        value = components[part]
-        try:
-            doy_as_datetime = datetime.strptime(value, "%Y_%j")
-        except ValueError:
-            return "Invalid day of year format. Please use YYYY_DOY format."
-
-        if "start" in part:
-            components["start_date"] = doy_as_datetime
-        elif "end" in part:
-            components["end_date"] = doy_as_datetime
-        del components[part]
-
-    @staticmethod
-    def _handle_date(part, components):
-        """Parse a YYYYMMDD string and stores a datetime object back in components."""
-        value = components[part]
-        try:
-            components[part] = datetime.strptime(value, "%Y%m%d")
-        except ValueError:
-            return "Invalid date format. Please use YYYYMMDD format."
-
-    @staticmethod
-    def _handle_type(part, components):
-        """Map the 'type' part to its corresponding SPICE type."""
-        value = components[part]
-        try:
-            components[part] = _SPICE_TYPE_MAPPING[value]
-        except KeyError:
-            return f"SPICE type '{value}' not found in the approved SPICE types."
-
-    @staticmethod
-    def _handle_start_year(part, components):
-        """Set the year and also computes a start_date of January 1 for that year."""
-        value = components[part]
-        year_int = int(value)
-        components[part] = int(year_int)
-        try:
-            components["start_date"] = datetime(year_int, 1, 1)
-        except ValueError:
-            return "Invalid year. Please ensure the year is not 0."
-        del components[part]
-
-    @staticmethod
-    def _handle_version(part, components):
-        """Parse version into an integer."""
-        value = components[part]
-        components[part] = int(value)
-
-    @staticmethod
     def _spice_parts_handler(components):
         """Validate and transform SPICE file compents.
 
@@ -606,27 +552,45 @@ class SPICEFilePath(ImapFilePath):
 
         Returns
         -------
-        components : dict
+        components : dict | None
             Dictionary containing components, validated and transformed.
+            If
         """
-        parts_list = list(components.keys())
-        transforms = {
-            "start_year_doy": SPICEFilePath._handle_doy,
-            "end_year_doy": SPICEFilePath._handle_doy,
-            "start_date": SPICEFilePath._handle_date,
-            "end_date": SPICEFilePath._handle_date,
-            "type": SPICEFilePath._handle_type,
-            "start_year": SPICEFilePath._handle_start_year,
-            "version": SPICEFilePath._handle_version,
-        }
-        errors = ""
-        for part in parts_list:
-            if part in transforms:
-                err = transforms[part](part, components)
-                if err:
-                    errors += err
-        if errors:
-            raise SPICEFilePath.InvalidSPICEFileError(errors)
+        if components["type"] not in _SPICE_TYPE_MAPPING:
+            raise SPICEFilePath.InvalidSPICEFileError(
+                f"Invalid SPICE file. Expected file to have one of the following "
+                f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
+                f"the documentation to ensure the file has the "
+                f"proper naming convention "
+            )
+
+        components["type"] = _SPICE_TYPE_MAPPING[components["type"]]
+
+        try:
+            if "start_date" in components:  # Convert to datetime
+                components["start_date"] = datetime.strptime(
+                    components["start_date"], "%Y%m%d"
+                )
+            if "end_date" in components:
+                components["end_date"] = datetime.strptime(
+                    components["end_date"], "%Y%m%d"
+                )
+            if "start_year_doy" in components:
+                components["start_date"] = datetime.strptime(
+                    components.pop("start_year_doy"), "%Y_%j"
+                )
+            if "end_year_doy" in components:
+                components["end_date"] = datetime.strptime(
+                    components.pop("end_year_doy"), "%Y_%j"
+                )
+            if "start_year" in components:
+                components["start_date"] = datetime(
+                    int(components.pop("start_year")), 1, 1
+                )
+        except ValueError:
+            raise SPICEFilePath.InvalidSPICEFileError(
+                "Invalid date detect in product file name, ensure date exists"
+            ) from None
         return components
 
     @staticmethod
@@ -634,11 +598,11 @@ class SPICEFilePath(ImapFilePath):
         """Extract all components from filename.
 
         Will return a dictionary in the form:
-            version - int
+            version - string
             type - string
             extension - string
-            start_date - datetime
-            end_date - datetime
+            start_date - datetime or None
+            end_date - datetime or None
 
         If a match is not found, InvalidSPICEFileError will be raised.
 
@@ -658,13 +622,15 @@ class SPICEFilePath(ImapFilePath):
             m = regex.match(filename.name.lower())
             if m is not None:
                 spice_metadata = SPICEFilePath._spice_parts_handler(m.groupdict())
+                # Add the final fields
                 spice_metadata["extension"] = filename.suffix[1:]
                 if "start_date" not in spice_metadata:
-                    spice_metadata["start_date"] = SPICEFilePath.EARLIEST_VALID_TIME
+                    spice_metadata["start_date"] = None
                 if "end_date" not in spice_metadata:
-                    spice_metadata["end_date"] = SPICEFilePath.LATEST_VALID_TIME
-                break
+                    spice_metadata["end_date"] = None
+                return spice_metadata
 
+        # Error if no match found to accepted types
         if spice_metadata is None:
             raise SPICEFilePath.InvalidSPICEFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
@@ -672,8 +638,6 @@ class SPICEFilePath(ImapFilePath):
                 f"the documentation to ensure the file has the "
                 f"proper naming convention "
             )
-
-        return spice_metadata
 
 
 class AncillaryFilePath(ImapFilePath):
