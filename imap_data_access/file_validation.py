@@ -561,7 +561,7 @@ class SPICEFilePath(ImapFilePath):
                 f"Invalid SPICE file. Expected file to have one of the following "
                 f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
                 f"the documentation to ensure the file has the "
-                f"proper naming convention "
+                f"proper naming convention."
             )
 
         components["type"] = _SPICE_TYPE_MAPPING[components["type"]]
@@ -591,6 +591,11 @@ class SPICEFilePath(ImapFilePath):
             raise SPICEFilePath.InvalidSPICEFileError(
                 "Invalid date detect in product file name, ensure date exists"
             ) from None
+
+        if "start_date" not in components:
+            components["start_date"] = None
+        if "end_date" not in components:
+            components["end_date"] = None
         return components
 
     @staticmethod
@@ -617,27 +622,21 @@ class SPICEFilePath(ImapFilePath):
             Dictionary containing components.
         """
         filename = Path(filename)
-        spice_metadata = None
         for regex in SPICEFilePath.valid_spice_regexes:
             m = regex.match(filename.name.lower())
             if m is not None:
                 spice_metadata = SPICEFilePath._spice_parts_handler(m.groupdict())
-                # Add the final fields
+                # Add the extension to the metadata
                 spice_metadata["extension"] = filename.suffix[1:]
-                if "start_date" not in spice_metadata:
-                    spice_metadata["start_date"] = None
-                if "end_date" not in spice_metadata:
-                    spice_metadata["end_date"] = None
                 return spice_metadata
 
         # Error if no match found to accepted types
-        if spice_metadata is None:
-            raise SPICEFilePath.InvalidSPICEFileError(
-                f"Invalid SPICE file. Expected file to have one of the following "
-                f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
-                f"the documentation to ensure the file has the "
-                f"proper naming convention "
-            )
+        raise SPICEFilePath.InvalidSPICEFileError(
+            f"Invalid SPICE file. Expected file to have one of the following "
+            f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
+            f"the documentation to ensure the file has the "
+            f"proper naming convention "
+        )
 
 
 class AncillaryFilePath(ImapFilePath):

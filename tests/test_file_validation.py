@@ -302,6 +302,7 @@ def test_spice_extract_repoint_parts():
     file_path = SPICEFilePath("imap_2025_230_01.repoint.csv")
     assert file_path.spice_metadata["version"] == "01"
     assert file_path.spice_metadata["type"] == "repoint"
+    assert file_path.spice_metadata["extension"] == "csv"
     assert file_path.spice_metadata["start_date"] is None
     assert file_path.spice_metadata["end_date"] == datetime.strptime(
         "2025_230", "%Y_%j"
