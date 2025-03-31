@@ -57,6 +57,7 @@ def _print_query_results_table(query_results: list[dict]):
         "Data Level",
         "Descriptor",
         "Start Date",
+        "Ingestion Date",
         "Repointing",
         "Version",
         "Filename",
@@ -101,6 +102,7 @@ def _print_query_results_table(query_results: list[dict]):
             str(item.get("data_level", "")),
             str(item.get("descriptor", "")),
             str(item.get("start_date", "")),
+            str(item.get("ingestion_date", "")),
             str(item.get("repointing", "")) or "",
             str(item.get("version", "")),
             os.path.basename(item.get("file_path", "")),
@@ -126,6 +128,8 @@ def _query_parser(args: argparse.Namespace):
         "descriptor",
         "start_date",
         "end_date",
+        "ingestion_start_date",
+        "ingestion_end_date",
         "repointing",
         "version",
         "extension",
@@ -333,6 +337,18 @@ def main():  # noqa: PLR0915
         type=str,
         required=False,
         help="End date for a range of file timestamps in YYYYMMDD format",
+    )
+    query_parser.add_argument(
+        "--ingestion-start-date",
+        type=str,
+        required=False,
+        help="Ingestion start date by for files in YYYYMMDD format",
+    )
+    query_parser.add_argument(
+        "--ingestion-end-date",
+        type=str,
+        required=False,
+        help="Ingestion end date for a range of file timestamps in YYYYMMDD format",
     )
     query_parser.add_argument(
         "--repointing", type=int, required=False, help="Repointing number (int)"
