@@ -108,6 +108,8 @@ def query(
     descriptor: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    ingestion_start_date: Optional[str] = None,
+    ingestion_end_date: Optional[str] = None,
     repointing: Optional[str] = None,
     version: Optional[str] = None,
     extension: Optional[str] = None,
@@ -133,6 +135,12 @@ def query(
     end_date : str, optional
         End date in YYYYMMDD format. Note this is to search for all files
         with start dates before the requested end_date.
+    ingestion_start_date : str, optional
+        Ingestion start date in YYYYMMDD format. Note this is to search
+        for all files with ingestion start dates on or after this value.
+    ingestion_end_date : str, optional
+        Ingestion end date in YYYYMMDD format. Note this is to search
+        for all files with ingestion start dates before the requested end_date.
     repointing : str, optional
         Repointing string, in the format 'repoint00000'
     version : str, optional
@@ -188,6 +196,20 @@ def query(
         end_date
     ):
         raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+
+    # Check ingestion-start-date
+    if (
+        ingestion_start_date is not None
+        and not file_validation.ImapFilePath.is_valid_date(ingestion_start_date)
+    ):
+        raise ValueError("Not a valid ingestion start date, use format 'YYYYMMDD'.")
+
+    # Check ingestion-end-date
+    if (
+        ingestion_end_date is not None
+        and not file_validation.ImapFilePath.is_valid_date(ingestion_end_date)
+    ):
+        raise ValueError("Not a valid ingestion end date, use format 'YYYYMMDD'.")
 
     # Check version make sure to include 'latest'
     if version is not None and not file_validation.ImapFilePath.is_valid_version(
