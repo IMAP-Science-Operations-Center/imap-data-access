@@ -178,6 +178,8 @@ def test_download_already_exists(mock_urlopen: unittest.mock.MagicMock):
             "descriptor": "test-description",
             "start_date": "20100101",
             "end_date": "20100102",
+            "ingestion_start_date": "",  # Todo: Fill in
+            "ingestion_end_date": "",  # Todo: Fill in
             "repointing": "repoint00001",
             "version": "v000",
             "extension": "pkts",
@@ -256,6 +258,16 @@ def test_query_bad_params(mock_urlopen: unittest.mock.MagicMock):
         ),
         ("start_date", "badInput", "Not a valid start date, use format 'YYYYMMDD'."),
         ("end_date", "badInput", "Not a valid end date, use format 'YYYYMMDD'."),
+        (
+            "ingestion_start_date",
+            "badInput",
+            "Not a valid ingestion start date, use format 'YYYYMMDD'.",
+        ),
+        (
+            "ingestion_end_date",
+            "badInput",
+            "Not a valid ingestion end date, use format 'YYYYMMDD'.",
+        ),
         (
             "repointing",
             "badInput",
