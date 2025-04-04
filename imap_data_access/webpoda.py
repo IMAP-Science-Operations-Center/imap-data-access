@@ -403,15 +403,24 @@ def download_repointing_data(  # noqa: PLR0913
     # Iterate over the packet dates to make a query for each individual "pointing"
     # A "pointing" is defined as the time between the end of one repointing maneuver
     # to the end of the next repointing maneuver.
+    # NOTE: We iterate over the repointings rather than the packet times because it is
+    #       assumed to be the shorter list (1/day vs 1000s of packets/day per apid)
     for i in range(len(repointings) - 1):
         pointing_start = datetime.datetime.strptime(
             repointings[i]["repoint_end_time_utc"], "%Y-%m-%dT%H:%M:%S.%f"
         )
         if repointings[i + 1]["repoint_end_time_utc"].lower() == "nan":
+            # Missing repointing end time, so it isn't a complete "pointing" yet.
+            continue
+        if pointing_start > packet_times[-1]:
+            # This pointing is after the last packet time, so skip it
             continue
         pointing_end = datetime.datetime.strptime(
             repointings[i + 1]["repoint_end_time_utc"], "%Y-%m-%dT%H:%M:%S.%f"
         )
+        if pointing_end < packet_times[0]:
+            # This pointing is before the first packet time, so skip it
+            continue
         if not any(pointing_start <= p_time <= pointing_end for p_time in packet_times):
             # This pointing didn't contain any packets within it
             continue
