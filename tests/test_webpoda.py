@@ -110,14 +110,6 @@ def test_download_repointing_data(
     upload_to_server,
     tmpdir,
 ):
-    mock_get_packet_times_ert.return_value = [
-        datetime.datetime(2024, 12, 1, 0, 0, 0),
-        # This packet is right on a pointing boundary, it shouldn't be
-        # in both files but only the second one.
-        datetime.datetime(2024, 12, 1, 0, 15, 0),
-        # This packet is after valid repointings in the file and shouldn't be counted
-        datetime.datetime(2024, 12, 2, 12, 0, 0),
-    ]
     mock_get_packet_binary_data_sctime.return_value = b"\x00\x01\x02\x03"
     # Create a fake repointing file
     # We only use repoint_end_time_utc and repoint_id
@@ -141,6 +133,26 @@ def test_download_repointing_data(
     end_time = datetime.datetime(2024, 12, 3, 23, 59, 59)
     instrument = "hi"
 
+    # Test that no packets returned doesn't fail and doesn't produce any files
+    mock_get_packet_times_ert.return_value = []
+    download_repointing_data(
+        instrument,
+        start_time,
+        end_time,
+        repointing_file=repointing_file,
+        upload_to_server=upload_to_server,
+    )
+    assert not (imap_data_access.config["DATA_DIR"] / "imap").exists()
+
+    # Now test with some returned packets
+    mock_get_packet_times_ert.return_value = [
+        datetime.datetime(2024, 12, 1, 0, 0, 0),
+        # This packet is right on a pointing boundary, it shouldn't be
+        # in both files but only the second one.
+        datetime.datetime(2024, 12, 1, 0, 15, 0),
+        # This packet is after valid repointings in the file and shouldn't be counted
+        datetime.datetime(2024, 12, 2, 12, 0, 0),
+    ]
     download_repointing_data(
         instrument,
         start_time,
@@ -164,3 +176,4 @@ def test_download_repointing_data(
         n_apids = len(INSTRUMENT_APIDS[instrument])
         assert expected_file_path.read_bytes() == b"\x00\x01\x02\x03" * n_apids
         assert mock_upload.called is upload_to_server
+    assert (imap_data_access.config["DATA_DIR"] / "imap").exists()

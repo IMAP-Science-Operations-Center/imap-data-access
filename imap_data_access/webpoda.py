@@ -235,7 +235,7 @@ def get_packet_binary_data_sctime(
         The binary packet data for the given APID between the start and end time.
     """
     logger.debug(
-        "Getting binary packet data for apid [{apid}] between "
+        f"Getting binary packet data for apid [{apid}] between "
         f"{start_time} and {end_time}"
     )
 
@@ -395,6 +395,13 @@ def download_repointing_data(  # noqa: PLR0913
     packet_times = sorted(
         [p for apid in apids for p in get_packet_times_ert(apid, start_time, end_time)]
     )
+    if len(packet_times) == 0:
+        logger.warning(
+            f"No packets found for instrument [{instrument}] "
+            f"between earth received time {start_time} and {end_time}"
+        )
+        return
+
     logger.info(
         f"Found [{len(packet_times)}] packets for instrument [{instrument}] "
         f"between earth received time {start_time} and {end_time}"
@@ -414,6 +421,10 @@ def download_repointing_data(  # noqa: PLR0913
             continue
         if pointing_start > packet_times[-1]:
             # This pointing is after the last packet time, so skip it
+            logger.debug(
+                f"Pointing start {pointing_start} is after last packet time "
+                f"{packet_times[-1]}, skipping"
+            )
             continue
         # NOTE: All queries are <= / >= following this, so we need to make sure we
         #       are not double grabbing packets into the pointings.
@@ -424,9 +435,17 @@ def download_repointing_data(  # noqa: PLR0913
         ) - datetime.timedelta(seconds=1)
         if pointing_end < packet_times[0]:
             # This pointing is before the first packet time, so skip it
+            logger.debug(
+                f"Pointing end {pointing_end} is before first packet time "
+                f"{packet_times[0]}, skipping"
+            )
             continue
         if not any(pointing_start <= p_time <= pointing_end for p_time in packet_times):
             # This pointing didn't contain any packets within it
+            logger.debug(
+                f"Pointing start {pointing_start} and end {pointing_end} "
+                f"didn't contain any packets, skipping"
+            )
             continue
 
         logger.info(
