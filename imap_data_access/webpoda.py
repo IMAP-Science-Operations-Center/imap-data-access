@@ -415,9 +415,13 @@ def download_repointing_data(  # noqa: PLR0913
         if pointing_start > packet_times[-1]:
             # This pointing is after the last packet time, so skip it
             continue
+        # NOTE: All queries are <= / >= following this, so we need to make sure we
+        #       are not double grabbing packets into the pointings.
+        #       The times included are [repointing_start, repointing_end), exclusive
+        #       on the right edge
         pointing_end = datetime.datetime.strptime(
             repointings[i + 1]["repoint_end_time_utc"], "%Y-%m-%dT%H:%M:%S.%f"
-        )
+        ) - datetime.timedelta(seconds=1)
         if pointing_end < packet_times[0]:
             # This pointing is before the first packet time, so skip it
             continue

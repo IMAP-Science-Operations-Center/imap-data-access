@@ -112,7 +112,9 @@ def test_download_repointing_data(
 ):
     mock_get_packet_times_ert.return_value = [
         datetime.datetime(2024, 12, 1, 0, 0, 0),
-        datetime.datetime(2024, 12, 2, 0, 0, 0),
+        # This packet is right on a pointing boundary, it shouldn't be
+        # in both files but only the second one.
+        datetime.datetime(2024, 12, 1, 0, 15, 0),
         # This packet is after valid repointings in the file and shouldn't be counted
         datetime.datetime(2024, 12, 2, 12, 0, 0),
     ]
