@@ -14,11 +14,13 @@ Location of list of APIDs and associated instruments:
 https://lasp.colorado.edu/galaxy/spaces/IMAP/pages/155648242/Packet+Decommutation+Resource+Page+-+IMAP
 """
 
+import csv
 import datetime
 import logging
 import urllib.parse
 import urllib.request
 import urllib.response
+from pathlib import Path
 
 import imap_data_access
 from imap_data_access.io import _get_url_response
@@ -294,9 +296,6 @@ def download_daily_data(
     ]
 
     # Get the unique dates from the packet times
-    # TODO: Account for repointing times and filter out packets between repointings?
-    #       Filtering out at this point seems dangerous, we should probably try to
-    #       filter in the instrument processing stage instead.
     unique_dates = set([dt.date() for dt in packet_times])
     logger.info(
         f"Found [{len(packet_times)}] packets for instrument [{instrument}] "
@@ -337,6 +336,118 @@ def download_daily_data(
         )
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(daily_packet_content)
+        if upload_to_server:
+            # Upload the data to the server
+            imap_data_access.upload(path)
+
+
+def download_repointing_data(  # noqa: PLR0913
+    instrument: str,
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    repointing_file: Path,
+    version: str = "v001",
+    upload_to_server=False,
+):
+    """Download data for the instrument and start/end time range from webpoda.
+
+    PODA stands for packet on demand access. This function requests the IMAP specific
+    API endpoint, so all APIDs must be from the IMAP mission.
+
+    The query is based on earth received time (ert), so all packets received during
+    a specific downlink to the ground, not the spacecraft time.
+
+    Parameters
+    ----------
+    instrument : str
+        The instrument to download data for.
+    start_time : datetime.datetime
+        The start time of the query in Earth Received Time (ERT).
+    end_time : datetime.datetime
+        The end time of the query in Earth Received Time (ERT).
+    repointing_file : Path
+        The path to the repointing file. This file should contain the repointing
+        times in the format:
+            repoint_start_sec_sclk	UINT
+            repoint_start_subsec_sclk	UINT
+            repoint_end_sec_sclk	UINT
+            repoint_end_subsec_sclk	UINT
+            repoint_start_time_utc	str
+            repoint_end_time_utc	str
+            repoint_id	UINT
+    version : str, optional
+        The version to use on the downloaded data file, by default "v001"
+    upload_to_server : bool, optional
+        If True, upload the data to the SDC data bucket, by default False
+    """
+    # Store a list of rows in the repointing file
+    with open(repointing_file) as f:
+        repointings = list(csv.DictReader(f))
+    logger.debug(
+        f"Repointing file [{repointing_file}] contains [{len(repointings)}] rows"
+    )
+
+    apids = INSTRUMENT_APIDS[instrument]
+    logger.info(f"Downloading data for instrument [{instrument}]")
+    # Make a query to get the timestamps of the packets during this ERT
+    # range. We can/will get packets outside of this range because of the way we are
+    # only getting data after the fact and potentially backfilling data gaps.
+    packet_times = sorted(
+        [p for apid in apids for p in get_packet_times_ert(apid, start_time, end_time)]
+    )
+    logger.info(
+        f"Found [{len(packet_times)}] packets for instrument [{instrument}] "
+        f"between earth received time {start_time} and {end_time}"
+    )
+
+    # Iterate over the packet dates to make a query for each individual "pointing"
+    # A "pointing" is defined as the time between the end of one repointing maneuver
+    # to the end of the next repointing maneuver.
+    for i in range(len(repointings) - 1):
+        pointing_start = datetime.datetime.strptime(
+            repointings[i]["repoint_end_time_utc"], "%Y-%m-%dT%H:%M:%S.%f"
+        )
+        if repointings[i + 1]["repoint_end_time_utc"].lower() == "nan":
+            continue
+        pointing_end = datetime.datetime.strptime(
+            repointings[i + 1]["repoint_end_time_utc"], "%Y-%m-%dT%H:%M:%S.%f"
+        )
+        if not any(pointing_start <= p_time <= pointing_end for p_time in packet_times):
+            # This pointing didn't contain any packets within it
+            continue
+
+        logger.info(
+            f"Found packets during pointing between {pointing_start} and {pointing_end}"
+        )
+
+        science_file = imap_data_access.ScienceFilePath.generate_from_inputs(
+            instrument=instrument,
+            data_level="l0",
+            descriptor="raw",
+            start_time=pointing_start.strftime("%Y%m%d"),
+            repointing=int(repointings[i]["repoint_id"]),
+            version=version,
+        )
+        path = science_file.construct_path()
+        if path.exists():
+            logger.info(f"Skipping {path} because it already exists.")
+            continue
+
+        # Iterate over all apids, downloading the content for this time period
+        # concatenating all the binary returns into a single binary file
+        pointing_packet_content = b"".join(
+            [
+                get_packet_binary_data_sctime(apid, pointing_start, pointing_end)
+                for apid in apids
+            ]
+        )
+
+        logger.info(
+            f"Saving binary data of size {len(pointing_packet_content) // 1000} kB "
+            f"to {path}"
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(pointing_packet_content)
         if upload_to_server:
             # Upload the data to the server
             imap_data_access.upload(path)
