@@ -368,6 +368,7 @@ class ScienceFilePath(ImapFilePath):
 _SPICE_TYPE_MAPPING = {
     "ah.bc": "attitude_history",
     "ap.bc": "attitude_predict",
+    "mk": "metakernel",
     "spin.csv": "spin",
     "repoint.csv": "repoint",
     "recon": "ephemeris_reconstructed",
@@ -484,12 +485,27 @@ class SPICEFilePath(ImapFilePath):
     )
 
     # Covers:
-    # Metakernels (type: 'tm')
+    # SDC generated metakernels (type: 'tm')
     mk_filename_pattern = (
         r"(imap)_"
         r"(?P<start_year>[\d]{4})_"
         r"v(?P<version>[\d]{3})\."
         r"(?P<type>tm)"
+    )
+
+    # Covers:
+    # MOC metakernels (type: 'mk')
+    attitude_mk_filename_pattern = (
+        r"imap_"
+        r"(?P<start_year_doy>\d{4}_\d{3})_"
+        r"a(?P<version>\d{2})\.spice\."
+        r"(?P<type>mk)"
+    )
+    ephemeris_mk_filename_pattern = (
+        r"IMAP_"
+        r"(?P<start_year_doy>\d{4}_\d{3})_"
+        r"e(?P<version>\d{2})\."
+        r"(?P<type>mk)"
     )
 
     valid_spice_regexes = (
@@ -500,6 +516,8 @@ class SPICEFilePath(ImapFilePath):
         re.compile(spice_frame_pattern),
         re.compile(sff_filename_pattern),
         re.compile(mk_filename_pattern),
+        re.compile(attitude_mk_filename_pattern),
+        re.compile(ephemeris_mk_filename_pattern),
     )
 
     class InvalidSPICEFileError(Exception):

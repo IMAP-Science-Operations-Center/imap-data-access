@@ -208,6 +208,18 @@ def test_spice_file_path():
         "spice/activities/imap_0001_001_hist_00.sff"
     )
 
+    # MOC attitude and ephemeris metakernel files tests
+    moc_att_mk = SPICEFilePath("imap_2025_005_a01.spice.mk")
+    assert moc_att_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "spice/mk/imap_2025_005_a01.spice.mk"
+    )
+
+    # TODO: why is tests failing here?
+    moc_ephem_mk = SPICEFilePath("IMAP_2025_005_e01.mk")
+    assert moc_ephem_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "spice/mk/IMAP_2025_005_e01.mk"
+    )
+
 
 def test_spice_extract_spin_parts():
     # Test spin
