@@ -5,6 +5,7 @@ import pytest
 
 import imap_data_access
 from imap_data_access import ScienceFilePath
+from imap_data_access.io import IMAPDataAccessError
 from imap_data_access.webpoda import (
     INSTRUMENT_APIDS,
     _add_webpoda_headers,
@@ -69,6 +70,9 @@ def test_download_daily_data(
     mock_get_packet_binary_data_sctime,
     upload_to_server,
 ):
+    # We are mocking the upload, lets also verify that
+    # duplicate files don't propagate any errors.
+    mock_upload.side_effect = IMAPDataAccessError("File already exists")
     mock_get_packet_times_ert.return_value = [
         datetime.datetime(2024, 12, 1, 0, 0, 0),
         datetime.datetime(2024, 12, 2, 0, 0, 0),
@@ -110,6 +114,9 @@ def test_download_repointing_data(
     upload_to_server,
     tmpdir,
 ):
+    # We are mocking the upload, lets also verify that
+    # duplicate files don't propagate any errors.
+    mock_upload.side_effect = IMAPDataAccessError("File already exists")
     mock_get_packet_binary_data_sctime.return_value = b"\x00\x01\x02\x03"
     # Create a fake repointing file
     # We only use repoint_end_time_utc and repoint_id

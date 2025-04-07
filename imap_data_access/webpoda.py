@@ -23,7 +23,7 @@ import urllib.response
 from pathlib import Path
 
 import imap_data_access
-from imap_data_access.io import _get_url_response
+from imap_data_access.io import IMAPDataAccessError, _get_url_response
 
 logger = logging.getLogger(__name__)
 
@@ -337,7 +337,12 @@ def download_daily_data(
         path.write_bytes(daily_packet_content)
         if upload_to_server:
             # Upload the data to the server
-            imap_data_access.upload(path)
+            try:
+                imap_data_access.upload(path)
+            except IMAPDataAccessError as e:
+                # We don't want to ruin all subsequent downloads if one fails
+                # during upload, so log the error and continue
+                logger.error(f"Failed to upload {path} to the server: {e}")
 
 
 def download_repointing_data(  # noqa: PLR0913
@@ -481,4 +486,9 @@ def download_repointing_data(  # noqa: PLR0913
         path.write_bytes(pointing_packet_content)
         if upload_to_server:
             # Upload the data to the server
-            imap_data_access.upload(path)
+            try:
+                imap_data_access.upload(path)
+            except IMAPDataAccessError as e:
+                # We don't want to ruin all subsequent downloads if one fails
+                # during upload, so log the error and continue
+                logger.error(f"Failed to upload {path} to the server: {e}")
