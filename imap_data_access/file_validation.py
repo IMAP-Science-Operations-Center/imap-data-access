@@ -379,7 +379,7 @@ _SPICE_TYPE_MAPPING = {
     "de": "planetary_ephemeris",
     "pck": "planetary_constants",
     "naif": "leapseconds",
-    "imapsclk_": "spacecraft_clock",
+    "imap_sclk_": "spacecraft_clock",
     "tf": "frames",
     "tm": "metakernel",
     "sff": "thruster",
@@ -462,7 +462,7 @@ class SPICEFilePath(ImapFilePath):
     # Planetary Ephemeris (type: "de")
     # Planetary Constants (type: "pck")
     # Leapsecond kernel (type: "naif")
-    # Spacecraft clock kernel (type: "imapsclk_")
+    # Spacecraft clock kernel (type: "imap_sclk_")
     spice_prod_ver_pattern = (
         r"(?P<type>[a-zA-Z\-_]+)"
         r"(?P<version>[\d]+)\."

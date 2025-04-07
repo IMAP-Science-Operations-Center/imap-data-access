@@ -255,7 +255,7 @@ def test_spice_extract_leapsecond_parts():
 
 
 def test_spice_extract_clock_parts():
-    file_path = SPICEFilePath("imapsclk_0012.tsc")
+    file_path = SPICEFilePath("imap_sclk_0012.tsc")
     assert file_path.spice_metadata["version"] == "0012"
     assert file_path.spice_metadata["type"] == "spacecraft_clock"
     assert file_path.spice_metadata["extension"] == "tsc"
