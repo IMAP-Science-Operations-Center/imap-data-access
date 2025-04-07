@@ -641,7 +641,7 @@ class SPICEFilePath(ImapFilePath):
         """
         filename = Path(filename)
         for regex in SPICEFilePath.valid_spice_regexes:
-            m = regex.match(filename.name.lower())
+            m = regex.match(filename.name)
             if m is not None:
                 spice_metadata = SPICEFilePath._spice_parts_handler(m.groupdict())
                 # Add the extension to the metadata
