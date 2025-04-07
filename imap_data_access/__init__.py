@@ -18,17 +18,17 @@ from imap_data_access.file_validation import (
 from imap_data_access.io import download, query, upload
 
 __all__ = [
-    "query",
-    "download",
-    "upload",
-    "ImapFilePath",
-    "ScienceFilePath",
-    "SPICEFilePath",
-    "AncillaryFilePath",
-    "VALID_INSTRUMENTS",
+    "FILENAME_CONVENTION",
     "VALID_DATALEVELS",
     "VALID_FILE_EXTENSION",
-    "FILENAME_CONVENTION",
+    "VALID_INSTRUMENTS",
+    "AncillaryFilePath",
+    "ImapFilePath",
+    "SPICEFilePath",
+    "ScienceFilePath",
+    "download",
+    "query",
+    "upload",
 ]
 
 __version__ = importlib.metadata.version("imap-data-access")

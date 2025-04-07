@@ -177,8 +177,7 @@ def get_packet_times_ert(
         A list of packet times for the given APID between the start and end time.
     """
     logger.debug(
-        f"Getting packet times for apid [{apid}] between "
-        f"{start_time} and {end_time}"
+        f"Getting packet times for apid [{apid}] between {start_time} and {end_time}"
     )
 
     # Add a .txt suffix to get the data in text format back
@@ -188,8 +187,8 @@ def get_packet_times_ert(
     # are handled correctly
     query_range += urllib.parse.quote(
         # Query the ERT field between start and end date
-        f'ert>={start_time.strftime("%Y-%m-%dT%H:%M:%S")}'
-        + f'&ert<={end_time.strftime("%Y-%m-%dT%H:%M:%S")}'
+        f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        + f"&ert<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
         # only get the time (packet time)
         # Represent all times in yyyy-MM-dd'T'HH:mm:ss format
         + "&project(time)&formatTime(\"yyyy-MM-dd'T'HH:mm:ss\")"
@@ -246,8 +245,8 @@ def get_packet_binary_data_sctime(
     # are handled correctly
     query_range += urllib.parse.quote(
         # Query the SCT field between start and end date
-        f'time>={start_time.strftime("%Y-%m-%dT%H:%M:%S")}'
-        + f'&time<={end_time.strftime("%Y-%m-%dT%H:%M:%S")}'
+        f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        + f"&time<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
         # only the raw packet data
         + "&project(packet)"
     )
