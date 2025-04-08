@@ -368,7 +368,6 @@ class ScienceFilePath(ImapFilePath):
 _SPICE_TYPE_MAPPING = {
     "ah.bc": "attitude_history",
     "ap.bc": "attitude_predict",
-    "mk": "metakernel",
     "spin.csv": "spin",
     "repoint.csv": "repoint",
     "recon": "ephemeris_reconstructed",
@@ -382,6 +381,7 @@ _SPICE_TYPE_MAPPING = {
     "naif": "leapseconds",
     "imap_sclk_": "spacecraft_clock",
     "tf": "frames",
+    "mk": "metakernel",
     "tm": "metakernel",
     "sff": "thruster",
 }
