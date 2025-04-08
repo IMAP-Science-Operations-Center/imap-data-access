@@ -8,6 +8,7 @@ import pytest
 import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
+    QuicklookFilePath,
     ScienceFilePath,
     SPICEFilePath,
 )
@@ -408,3 +409,58 @@ def test_ancillary_file_path():
     ancillary_file = AncillaryFilePath(anc_file)
     assert ancillary_file.instrument == "mag"
     assert ancillary_file.end_date == "20210102"
+
+
+def test_quicklook_file_path():
+    """Tests the ``QuicklookFilePath`` class for different scenarios."""
+
+    # Test for an invalid quicklook file (incorrect instrument type)
+    with pytest.raises(QuicklookFilePath.InvalidQuicklookFileError):
+        QuicklookFilePath.generate_from_inputs(
+            instrument="invalid_instrument",  # Invalid instrument
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="png",
+        )
+    # Test for an invalid quicklook file (incorrect extension type)
+    with pytest.raises(QuicklookFilePath.InvalidQuicklookFileError):
+        QuicklookFilePath.generate_from_inputs(
+            instrument="mag",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="cdf",
+        )
+
+    # Test with start_time and end_time
+    file_all_params = QuicklookFilePath.generate_from_inputs(
+        instrument="mag",
+        descriptor="test",
+        start_time="20210101",
+        end_time="20210102",
+        version="v001",
+        extension="png",
+    )
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/quicklook/mag/imap_mag_test_20210101_20210102_v001.png"
+    )
+    assert file_all_params.construct_path() == expected_output
+
+    # Test with no end date
+    file_no_end_date = QuicklookFilePath.generate_from_inputs(
+        instrument="mag",
+        descriptor="test",
+        start_time="20210101",
+        version="v001",
+        extension="png",
+    )
+    expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/quicklook/mag/imap_mag_test_20210101_v001.png"
+    )
+    assert file_no_end_date.construct_path() == expected_output_no_end_date
+
+    # Test by passing the file
+    file = QuicklookFilePath("imap_mag_test_20210101_20210102_v001.png")
+    assert file.instrument == "mag"
+    assert file.end_date == "20210102"
