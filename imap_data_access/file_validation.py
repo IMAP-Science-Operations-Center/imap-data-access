@@ -486,8 +486,8 @@ class SPICEFilePath(ImapFilePath):
 
     # Covers:
     # SDC generated metakernels (type: 'tm')
-    mk_filename_pattern = (
-        r"(imap)_"
+    sdc_mk_filename_pattern = (
+        r"(imap)_sdc_metakernel_"
         r"(?P<start_year>[\d]{4})_"
         r"v(?P<version>[\d]{3})\."
         r"(?P<type>tm)"
@@ -515,7 +515,7 @@ class SPICEFilePath(ImapFilePath):
         re.compile(spice_prod_ver_pattern),
         re.compile(spice_frame_pattern),
         re.compile(sff_filename_pattern),
-        re.compile(mk_filename_pattern),
+        re.compile(sdc_mk_filename_pattern),
         re.compile(attitude_mk_filename_pattern),
         re.compile(ephemeris_mk_filename_pattern),
     )

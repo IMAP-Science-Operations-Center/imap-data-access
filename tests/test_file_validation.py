@@ -198,10 +198,10 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("spice/repoint/imap_2025_122_01.repoint.csv")
 
-    metakernel_file = SPICEFilePath("imap_1000_v000.tm")
+    metakernel_file = SPICEFilePath("imap_sdc_metakernel_1000_v000.tm")
     assert metakernel_file.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/mk/imap_1000_v000.tm")
+    ] / Path("spice/mk/imap_sdc_metakernel_1000_v000.tm")
 
     thruster_file = SPICEFilePath("imap_0001_001_hist_00.sff")
     assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
@@ -214,7 +214,6 @@ def test_spice_file_path():
         "spice/mk/imap_2025_005_a01.spice.mk"
     )
 
-    # TODO: why is tests failing here?
     moc_ephem_mk = SPICEFilePath("IMAP_2025_005_e01.mk")
     assert moc_ephem_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
         "spice/mk/IMAP_2025_005_e01.mk"
@@ -236,7 +235,7 @@ def test_spice_extract_spin_parts():
 
 
 def test_spice_extract_metakernel_parts():
-    file_path = SPICEFilePath("imap_2025_v100.tm")
+    file_path = SPICEFilePath("imap_sdc_metakernel_2025_v100.tm")
     assert file_path.spice_metadata["version"] == "100"
     assert file_path.spice_metadata["type"] == "metakernel"
     assert file_path.spice_metadata["start_date"] == datetime(2025, 1, 1)
