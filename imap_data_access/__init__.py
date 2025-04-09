@@ -108,4 +108,4 @@ ANCILLARY_FILENAME_CONVENTION = (
     "<start_date>(_<end_date>)_<version>.<extension>"
 )
 
-VALID_ANCILLARY_FILE_EXTENSION = {"cdf", "csv", "json", "zip", "dat"}
+VALID_ANCILLARY_FILE_EXTENSION = {"cdf", "csv", "dat", "json", "zip"}
