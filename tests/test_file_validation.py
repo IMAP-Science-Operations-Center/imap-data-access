@@ -401,6 +401,18 @@ def test_ancillary_file_path():
     )
     assert ancillary_file_csv.construct_path() == expected_output_csv
 
+    # Test with dat extension
+    assert (
+        AncillaryFilePath.generate_from_inputs(
+            instrument="glows",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="dat",
+        ).extension
+        == "dat"
+    )
+
     # Test with no end date
     ancillary_file_no_end_date = AncillaryFilePath.generate_from_inputs(
         instrument="mag",

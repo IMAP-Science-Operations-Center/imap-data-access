@@ -318,6 +318,8 @@ class ScienceFilePath(ImapFilePath):
         components : dict
             Dictionary containing components.
         """
+        # Pipe these together for optional matching in the regex below
+        extension_regex = "|".join(imap_data_access.VALID_FILE_EXTENSION)
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
@@ -326,7 +328,7 @@ class ScienceFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             r"(-repoint(?P<repointing>\d{5}))?"  # Optional repointing field
             r"_(?P<version>v\d{3})"
-            r"\.(?P<extension>cdf|pkts)$"
+            rf"\.(?P<extension>{extension_regex})$"
         )
         if isinstance(filename, Path):
             filename = filename.name
@@ -809,7 +811,8 @@ class AncillaryFilePath(ImapFilePath):
 
         if self.extension not in imap_data_access.VALID_ANCILLARY_FILE_EXTENSION:
             error_message += (
-                "Invalid extension. Extension should be cdf. \n"  # TODO: Change this
+                f"Invalid extension. Extension should be one of "
+                f"{imap_data_access.VALID_ANCILLARY_FILE_EXTENSION}.\n"
             )
 
         if not ScienceFilePath.is_valid_date(self.start_date):
@@ -866,6 +869,8 @@ class AncillaryFilePath(ImapFilePath):
         components : dict
             Dictionary containing components.
         """
+        # Pipe these together for optional matching in the regex below
+        extension_regex = "|".join(imap_data_access.VALID_ANCILLARY_FILE_EXTENSION)
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
@@ -873,7 +878,7 @@ class AncillaryFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             r"(_(?P<end_date>\d{8}))?"  # Optional end_date
             r"_(?P<version>v\d{3})"
-            r"\.(?P<extension>cdf|csv|json)$"
+            rf"\.(?P<extension>{extension_regex})$"
         )
         if isinstance(filename, Path):
             filename = filename.name
