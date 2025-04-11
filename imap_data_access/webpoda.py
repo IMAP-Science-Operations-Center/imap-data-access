@@ -376,8 +376,8 @@ def download_repointing_data(  # noqa: PLR0913
             repoint_start_subsec_sclk	UINT
             repoint_end_sec_sclk	UINT
             repoint_end_subsec_sclk	UINT
-            repoint_start_time_utc	str
-            repoint_end_time_utc	str
+            repoint_start_utc	str
+            repoint_end_utc	str
             repoint_id	UINT
     version : str, optional
         The version to use on the downloaded data file, by default "v001"
@@ -418,9 +418,9 @@ def download_repointing_data(  # noqa: PLR0913
     #       assumed to be the shorter list (1/day vs 1000s of packets/day per apid)
     for i in range(len(repointings) - 1):
         pointing_start = datetime.datetime.strptime(
-            repointings[i]["repoint_end_time_utc"], "%Y-%m-%dT%H:%M:%S.%f"
+            repointings[i]["repoint_end_utc"], "%Y-%m-%dT%H:%M:%S.%f"
         )
-        if repointings[i + 1]["repoint_end_time_utc"].lower() == "nan":
+        if repointings[i + 1]["repoint_end_utc"].lower() == "nan":
             # Missing repointing end time, so it isn't a complete "pointing" yet.
             continue
         if pointing_start > packet_times[-1]:
@@ -435,7 +435,7 @@ def download_repointing_data(  # noqa: PLR0913
         #       The times included are [repointing_start, repointing_end), exclusive
         #       on the right edge
         pointing_end = datetime.datetime.strptime(
-            repointings[i + 1]["repoint_end_time_utc"], "%Y-%m-%dT%H:%M:%S.%f"
+            repointings[i + 1]["repoint_end_utc"], "%Y-%m-%dT%H:%M:%S.%f"
         ) - datetime.timedelta(seconds=1)
         if pointing_end < packet_times[0]:
             # This pointing is before the first packet time, so skip it

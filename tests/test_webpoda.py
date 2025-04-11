@@ -125,7 +125,7 @@ def test_download_repointing_data(
         f.write(
             "repoint_start_sec_sclk,repoint_start_subsec_sclk,"
             "repoint_end_sec_sclk,repoint_end_subsec_sclk,"
-            "repoint_start_time_utc,repoint_end_time_utc,"
+            "repoint_start_utc,repoint_end_utc,"
             "repoint_id\n"
             # One packet per pointing period
             "0,0,1,0,2024-11-30T00:00:00.000000,2024-11-30T20:15:00.000000,1\n"
