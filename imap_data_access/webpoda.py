@@ -27,7 +27,6 @@ from imap_data_access.io import IMAPDataAccessError, _get_url_response
 
 logger = logging.getLogger(__name__)
 
-
 WEBPODA_APID_URL = "https://lasp.colorado.edu/ops/imap/poda/dap2/apids"
 # The system ID for the IMAP mission
 # SID1 == FLIGHT instrument telemetry and spacecraft telemetry after launch
@@ -195,12 +194,20 @@ def get_packet_times_ert(
     )
 
     request = urllib.request.Request(query_range, method="GET")
+
     request = _add_webpoda_headers(request)
     # Returns a text file with the packet times
     # 2024-12-01T00:00:00
     # 2024-12-01T00:00:01
-    with _get_url_response(request) as response:
-        data = response.read().decode().split("\n")
+    try:
+        with _get_url_response(request) as response:
+            data = response.read().decode().split("\n")
+    except IMAPDataAccessError:
+        logger.error(
+            f"Failed to get packet times for apid [{apid}] between "
+            f"{start_time} and {end_time}"
+        )
+        data = []
 
     # Iterate over each line in the response, converting them to dates.
     # We first strip the line to remove any whitespace (\r) and skip any trailing lines
@@ -250,11 +257,19 @@ def get_packet_binary_data_sctime(
         # only the raw packet data
         + "&project(packet)"
     )
+
     request = urllib.request.Request(query_range, method="GET")
     request = _add_webpoda_headers(request)
 
-    with _get_url_response(request) as response:
-        return response.read()
+    try:
+        with _get_url_response(request) as response:
+            return response.read()
+    except IMAPDataAccessError:
+        logger.error(
+            f"Failed to get binary packet data for apid [{apid}] between "
+            f"{start_time} and {end_time}"
+        )
+        return b""
 
 
 def download_daily_data(
