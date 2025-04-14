@@ -17,16 +17,14 @@ https://lasp.colorado.edu/galaxy/spaces/IMAP/pages/155648242/Packet+Decommutatio
 import csv
 import datetime
 import logging
-import urllib.parse
-import urllib.request
-import urllib.response
 from pathlib import Path
 
+import requests
+
 import imap_data_access
-from imap_data_access.io import IMAPDataAccessError, _get_url_response
+from imap_data_access.io import IMAPDataAccessError, _make_request
 
 logger = logging.getLogger(__name__)
-
 
 WEBPODA_APID_URL = "https://lasp.colorado.edu/ops/imap/poda/dap2/apids"
 # The system ID for the IMAP mission
@@ -130,22 +128,16 @@ INSTRUMENT_APIDS = {
 }
 
 
-def _add_webpoda_headers(request: urllib.request.Request) -> urllib.request.Request:
-    """Add the necessary headers for webpoda requests.
-
-    This function adds the necessary headers for webpoda requests to the provided
-    request object. It returns the modified request object.
-    """
-    if not imap_data_access.config.get("WEBPODA_TOKEN", ""):
+def _get_webpoda_headers() -> dict:
+    """Get the necessary headers for webpoda requests."""
+    token = imap_data_access.config.get("WEBPODA_TOKEN", "")
+    if not token:
         raise ValueError(
             "The IMAP_WEBPODA_TOKEN environment variable must be set. "
             "You can run the following command to get the token: "
             "echo -n 'username:password' | base64"
         )
-    request.add_header(
-        "Authorization", f"Basic {imap_data_access.config['WEBPODA_TOKEN']}"
-    )
-    return request
+    return {"Authorization": f"Basic {token}"}
 
 
 def get_packet_times_ert(
@@ -181,26 +173,28 @@ def get_packet_times_ert(
     )
 
     # Add a .txt suffix to get the data in text format back
-    query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.txt?"
-
+    query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.txt"
     # We need to properly encode the query string to make sure the special characters
-    # are handled correctly
-    query_range += urllib.parse.quote(
+    # are handled correctly, so pass them as params
+    params = (
         # Query the ERT field between start and end date
         f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
-        + f"&ert<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        f"&ert<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
         # only get the time (packet time)
         # Represent all times in yyyy-MM-dd'T'HH:mm:ss format
-        + "&project(time)&formatTime(\"yyyy-MM-dd'T'HH:mm:ss\")"
+        "&project(time)&formatTime(\"yyyy-MM-dd'T'HH:mm:ss\")"
     )
 
-    request = urllib.request.Request(query_range, method="GET")
-    request = _add_webpoda_headers(request)
+    headers = _get_webpoda_headers()
+    request = requests.Request(
+        "GET", query_range, headers=headers, params=params
+    ).prepare()
+
     # Returns a text file with the packet times
     # 2024-12-01T00:00:00
     # 2024-12-01T00:00:01
-    with _get_url_response(request) as response:
-        data = response.read().decode().split("\n")
+    with _make_request(request) as response:
+        data = response.text.split("\n")
 
     # Iterate over each line in the response, converting them to dates.
     # We first strip the line to remove any whitespace (\r) and skip any trailing lines
@@ -239,22 +233,22 @@ def get_packet_binary_data_sctime(
     )
 
     # Add a .bin suffix to get the binary data back
-    query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.bin?"
-
-    # We need to properly encode the query string to make sure the special characters
-    # are handled correctly
-    query_range += urllib.parse.quote(
+    query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.bin"
+    params = (
         # Query the SCT field between start and end date
         f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
-        + f"&time<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        f"&time<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
         # only the raw packet data
-        + "&project(packet)"
+        "&project(packet)"
     )
-    request = urllib.request.Request(query_range, method="GET")
-    request = _add_webpoda_headers(request)
 
-    with _get_url_response(request) as response:
-        return response.read()
+    headers = _get_webpoda_headers()
+    request = requests.Request(
+        "GET", query_range, headers=headers, params=params
+    ).prepare()
+
+    with _make_request(request) as response:
+        return response.content
 
 
 def download_daily_data(

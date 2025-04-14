@@ -1,13 +1,11 @@
 """Input/output capabilities for the IMAP data processing pipeline."""
 
 import contextlib
-import json
 import logging
-import urllib.request
 from pathlib import Path
 from typing import Optional, Union
-from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+
+import requests
 
 import imap_data_access
 from imap_data_access import file_validation
@@ -23,33 +21,25 @@ class IMAPDataAccessError(Exception):
 
 
 @contextlib.contextmanager
-def _get_url_response(request: urllib.request.Request):
-    """Get the response from a URL request.
+def _make_request(request: requests.PreparedRequest):
+    """Get the response from a URL request using the requests library.
 
-    This is a helper function to make it easier to handle
-    the different types of errors that can occur when
-    opening a URL and write out the response body.
+    This is a helper function to handle different types of errors that can occur
+    when making HTTP requests and yield the response body.
     """
     try:
-        # Open the URL and yield the response
-        with urllib.request.urlopen(request) as response:
+        with requests.Session() as session:
+            response = session.send(request)
+            response.raise_for_status()
             yield response
-
-    except HTTPError as e:
-        if e.status == 307:
-            # If the server is redirecting us, we need to follow the redirect
-            request.full_url = e.headers["Location"]
-            with _get_url_response(request) as response:
-                yield response
-        else:
-            message = (
-                f"HTTP Error: {e.code} - {e.reason}\n"
-                f"Server Message: {e.read().decode('utf-8')}"
-            )
-            raise IMAPDataAccessError(message) from e
-
-    except URLError as e:
-        message = f"URL Error: {e.reason}"
+    except requests.exceptions.HTTPError as e:
+        message = (
+            f"HTTP Error: {e.response.status_code} - {e.response.reason}\n"
+            f"Server Message: {e.response.text}"
+        )
+        raise IMAPDataAccessError(message) from e
+    except requests.exceptions.RequestException as e:
+        message = f"Request Error: {e}"
         raise IMAPDataAccessError(message) from e
 
 
@@ -81,20 +71,17 @@ def download(file_path: Union[Path, str]) -> Path:
         logger.info("The file %s already exists, skipping download", destination)
         return destination
 
-    # encode the query parameters
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
-    url += f"/download/{file_path}"
+    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/download/{file_path}"
     logger.info("Downloading file %s from %s to %s", file_path, url, destination)
 
     # Create a request with the provided URL
-    request = urllib.request.Request(url, method="GET")
+    request = requests.Request("GET", url).prepare()
     # Open the URL and download the file
-    with _get_url_response(request) as response:
+    with _make_request(request) as response:
         logger.debug("Received response: %s", response)
         # Save the file locally with the same filename
         destination.parent.mkdir(parents=True, exist_ok=True)
-        with open(destination, "wb") as local_file:
-            local_file.write(response.read())
+        destination.write_bytes(response.content)
 
     logger.debug("File %s downloaded successfully", destination)
     return destination
@@ -210,17 +197,15 @@ def query(
     if extension is not None and extension not in imap_data_access.VALID_FILE_EXTENSION:
         raise ValueError("Not a valid extension, choose from ('pkts', 'cdf').")
 
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
-    url += f"/query?{urlencode(query_params)}"
+    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/query"
+    request = requests.Request(method="GET", url=url, params=query_params).prepare()
 
-    logger.info("Querying data archive for %s with url %s", query_params, url)
-    request = urllib.request.Request(url, method="GET")
-    with _get_url_response(request) as response:
+    logger.info("Querying data archive for %s with url %s", query_params, request.url)
+    with _make_request(request) as response:
         # Retrieve the response as a list of files
-        items = response.read().decode("utf-8")
-        logger.debug("Received response: %s", items)
+        logger.debug("Received response: %s", response.text)
         # Decode the JSON string into a list
-        items = json.loads(items)
+        items = response.json()
         logger.debug("Decoded JSON: %s", items)
 
     # if latest version was included in search then filter returned query for largest.
@@ -249,35 +234,32 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
     if not file_path.exists():
         raise FileNotFoundError(file_path)
 
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}"
     # The upload name needs to be given as a path parameter
-    url += f"/upload/{file_path.name}"
+    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/upload/{file_path.name}"
     logger.info("Uploading file %s to %s", file_path, url)
 
     # Create a request header with the API key
     api_key = api_key or imap_data_access.config["API_KEY"]
+
     # We send a GET request with the filename and the server
     # will respond with an s3 presigned URL that we can use
     # to upload the file to the data archive
     headers = {"X-api-key": api_key} if api_key else {}
-    request = urllib.request.Request(url, method="GET", headers=headers)
+    request = requests.Request("GET", url, headers=headers).prepare()
 
-    with _get_url_response(request) as response:
-        # Retrieve the key for the upload
-        s3_url = response.read().decode("utf-8")
+    with _make_request(request) as response:
+        s3_url = response.json()
         logger.debug("Received s3 presigned URL: %s", s3_url)
-        s3_url = json.loads(s3_url)
 
     # Follow the presigned URL to upload the file with a PUT request
-    with open(file_path, "rb") as local_file:
-        request = urllib.request.Request(
-            s3_url, data=local_file.read(), method="PUT", headers={"Content-Type": ""}
+    upload_request = requests.Request(
+        "PUT", s3_url, data=file_path.read_bytes(), headers={"Content-Type": ""}
+    ).prepare()
+    with _make_request(upload_request) as response:
+        logger.debug(
+            "Received status code [%s] with response: %s",
+            response.status_code,
+            response.text,
         )
-        with _get_url_response(request) as response:
-            logger.debug(
-                "Received status code [%s] with response: %s",
-                response.status,
-                response.read().decode("utf-8"),
-            )
 
     logger.debug("File %s uploaded successfully", file_path)

@@ -189,7 +189,7 @@ def test_get_file_paths():
 
 
 # Add a test for download()
-def test_download_all_files(mock_urlopen):
+def test_download_all_files():
     # This example is fake example where we are processing HIT L2
     # and it has three dependencies, one primary dependent (HIT l1b)
     # and two ancillary dependents, MAG l1a and HIT ancillary.
