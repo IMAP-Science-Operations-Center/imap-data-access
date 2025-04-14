@@ -178,8 +178,8 @@ def test_download_already_exists(mock_urlopen: unittest.mock.MagicMock):
             "descriptor": "test-description",
             "start_date": "20100101",
             "end_date": "20100102",
-            "ingestion_start_date": "20000101",  # Todo: Fill in
-            "ingestion_end_date": "20000102",  # Todo: Fill in
+            "ingestion_start_date": "20100101",
+            "ingestion_end_date": "20100102",
             "repointing": "repoint00001",
             "version": "v000",
             "extension": "pkts",
