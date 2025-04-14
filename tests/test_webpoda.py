@@ -128,9 +128,9 @@ def test_download_repointing_data(
             "repoint_start_utc,repoint_end_utc,"
             "repoint_id\n"
             # One packet per pointing period
-            "0,0,1,0,2024-11-30T00:00:00.000000,2024-11-30T20:15:00.000000,1\n"
-            "0,0,1,0,2024-12-01T00:00:00.000000,2024-12-01T00:15:00.000000,2\n"
-            "10,0,11,0,2024-12-02T00:00:00.000000,2024-12-02T00:15:00.000000,3\n"
+            "0,0,1,0,2024-11-30 00:00:00.000,2024-11-30 20:15:00.000,1\n"
+            "0,0,1,0,2024-12-01 00:00:00.000,2024-12-01 00:15:00.000,2\n"
+            "10,0,11,0,2024-12-02 00:00:00.000,2024-12-02 00:15:00.000,3\n"
             # An unfinished repointing maneuver may have NaNs in the end times
             # Make sure we can handle this and ignore it
             "10,0,NaN,NaN,2024-12-03T00:00:00.000000,NaN,4\n"

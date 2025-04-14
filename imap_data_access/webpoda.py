@@ -418,7 +418,7 @@ def download_repointing_data(  # noqa: PLR0913
     #       assumed to be the shorter list (1/day vs 1000s of packets/day per apid)
     for i in range(len(repointings) - 1):
         pointing_start = datetime.datetime.strptime(
-            repointings[i]["repoint_end_utc"], "%Y-%m-%dT%H:%M:%S.%f"
+            repointings[i]["repoint_end_utc"], "%Y-%m-%d %H:%M:%S.%f"
         )
         if repointings[i + 1]["repoint_end_utc"].lower() == "nan":
             # Missing repointing end time, so it isn't a complete "pointing" yet.
@@ -435,7 +435,7 @@ def download_repointing_data(  # noqa: PLR0913
         #       The times included are [repointing_start, repointing_end), exclusive
         #       on the right edge
         pointing_end = datetime.datetime.strptime(
-            repointings[i + 1]["repoint_end_utc"], "%Y-%m-%dT%H:%M:%S.%f"
+            repointings[i + 1]["repoint_end_utc"], "%Y-%m-%d %H:%M:%S.%f"
         ) - datetime.timedelta(seconds=1)
         if pointing_end < packet_times[0]:
             # This pointing is before the first packet time, so skip it
