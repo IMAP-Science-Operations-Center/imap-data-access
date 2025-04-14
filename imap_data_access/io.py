@@ -96,6 +96,7 @@ def download(file_path: Union[Path, str]) -> Path:
         with open(destination, "wb") as local_file:
             local_file.write(response.read())
 
+    logger.debug("File %s downloaded successfully", destination)
     return destination
 
 
@@ -273,4 +274,10 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
             s3_url, data=local_file.read(), method="PUT", headers={"Content-Type": ""}
         )
         with _get_url_response(request) as response:
-            logger.debug("Received response: %s", response.read().decode("utf-8"))
+            logger.debug(
+                "Received status code [%s] with response: %s",
+                response.status,
+                response.read().decode("utf-8"),
+            )
+
+    logger.debug("File %s uploaded successfully", file_path)
