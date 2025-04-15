@@ -439,7 +439,7 @@ def main():  # noqa: PLR0915
         args.func(args)
     except Exception as e:
         # Make sure we are exiting with non-zero exit code and printing the message
-        parser.exit(status=1, message=str(e) + "\n")
+        parser.exit(status=1, message=f"{e!r}\n")
 
 
 if __name__ == "__main__":

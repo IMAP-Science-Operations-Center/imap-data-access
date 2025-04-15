@@ -47,17 +47,15 @@ def test_request_errors(mock_send_request):
         Mock object for requests.Session
     """
     # Set up the mock to raise an HTTPError
-    mock_send_request.side_effect = requests.exceptions.HTTPError(
-        response=MagicMock(status_code=404, reason="Not Found")
-    )
-    with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="HTTP Error"):
+    mock_send_request.side_effect = requests.exceptions.HTTPError("404 Not found")
+    with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="404"):
         imap_data_access.download(test_science_path)
 
     # Set up the mock to raise a RequestException
     mock_send_request.side_effect = requests.exceptions.RequestException(
         "Request failed"
     )
-    with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="Request Error"):
+    with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="Request failed"):
         imap_data_access.download(test_science_path)
 
 

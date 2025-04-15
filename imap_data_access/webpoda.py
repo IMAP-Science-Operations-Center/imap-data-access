@@ -168,7 +168,7 @@ def get_packet_times_ert(
     list[datetime.datetime]
         A list of packet times for the given APID between the start and end time.
     """
-    logger.debug(
+    logger.info(
         f"Getting packet times for apid [{apid}] between {start_time} and {end_time}"
     )
 
@@ -195,6 +195,7 @@ def get_packet_times_ert(
     # 2024-12-01T00:00:01
     with _make_request(request) as response:
         data = response.text.split("\n")
+        logger.debug("Received data: %s", data)
 
     # Iterate over each line in the response, converting them to dates.
     # We first strip the line to remove any whitespace (\r) and skip any trailing lines
@@ -227,7 +228,7 @@ def get_packet_binary_data_sctime(
     bytes
         The binary packet data for the given APID between the start and end time.
     """
-    logger.debug(
+    logger.info(
         f"Getting binary packet data for apid [{apid}] between "
         f"{start_time} and {end_time}"
     )
@@ -331,12 +332,15 @@ def download_daily_data(
         path.write_bytes(daily_packet_content)
         if upload_to_server:
             # Upload the data to the server
+            logger.info("Uploading packet file to the server: %s", path)
             try:
                 imap_data_access.upload(path)
             except IMAPDataAccessError as e:
                 # We don't want to ruin all subsequent downloads if one fails
                 # during upload, so log the error and continue
-                logger.error(f"Failed to upload {path} to the server: {e}")
+                logger.error(f"Failed to upload {path} to the server: {e!r}")
+
+    logger.info(f"Finished downloading data for instrument [{instrument}]")
 
 
 def download_repointing_data(  # noqa: PLR0913
@@ -447,7 +451,8 @@ def download_repointing_data(  # noqa: PLR0913
             continue
 
         logger.info(
-            f"Found packets during pointing between {pointing_start} and {pointing_end}"
+            f"Found packets during pointing [{repointings[i]['repoint_id']}] "
+            f"between {pointing_start} and {pointing_end}"
         )
 
         science_file = imap_data_access.ScienceFilePath.generate_from_inputs(
@@ -480,9 +485,12 @@ def download_repointing_data(  # noqa: PLR0913
         path.write_bytes(pointing_packet_content)
         if upload_to_server:
             # Upload the data to the server
+            logger.info("Uploading packet file to the server: %s", path)
             try:
                 imap_data_access.upload(path)
             except IMAPDataAccessError as e:
                 # We don't want to ruin all subsequent downloads if one fails
                 # during upload, so log the error and continue
                 logger.error(f"Failed to upload {path} to the server: {e}")
+
+    logger.info(f"Finished downloading data for instrument [{instrument}]")

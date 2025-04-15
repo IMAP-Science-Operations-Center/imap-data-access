@@ -27,20 +27,16 @@ def _make_request(request: requests.PreparedRequest):
     This is a helper function to handle different types of errors that can occur
     when making HTTP requests and yield the response body.
     """
+    logger.debug("Making request: %s", request)
     try:
         with requests.Session() as session:
             response = session.send(request)
             response.raise_for_status()
             yield response
     except requests.exceptions.HTTPError as e:
-        message = (
-            f"HTTP Error: {e.response.status_code} - {e.response.reason}\n"
-            f"Server Message: {e.response.text}"
-        )
-        raise IMAPDataAccessError(message) from e
+        raise IMAPDataAccessError(str(e)) from e
     except requests.exceptions.RequestException as e:
-        message = f"Request Error: {e}"
-        raise IMAPDataAccessError(message) from e
+        raise IMAPDataAccessError(str(e)) from e
 
 
 def download(file_path: Union[Path, str]) -> Path:
@@ -83,7 +79,7 @@ def download(file_path: Union[Path, str]) -> Path:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(response.content)
 
-    logger.debug("File %s downloaded successfully", destination)
+    logger.info("File %s downloaded successfully", destination)
     return destination
 
 
@@ -136,6 +132,7 @@ def query(
     # locals() gives us the keyword arguments passed to the function
     # and allows us to filter out the None values
     query_params = {key: value for key, value in locals().items() if value is not None}
+    logger.debug("Input query parameters: %s", query_params)
 
     # removing version from query if it is 'latest',
     # ensuring other parameters are passed
@@ -202,11 +199,9 @@ def query(
 
     logger.info("Querying data archive for %s with url %s", query_params, request.url)
     with _make_request(request) as response:
-        # Retrieve the response as a list of files
-        logger.debug("Received response: %s", response.text)
-        # Decode the JSON string into a list
+        # Decode the JSON response as a list of items
         items = response.json()
-        logger.debug("Decoded JSON: %s", items)
+        logger.debug("Received JSON: %s", items)
 
     # if latest version was included in search then filter returned query for largest.
     if (version == "latest") and items:
@@ -262,4 +257,4 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
             response.text,
         )
 
-    logger.debug("File %s uploaded successfully", file_path)
+    logger.info("File %s uploaded successfully", file_path)
