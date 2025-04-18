@@ -188,6 +188,38 @@ def test_get_file_paths():
     assert len(all_files) == 4
 
 
+def test_get_file_paths_ultra():
+    # Example where we have 2 ultra 45 sensor files and 1 ultra 90 sensor file
+    # Also have an unrelated mag file.
+    # Test that we can get all the ultra 45/90 files, and also filter by sensor
+    ultra_sci_45sensor = ScienceInput(
+        "imap_ultra_l1c_sci-45sensor-pset_20240312_v000.cdf",
+        "imap_ultra_l1c_sci-45sensor-pset_20240313_v000.cdf",
+    )
+    ultra_sci_90sensor = ScienceInput(
+        "imap_ultra_l1c_sci-90sensor-pset_20240312_v000.cdf",
+    )
+    mag_sci_anc = ScienceInput(
+        "imap_mag_l1a_norm-magi_20240312_v000.cdf",
+    )
+
+    input_collection = processing_input.ProcessingInputCollection(
+        ultra_sci_45sensor, ultra_sci_90sensor, mag_sci_anc
+    )
+
+    all_ultra_files = input_collection.get_file_paths(descriptor="sensor-pset")
+    assert len(all_ultra_files) == 3
+
+    all_ultra45_files = input_collection.get_file_paths(descriptor="45se")
+    assert len(all_ultra45_files) == 2
+
+    all_ultra90_files = input_collection.get_file_paths(descriptor="90sens")
+    assert len(all_ultra90_files) == 1
+
+    all_files = input_collection.get_file_paths()
+    assert len(all_files) == 4
+
+
 # Add a test for download()
 def test_download_all_files():
     # This example is fake example where we are processing HIT L2

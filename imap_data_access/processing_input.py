@@ -413,7 +413,7 @@ class ProcessingInputCollection:
         for input_type in self.processing_input:
             matches_source = source is None or input_type.source == source
             matches_descriptor = (
-                descriptor is None or input_type.descriptor in descriptor
+                descriptor is None or descriptor in input_type.descriptor
             )
             if matches_source and matches_descriptor:
                 out.extend(file.construct_path() for file in input_type.imap_file_paths)
