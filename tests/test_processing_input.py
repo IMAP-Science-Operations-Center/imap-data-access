@@ -188,36 +188,65 @@ def test_get_file_paths():
     assert len(all_files) == 4
 
 
-def test_get_file_paths_ultra():
-    # Example where we have 2 ultra 45 sensor files and 1 ultra 90 sensor file
-    # Also have an unrelated mag file.
-    # Test that we can get all the ultra 45/90 files, and also filter by sensor
+def test_get_file_paths_descriptor():
+    # Example where we have 2 ultra 45 sensor files, 1 ultra 90 sensor file.
+    # Also have an unrelated mag file and 1 hi 45, 1 hi 90 file.
+    # Test that we can get all the ultra 45/90 files, hi 45/90 files, etc.
+    # by filtering by sensor and/or instrument.
     ultra_sci_45sensor = ScienceInput(
-        "imap_ultra_l1c_sci-45sensor-pset_20240312_v000.cdf",
-        "imap_ultra_l1c_sci-45sensor-pset_20240313_v000.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240312_v000.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240313_v000.cdf",
     )
     ultra_sci_90sensor = ScienceInput(
-        "imap_ultra_l1c_sci-90sensor-pset_20240312_v000.cdf",
+        "imap_ultra_l1c_90sensor-pset_20240312_v000.cdf",
+    )
+    hi_sci_45sensor = ScienceInput(
+        "imap_hi_l1c_45sensor-pset_20240312_v000.cdf",
+    )
+    hi_sci_90sensor = ScienceInput(
+        "imap_hi_l1c_90sensor-pset_20240312_v000.cdf",
     )
     mag_sci_anc = ScienceInput(
         "imap_mag_l1a_norm-magi_20240312_v000.cdf",
     )
 
     input_collection = processing_input.ProcessingInputCollection(
-        ultra_sci_45sensor, ultra_sci_90sensor, mag_sci_anc
+        ultra_sci_45sensor,
+        ultra_sci_90sensor,
+        hi_sci_45sensor,
+        hi_sci_90sensor,
+        mag_sci_anc,
     )
 
-    all_ultra_files = input_collection.get_file_paths(descriptor="sensor-pset")
+    all_ultra_files = input_collection.get_file_paths(
+        source="ultra", descriptor="sensor-pset"
+    )
     assert len(all_ultra_files) == 3
 
-    all_ultra45_files = input_collection.get_file_paths(descriptor="45se")
+    all_ultra_files = input_collection.get_file_paths(descriptor="sensor-pset")
+    assert len(all_ultra_files) == 5
+
+    all_ultra45_files = input_collection.get_file_paths(
+        source="ultra", descriptor="45se"
+    )
     assert len(all_ultra45_files) == 2
 
-    all_ultra90_files = input_collection.get_file_paths(descriptor="90sens")
+    all_ultra90_files = input_collection.get_file_paths(
+        source="ultra", descriptor="90sens"
+    )
     assert len(all_ultra90_files) == 1
 
+    all_hi_files = input_collection.get_file_paths(source="hi")
+    assert len(all_hi_files) == 2
+
+    all_hi45_files = input_collection.get_file_paths(source="hi", descriptor="45se")
+    assert len(all_hi45_files) == 1
+
+    all_hi90_files = input_collection.get_file_paths(source="hi", descriptor="90se")
+    assert len(all_hi90_files) == 1
+
     all_files = input_collection.get_file_paths()
-    assert len(all_files) == 4
+    assert len(all_files) == 6
 
 
 # Add a test for download()
