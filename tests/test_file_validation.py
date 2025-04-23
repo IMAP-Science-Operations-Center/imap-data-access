@@ -180,7 +180,7 @@ def test_spice_file_path():
     """Tests the ``SPICEFilePath`` class."""
     file_path = SPICEFilePath("imap_1000_100_1000_100_01.ap.bc")
     assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/ck/imap_1000_100_1000_100_01.ap.bc"
+        "imap/spice/ck/imap_1000_100_1000_100_01.ap.bc"
     )
 
     # Test a bad file extension too
@@ -191,32 +191,32 @@ def test_spice_file_path():
     spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
     assert spin_file_path.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/spin/imap_2025_122_2025_122_01.spin.csv")
+    ] / Path("imap/spice/spin/imap_2025_122_2025_122_01.spin.csv")
 
     repoint_file_path = SPICEFilePath("imap_2025_122_01.repoint.csv")
     assert repoint_file_path.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/repoint/imap_2025_122_01.repoint.csv")
+    ] / Path("imap/spice/repoint/imap_2025_122_01.repoint.csv")
 
     metakernel_file = SPICEFilePath("imap_sdc_metakernel_1000_v000.tm")
     assert metakernel_file.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/mk/imap_sdc_metakernel_1000_v000.tm")
+    ] / Path("imap/spice/mk/imap_sdc_metakernel_1000_v000.tm")
 
     thruster_file = SPICEFilePath("imap_0001_001_hist_00.sff")
     assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/activities/imap_0001_001_hist_00.sff"
+        "imap/spice/activities/imap_0001_001_hist_00.sff"
     )
 
     # MOC attitude and ephemeris metakernel files tests
     moc_att_mk = SPICEFilePath("imap_2025_005_a01.spice.mk")
     assert moc_att_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/mk/imap_2025_005_a01.spice.mk"
+        "imap/spice/mk/imap_2025_005_a01.spice.mk"
     )
 
     moc_ephem_mk = SPICEFilePath("IMAP_2025_005_e01.mk")
     assert moc_ephem_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/mk/IMAP_2025_005_e01.mk"
+        "imap/spice/mk/IMAP_2025_005_e01.mk"
     )
 
 

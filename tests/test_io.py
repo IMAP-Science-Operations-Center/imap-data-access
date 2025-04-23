@@ -72,7 +72,10 @@ def test_request_errors(mock_send_request):
         # Pathlib.Path object
         (Path(test_science_path), test_science_path),
         # SPICE file
-        ("imap_1000_100_1000_100_01.ap.bc", "spice/ck/imap_1000_100_1000_100_01.ap.bc"),
+        (
+            "imap_1000_100_1000_100_01.ap.bc",
+            "imap/spice/ck/imap_1000_100_1000_100_01.ap.bc",
+        ),
     ],
 )
 def test_download(mock_send_request, file_path: str | Path, destination: str):
