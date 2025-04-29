@@ -472,7 +472,11 @@ class ProcessingInputCollection:
         start_date : datetime
             The time to filter the collection with.
         """
+        invalid_date_filepaths = []
         for processing_input in self.processing_input:
             for filepath in processing_input.imap_file_paths:
-                if not filepath.is_valid_for_science_start_date(start_date):
-                    self.remove(filepath)
+                if not filepath.is_valid_for_start_date(start_date):
+                    invalid_date_filepaths.append(filepath)
+        # After all files have been checked, remove the ones with invalid dates.
+        for filepath in invalid_date_filepaths:
+            self.remove(filepath)

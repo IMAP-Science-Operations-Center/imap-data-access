@@ -100,7 +100,7 @@ class ImapFilePath:
         raise NotImplementedError
 
     @abstractmethod
-    def is_valid_for_science_start_date(self, start_date):
+    def is_valid_for_start_date(self, start_date):
         """Check if the file is valid for the given time."""
         pass
 
