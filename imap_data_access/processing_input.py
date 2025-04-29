@@ -372,17 +372,26 @@ class ProcessingInputCollection:
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
 
-    def get_science_inputs(self) -> list[ProcessingInput]:
+    def get_science_inputs(self, source: str | None = None) -> list[ProcessingInput]:
         """Return just the science files from the collection.
+
+        Parameters
+        ----------
+        source : str, optional
+            Instrument name.
 
         Returns
         -------
         out : list[ProcessingInput]
             List of ScienceInput files contained in the collection.
+            If "source" is provided, return only the ScienceInput files that match the
+            source.
         """
         out = []
         for file in self.processing_input:
-            if file.input_type == ProcessingInputType.SCIENCE_FILE:
+            if file.input_type == ProcessingInputType.SCIENCE_FILE and (
+                not source or file.source == source
+            ):
                 out.append(file)
         return out
 
@@ -426,3 +435,44 @@ class ProcessingInputCollection:
         # processing input list and download all files
         for path in self.get_file_paths():
             download(path)
+
+    def remove(self, filepath: ImapFilePath):
+        """Remove an IMAPFilePath from the collection.
+
+        Parameters
+        ----------
+        filepath : ImapFilePath
+            The ImapFilePath to remove.
+
+        Raises
+        ------
+        ValueError
+            If the IMAPFilePath is not found in the collection.
+        """
+        filename = str(filepath.filename)
+        for processing_input in self.processing_input:
+            if filename in processing_input.filename_list:
+                try:
+                    index = processing_input.filename_list.index(filename)
+                    processing_input.imap_file_paths.pop(index)
+                    processing_input.filename_list.pop(index)
+                except ValueError as e:
+                    raise ValueError(
+                        f"Filename '{filename}' not found in the ProcessingInput."
+                    ) from e
+                # If the processing input is now empty, remove it from the collection.
+                if len(processing_input.filename_list) == 0:
+                    self.processing_input.remove(processing_input)
+
+    def get_valid_inputs_for_start_date(self, start_date: datetime):
+        """Return collection containing only ImapFilePaths valid for the start date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The time to filter the collection with.
+        """
+        for processing_input in self.processing_input:
+            for filepath in processing_input.imap_file_paths:
+                if not filepath.is_valid_for_science_start_date(start_date):
+                    self.remove(filepath)

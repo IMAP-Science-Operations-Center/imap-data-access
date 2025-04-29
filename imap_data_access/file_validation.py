@@ -99,6 +99,11 @@ class ImapFilePath:
         """Construct valid path from class variables and data_dir."""
         raise NotImplementedError
 
+    @abstractmethod
+    def is_valid_for_science_start_date(self, start_date):
+        """Check if the file is valid for the given time."""
+        pass
+
 
 class ScienceFilePath(ImapFilePath):
     """Class for building and validating filepaths for science files."""
@@ -366,6 +371,24 @@ class ScienceFilePath(ImapFilePath):
             Whether input repointing is valid or not.
         """
         return re.fullmatch(r"repoint\d{5}", str(input_repointing))
+
+    def is_valid_for_start_date(self, start_date: datetime) -> bool:
+        """Check if the file is valid for the given science file start_date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The science time to check in YYYYMMDD format.
+
+        Returns
+        -------
+        bool
+            True if the file start_date is equal to the given time, False otherwise.
+        """
+        if datetime.strptime(self.start_date, "%Y%m%d") == start_date:
+            return True
+        else:
+            return False
 
 
 # Transform the suffix to the directory structure we are using
@@ -663,6 +686,22 @@ class SPICEFilePath(ImapFilePath):
             f"proper naming convention "
         )
 
+    def is_valid_for_start_date(self, start_date: datetime) -> bool:
+        """Check if the SPICE file is valid for the given science start_date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The science time to check in YYYYMMDD format.
+
+        Returns
+        -------
+        bool
+            True if the SPICE file date range covers the given time, False otherwise.
+        """
+        # TODO implement this
+        return True
+
 
 class AncillaryFilePath(ImapFilePath):
     """Class for building and validating filepaths for Ancillary files."""
@@ -897,3 +936,28 @@ class AncillaryFilePath(ImapFilePath):
 
         components = match.groupdict()
         return components
+
+    def is_valid_for_start_date(self, start_date: datetime) -> bool:
+        """Check if the Ancillary file is valid for the given science start_date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The science time to check in YYYYMMDD format.
+
+        Returns
+        -------
+        bool
+            True if the Ancillary file date range covers the given time, False
+            otherwise.
+        """
+        start_date_anc = datetime.strptime(self.start_date, "%Y%m%d")
+        if self.end_date:
+            # If end_date is set, check to see weather the time is between start and end
+            end_date_anc = datetime.strptime(self.end_date, "%Y%m%d")
+            if start_date_anc <= start_date <= end_date_anc:
+                return True
+        # If end_date is not set, check to see if the time is after start_date
+        elif start_date_anc <= start_date:
+            return True
+        return False

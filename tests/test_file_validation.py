@@ -110,6 +110,10 @@ def test_construct_sciencefilepathmanager():
     assert sfm.version == "v001"
     assert sfm.extension == "cdf"
 
+    # Test valid date for given start_date
+    assert sfm.is_valid_for_start_date(datetime(2021, 1, 1))
+    assert not sfm.is_valid_for_start_date(datetime(2021, 1, 3))
+
 
 def test_is_valid_date():
     """Tests the ``is_valid_date`` method."""
@@ -431,3 +435,7 @@ def test_ancillary_file_path():
     ancillary_file = AncillaryFilePath(anc_file)
     assert ancillary_file.instrument == "mag"
     assert ancillary_file.end_date == "20210102"
+
+    # Test valid date for given start_date
+    assert ancillary_file.is_valid_for_start_date(datetime(2021, 1, 2))
+    assert not ancillary_file.is_valid_for_start_date(datetime(2021, 1, 3))
