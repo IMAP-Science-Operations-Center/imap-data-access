@@ -295,21 +295,21 @@ def test_get_valid_inputs_for_start_date():
         mag_sci_anc, hit_anc, hit_sci
     )
     date = datetime(2025, 1, 1)
-    input_collection.get_valid_inputs_for_start_date(date)
+    valid_collection = input_collection.get_valid_inputs_for_start_date(date)
 
-    assert len(input_collection.processing_input) == 2
-    assert input_collection.processing_input[0].descriptor == "norm-magi"
+    assert len(valid_collection.processing_input) == 2
+    assert valid_collection.processing_input[0].descriptor == "norm-magi"
     assert (
         datetime.strptime(
-            input_collection.processing_input[0].imap_file_paths[0].start_date, "%Y%m%d"
+            valid_collection.processing_input[0].imap_file_paths[0].start_date, "%Y%m%d"
         )
         == date
     )
 
-    assert input_collection.processing_input[1].descriptor == "l1b-cal"
+    assert valid_collection.processing_input[1].descriptor == "l1b-cal"
     assert (
         datetime.strptime(
-            input_collection.processing_input[1].imap_file_paths[0].start_date, "%Y%m%d"
+            valid_collection.processing_input[1].imap_file_paths[0].start_date, "%Y%m%d"
         )
         == date
     )

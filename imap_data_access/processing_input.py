@@ -436,47 +436,32 @@ class ProcessingInputCollection:
         for path in self.get_file_paths():
             download(path)
 
-    def remove(self, filepath: ImapFilePath):
-        """Remove an IMAPFilePath from the collection.
-
-        Parameters
-        ----------
-        filepath : ImapFilePath
-            The ImapFilePath to remove.
-
-        Raises
-        ------
-        ValueError
-            If the IMAPFilePath is not found in the collection.
-        """
-        filename = str(filepath.filename)
-        for processing_input in self.processing_input:
-            if filename in processing_input.filename_list:
-                try:
-                    index = processing_input.filename_list.index(filename)
-                    processing_input.imap_file_paths.pop(index)
-                    processing_input.filename_list.pop(index)
-                except ValueError as e:
-                    raise ValueError(
-                        f"Filename '{filename}' not found in the ProcessingInput."
-                    ) from e
-                # If the processing input is now empty, remove it from the collection.
-                if len(processing_input.filename_list) == 0:
-                    self.processing_input.remove(processing_input)
-
-    def get_valid_inputs_for_start_date(self, start_date: datetime):
+    def get_valid_inputs_for_start_date(
+        self, start_date: datetime
+    ) -> ProcessingInputCollection:
         """Return collection containing only ImapFilePaths valid for the start date.
 
         Parameters
         ----------
         start_date : datetime
             The time to filter the collection with.
+
+        Returns
+        -------
+        ProcessingInputCollection
+            Collection of ProcessingInput objects that are valid for the start date.
         """
-        invalid_date_filepaths = []
+        valid_date_collection = ProcessingInputCollection()
         for processing_input in self.processing_input:
+            valid_date_filepaths = []
+            input_type = type(processing_input)
             for filepath in processing_input.imap_file_paths:
-                if not filepath.is_valid_for_start_date(start_date):
-                    invalid_date_filepaths.append(filepath)
-        # After all files have been checked, remove the ones with invalid dates.
-        for filepath in invalid_date_filepaths:
-            self.remove(filepath)
+                # Check if each file in the ProcessingInput is valid for the start date
+                if filepath.is_valid_for_start_date(start_date):
+                    valid_date_filepaths.append(str(filepath.filename))
+            # Create a new ProcessingInput from the valid filepaths and add it to the
+            # collection.
+            if valid_date_filepaths:
+                valid_date_collection.add(input_type(*valid_date_filepaths))
+
+        return valid_date_collection
