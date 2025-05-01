@@ -282,34 +282,44 @@ def test_download_all_files():
 def test_get_valid_inputs_for_start_date():
     mag_sci_anc = ScienceInput(
         "imap_mag_l1a_norm-magi_20250101_v000.cdf",
-        "imap_mag_l1a_norm-magi_20240312_v001.cdf",
+        "imap_mag_l1a_norm-magi_20250102_v001.cdf",
     )
     hit_anc = AncillaryInput(
         "imap_hit_l1b-cal_20250101_v000.cdf",
     )
     hit_sci = ScienceInput(
-        "imap_hit_l1b_sci_20240312_v000.cdf",
+        "imap_hit_l1b_sci_20250101_v000.cdf",
+        "imap_hit_l1b_sci_20250102_v000.cdf",
     )
-
     input_collection = processing_input.ProcessingInputCollection(
         mag_sci_anc, hit_anc, hit_sci
     )
     date = datetime(2025, 1, 1)
+
     valid_collection = input_collection.get_valid_inputs_for_start_date(date)
 
-    assert len(valid_collection.processing_input) == 2
+    assert len(valid_collection.processing_input) == 3
     assert valid_collection.processing_input[0].descriptor == "norm-magi"
+    assert len(valid_collection.processing_input[0].imap_file_paths) == 1
     assert (
         datetime.strptime(
             valid_collection.processing_input[0].imap_file_paths[0].start_date, "%Y%m%d"
         )
         == date
     )
-
+    assert len(valid_collection.processing_input[1].imap_file_paths) == 1
     assert valid_collection.processing_input[1].descriptor == "l1b-cal"
     assert (
         datetime.strptime(
             valid_collection.processing_input[1].imap_file_paths[0].start_date, "%Y%m%d"
+        )
+        == date
+    )
+    assert valid_collection.processing_input[2].descriptor == "sci"
+    assert len(valid_collection.processing_input[2].imap_file_paths) == 1
+    assert (
+        datetime.strptime(
+            valid_collection.processing_input[2].imap_file_paths[0].start_date, "%Y%m%d"
         )
         == date
     )
