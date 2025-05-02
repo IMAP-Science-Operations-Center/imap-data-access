@@ -271,26 +271,52 @@ class SPICEInput(ProcessingInput):
     def __init__(self, *args) -> None:
         """Initialize the attributes from the SPICE file name.
 
-        Not completed.
-
         Parameters
         ----------
         args : str
             Input SPICE filenames.
         """
         self.input_type = ProcessingInputType.SPICE_FILE
-        # Not yet completed
-        raise NotImplementedError
+        self.descriptor = "historical"
+        self.data_type = ProcessingInputType.SPICE_FILE.value
+        super().__init__(*args)
 
     def _set_attributes_from_filenames(self) -> None:
         """Set the source, data type, and descriptor attributes based on filename."""
-        # TODO: update SPICEFilePath to retrieve data_type and descriptor from
-        # file name. Do we have an expected filename format?
+        source = set()
+        file_obj_list = []
 
-        # just using examples for now
-        self.source = "sc_attitude"
-        self.data_type = ProcessingInputType.SPICE_FILE.value
-        self.descriptor = "predict"
+        for file in self.filename_list:
+            path_validator = SPICEFilePath(file)
+            kernel_type = path_validator.spice_metadata["type"]
+            source.add(kernel_type)
+            file_obj_list.append(path_validator)
+
+            # Set the descriptor to be predict if it contains any predict kernel types
+            if (
+                "ephemeris" in kernel_type and kernel_type != "ephemeris_reconstructed"
+            ) or kernel_type == "attitude_predict":
+                self.descriptor = "best"
+
+        if "spin" in source:
+            # Update the source to be spin
+            self.source = "spin"
+            if len(source) != 1:
+                raise ValueError(
+                    "If spin data in the list, it should only contain spin files"
+                )
+        elif "repoint" in source:
+            # Update the source to be repoint
+            self.source = "repoint"
+            # Latest file will contain all the repointing data.
+            if len(file_obj_list) != 1:
+                raise ValueError(
+                    "There should only be one repoint file in the list of files"
+                )
+        else:
+            self.source = ProcessingInputType.SPICE_FILE.value
+
+        self.imap_file_paths = file_obj_list
 
     def get_time_range(self):
         """Not yet complete."""
