@@ -516,8 +516,26 @@ class SPICEFilePath(ImapFilePath):
 
     # Covers:
     # SDC generated metakernels (type: 'tm')
-    sdc_mk_filename_pattern = (
-        r"(imap)_sdc_metakernel_"
+    sdc_time_mk_filename_pattern = (
+        r"(imap)_sdc_time_"
+        r"(?P<start_year>[\d]{4})_"
+        r"v(?P<version>[\d]{3})\."
+        r"(?P<type>tm)"
+    )
+    sdc_att_ephem_hist_mk_filename_pattern = (
+        r"(imap)_sdc_attitude_ephemeris_hist_"
+        r"(?P<start_year>[\d]{4})_"
+        r"v(?P<version>[\d]{3})\."
+        r"(?P<type>tm)"
+    )
+    sdc_att_hist_mk_filename_pattern = (
+        r"(imap)_sdc_attitude_hist_"
+        r"(?P<start_year>[\d]{4})_"
+        r"v(?P<version>[\d]{3})\."
+        r"(?P<type>tm)"
+    )
+    sdc_full_mk_filename_pattern = (
+        r"(imap)_sdc_full_"
         r"(?P<start_year>[\d]{4})_"
         r"v(?P<version>[\d]{3})\."
         r"(?P<type>tm)"
@@ -545,7 +563,10 @@ class SPICEFilePath(ImapFilePath):
         re.compile(spice_prod_ver_pattern),
         re.compile(spice_frame_pattern),
         re.compile(sff_filename_pattern),
-        re.compile(sdc_mk_filename_pattern),
+        re.compile(sdc_time_mk_filename_pattern),
+        re.compile(sdc_att_ephem_hist_mk_filename_pattern),
+        re.compile(sdc_att_hist_mk_filename_pattern),
+        re.compile(sdc_full_mk_filename_pattern),
         re.compile(attitude_mk_filename_pattern),
         re.compile(ephemeris_mk_filename_pattern),
     )

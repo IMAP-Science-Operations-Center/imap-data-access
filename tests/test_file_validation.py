@@ -202,10 +202,25 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("imap/spice/repoint/imap_2025_122_01.repoint.csv")
 
-    metakernel_file = SPICEFilePath("imap_sdc_metakernel_1000_v000.tm")
+    metakernel_file = SPICEFilePath("imap_sdc_time_1000_v000.tm")
     assert metakernel_file.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("imap/spice/mk/imap_sdc_metakernel_1000_v000.tm")
+    ] / Path("imap/spice/mk/imap_sdc_time_1000_v000.tm")
+
+    metakernel_file = SPICEFilePath("imap_sdc_attitude_hist_1000_v000.tm")
+    assert metakernel_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("imap/spice/mk/imap_sdc_attitude_hist_1000_v000.tm")
+
+    metakernel_file = SPICEFilePath("imap_sdc_attitude_ephemeris_hist_1000_v000.tm")
+    assert metakernel_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("imap/spice/mk/imap_sdc_attitude_ephemeris_hist_1000_v000.tm")
+
+    metakernel_file = SPICEFilePath("imap_sdc_full_1000_v000.tm")
+    assert metakernel_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("imap/spice/mk/imap_sdc_full_1000_v000.tm")
 
     thruster_file = SPICEFilePath("imap_0001_001_hist_00.sff")
     assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
@@ -239,7 +254,7 @@ def test_spice_extract_spin_parts():
 
 
 def test_spice_extract_metakernel_parts():
-    file_path = SPICEFilePath("imap_sdc_metakernel_2025_v100.tm")
+    file_path = SPICEFilePath("imap_sdc_time_2025_v100.tm")
     assert file_path.spice_metadata["version"] == "100"
     assert file_path.spice_metadata["type"] == "metakernel"
     assert file_path.spice_metadata["start_date"] == datetime(2025, 1, 1)
