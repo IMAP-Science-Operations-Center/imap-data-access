@@ -71,6 +71,15 @@ def test_request_errors(mock_send_request):
         (test_science_path, test_science_path),
         # Pathlib.Path object
         (Path(test_science_path), test_science_path),
+        # Ancillary files
+        (
+            "imap_mag_test_20210101_v001.csv",
+            "imap/ancillary/mag/imap_mag_test_20210101_v001.csv",
+        ),
+        (
+            "imap_mag_test_20210101_v001.cdf",
+            "imap/ancillary/mag/imap_mag_test_20210101_v001.cdf",
+        ),
         # SPICE file
         (
             "imap_1000_100_1000_100_01.ap.bc",
