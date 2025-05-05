@@ -24,6 +24,8 @@ class ProcessingInputType(Enum):
     SCIENCE_FILE = "science"
     ANCILLARY_FILE = "ancillary"
     SPICE_FILE = "spice"
+    SPIN_FILE = "spin"
+    REPOINT_FILE = "repoint"
 
 
 class InputTypePathMapper(Enum):
@@ -276,9 +278,7 @@ class SPICEInput(ProcessingInput):
         args : str
             Input SPICE filenames.
         """
-        self.input_type = ProcessingInputType.SPICE_FILE
         self.descriptor = "historical"
-        self.data_type = ProcessingInputType.SPICE_FILE.value
         super().__init__(*args)
 
     def _set_attributes_from_filenames(self) -> None:
@@ -301,6 +301,8 @@ class SPICEInput(ProcessingInput):
         if "spin" in source:
             # Update the source to be spin
             self.source = "spin"
+            self.input_type = ProcessingInputType.SPIN_FILE
+            self.data_type = ProcessingInputType.SPIN_FILE.value
             if len(source) != 1:
                 raise ValueError(
                     "If spin data in the list, it should only contain spin files"
@@ -308,6 +310,8 @@ class SPICEInput(ProcessingInput):
         elif "repoint" in source:
             # Update the source to be repoint
             self.source = "repoint"
+            self.input_type = ProcessingInputType.REPOINT_FILE
+            self.data_type = ProcessingInputType.REPOINT_FILE.value
             # Latest file will contain all the repointing data.
             if len(file_obj_list) != 1:
                 raise ValueError(
@@ -315,6 +319,8 @@ class SPICEInput(ProcessingInput):
                 )
         else:
             self.source = ProcessingInputType.SPICE_FILE.value
+            self.input_type = ProcessingInputType.SPICE_FILE
+            self.data_type = ProcessingInputType.SPICE_FILE.value
 
         self.imap_file_paths = file_obj_list
 
@@ -425,6 +431,7 @@ class ProcessingInputCollection:
         self,
         source: str | None = None,
         descriptor: str | None = None,
+        data_type: str | None = None,
     ) -> list[Path]:
         """Get the dependency files path from the collection.
 
@@ -437,6 +444,10 @@ class ProcessingInputCollection:
             Instrument name.
         descriptor : str, optional
             Descriptor for the file.
+        data_type : str, optional
+            Data type for the file. For science files, this is the data level (e.g. l1a,
+            l1b). For ancillary files, this is "ancillary". For SPICE files, this is
+            "spice" or "spin" or "repoint".
 
         Returns
         -------
@@ -450,7 +461,8 @@ class ProcessingInputCollection:
             matches_descriptor = (
                 descriptor is None or descriptor in input_type.descriptor
             )
-            if matches_source and matches_descriptor:
+            matches_data_type = data_type is None or input_type.data_type == data_type
+            if matches_source and matches_descriptor and matches_data_type:
                 out.extend(file.construct_path() for file in input_type.imap_file_paths)
 
         return out

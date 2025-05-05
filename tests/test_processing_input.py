@@ -146,7 +146,7 @@ def test_spice_input():
 
     assert spin_file.filename_list == ["imap_1000_100_1000_100_01.spin.csv"]
     assert len(spin_file.imap_file_paths) == 1
-    assert spin_file.input_type == ProcessingInputType.SPICE_FILE
+    assert spin_file.input_type == ProcessingInputType.SPIN_FILE
     assert spin_file.source == "spin"
     assert spin_file.descriptor == "historical"
 
@@ -155,7 +155,7 @@ def test_spice_input():
 
     assert repoint_file.filename_list == ["imap_1000_100_01.repoint.csv"]
     assert len(repoint_file.imap_file_paths) == 1
-    assert repoint_file.input_type == ProcessingInputType.SPICE_FILE
+    assert repoint_file.input_type == ProcessingInputType.REPOINT_FILE
     assert repoint_file.source == "repoint"
     assert repoint_file.descriptor == "historical"
 
@@ -257,14 +257,14 @@ def test_create_collection():
             ],
         },
         {
-            "type": "spice",
+            "type": "spin",
             "files": [
                 "imap_1000_100_1000_100_01.spin.csv",
                 "imap_1000_100_1000_101_01.spin.csv",
             ],
         },
         {
-            "type": "spice",
+            "type": "repoint",
             "files": [
                 "imap_1000_001_03.repoint.csv",
             ],
@@ -400,11 +400,11 @@ def test_get_file_paths_descriptor():
     all_files = input_collection.get_file_paths()
     assert len(all_files) == 11
 
-    all_spice_files = input_collection.get_file_paths(source="spice")
+    all_spice_files = input_collection.get_file_paths(data_type="spice")
     assert len(all_spice_files) == 2
-    all_spin_files = input_collection.get_file_paths(source="spin")
+    all_spin_files = input_collection.get_file_paths(data_type="spin")
     assert len(all_spin_files) == 2
-    all_repoint_files = input_collection.get_file_paths(source="repoint")
+    all_repoint_files = input_collection.get_file_paths(data_type="repoint")
     assert len(all_repoint_files) == 1
 
 
