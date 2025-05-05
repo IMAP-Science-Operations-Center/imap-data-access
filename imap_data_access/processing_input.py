@@ -273,6 +273,26 @@ class SPICEInput(ProcessingInput):
     def __init__(self, *args) -> None:
         """Initialize the attributes from the SPICE file name.
 
+        The SPICEInput class customizes the initialization process to handle
+        SPICE-specific requirements. It sets attributes such as input type,
+        source, data type, and descriptor based on the provided filenames.
+        These attributes are used to group and manage SPICE files effectively.
+
+        Key Attributes:
+        1. input_type: Identifies the type of input
+            (e.g., 'spice', 'spin', 'repoint'). This helps in serialize() output. Eg.
+           [
+                {"type": "spice", "files": [ordered list of SPICE files]},
+                {"type": "spin", "files": [<list of spin files>]},
+                {"type": "repoint", "files": [<latest repoint file>]}
+           ]
+        2. source: Specifies the source of the files
+            (e.g., 'spice', 'spin', 'repoint').
+        3. data_type: Groups and read files by their type
+            (e.g., 'spice', 'spin', 'repoint').
+        4. descriptor: Indicates the file descriptor ('historical' by default, or 'best'
+            if predictive kernels are included).
+
         Parameters
         ----------
         args : str
