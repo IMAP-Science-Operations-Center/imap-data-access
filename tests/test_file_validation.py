@@ -186,6 +186,10 @@ def test_spice_file_path():
     assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
         "imap/spice/ck/imap_1000_100_1000_100_01.ap.bc"
     )
+    file_path = SPICEFilePath("IMAP_1000_100_1000_100_01.ap.bc")
+    assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/ck/IMAP_1000_100_1000_100_01.ap.bc"
+    )
 
     # Test a bad file extension too
     with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
@@ -207,10 +211,11 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("imap/spice/mk/imap_sdc_metakernel_1000_v000.tm")
 
-    thruster_file = SPICEFilePath("imap_0001_001_hist_00.sff")
+    thruster_file = SPICEFilePath("imap_2026_267_2026_267_sff_hist_02.csv")
     assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "imap/spice/activities/imap_0001_001_hist_00.sff"
+        "imap/spice/activities/imap_2026_267_2026_267_sff_hist_02.csv"
     )
+    assert thruster_file.spice_metadata["type"] == "thruster"
 
     # MOC attitude and ephemeris metakernel files tests
     moc_att_mk = SPICEFilePath("imap_2025_005_a01.spice.mk")
@@ -221,6 +226,10 @@ def test_spice_file_path():
     moc_ephem_mk = SPICEFilePath("IMAP_2025_005_e01.mk")
     assert moc_ephem_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
         "imap/spice/mk/IMAP_2025_005_e01.mk"
+    )
+    moc_ephem_mk = SPICEFilePath("imap_2025_005_e01.mk")
+    assert moc_ephem_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/mk/imap_2025_005_e01.mk"
     )
 
 

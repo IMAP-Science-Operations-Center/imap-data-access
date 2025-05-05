@@ -509,9 +509,11 @@ class SPICEFilePath(ImapFilePath):
     sff_filename_pattern = (
         r"(imap)_"
         r"(?P<start_year_doy>[\d]{4}_[\d]{3})_"
+        r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
+        r"(?P<type>sff)_"
         r"([a-zA-Z0-9\-_]+)_"
         r"(?P<version>[\d]{2})\."
-        r"(?P<type>sff)"
+        r"(?P<extension>csv)"
     )
 
     # Covers:
@@ -539,15 +541,15 @@ class SPICEFilePath(ImapFilePath):
     )
 
     valid_spice_regexes = (
-        re.compile(attitude_file_pattern),
-        re.compile(repoint_file_pattern),
-        re.compile(spacecraft_ephemeris_file_pattern),
-        re.compile(spice_prod_ver_pattern),
-        re.compile(spice_frame_pattern),
-        re.compile(sff_filename_pattern),
+        re.compile(attitude_file_pattern, re.IGNORECASE),
+        re.compile(repoint_file_pattern, re.IGNORECASE),
+        re.compile(spacecraft_ephemeris_file_pattern, re.IGNORECASE),
+        re.compile(spice_prod_ver_pattern, re.IGNORECASE),
+        re.compile(spice_frame_pattern, re.IGNORECASE),
+        re.compile(sff_filename_pattern, re.IGNORECASE),
         re.compile(sdc_mk_filename_pattern),
-        re.compile(attitude_mk_filename_pattern),
-        re.compile(ephemeris_mk_filename_pattern),
+        re.compile(attitude_mk_filename_pattern, re.IGNORECASE),
+        re.compile(ephemeris_mk_filename_pattern, re.IGNORECASE),
     )
 
     class InvalidSPICEFileError(Exception):
