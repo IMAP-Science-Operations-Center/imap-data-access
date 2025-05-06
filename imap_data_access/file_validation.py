@@ -472,7 +472,7 @@ class SPICEFilePath(ImapFilePath):
     # DPS kernel (type: ah.bc)
     dps_file_pattern = (
         r"(?P<type>imap_dps)_"
-        r"(?P<start_year_doy>\d{4}_\d{3})_"
+        r"(?P<start_year_doy>\d{4}_\d{3})-"
         r"repoint(?P<repointing>\d{5})_"
         r"(?P<version>\d+)\."
         r"(?P<extension>ah\.bc)"
