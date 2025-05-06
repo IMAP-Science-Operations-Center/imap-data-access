@@ -409,6 +409,7 @@ _SPICE_TYPE_MAPPING = {
     "de": "planetary_ephemeris",
     "pck": "planetary_constants",
     "naif": "leapseconds",
+    "imap_dps": "dps_history",
     "imap_sclk_": "spacecraft_clock",
     "tf": "frames",
     "mk": "metakernel",
@@ -418,6 +419,7 @@ _SPICE_TYPE_MAPPING = {
 
 _SPICE_DIR_MAPPING = {
     "attitude_history": "ck",
+    "dps_history": "ck",
     "attitude_predict": "ck",
     "spin": "spin",
     "repoint": "repoint",
@@ -465,6 +467,15 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<version>[\d]+)\."
         r"(?P<type>ah.bc|ap.bc|spin.csv)"
+    )
+    # Covers:
+    # DPS kernel (type: ah.bc)
+    dps_file_pattern = (
+        r"(?P<type>imap_dps)_"
+        r"(?P<start_year_doy>\d{4}_\d{3})_"
+        r"repoint(?P<repointing>\d{5})_"
+        r"(?P<version>\d+)\."
+        r"(?P<extension>ah\.bc)"
     )
     # Covers:
     # Repoint Files (type: repoint.csv)
@@ -542,6 +553,7 @@ class SPICEFilePath(ImapFilePath):
 
     valid_spice_regexes = (
         re.compile(attitude_file_pattern, re.IGNORECASE),
+        re.compile(dps_file_pattern, re.IGNORECASE),
         re.compile(repoint_file_pattern, re.IGNORECASE),
         re.compile(spacecraft_ephemeris_file_pattern, re.IGNORECASE),
         re.compile(spice_prod_ver_pattern, re.IGNORECASE),

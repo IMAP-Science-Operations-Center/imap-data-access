@@ -232,6 +232,23 @@ def test_spice_file_path():
         "imap/spice/mk/imap_2025_005_e01.mk"
     )
 
+    dps_pointing_file = SPICEFilePath("imap_dps_2025_121_repoint00023_007.ah.bc")
+    assert dps_pointing_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/ck/imap_dps_2025_121_repoint00023_007.ah.bc"
+    )
+
+
+def test_spice_extract_dps_pointing_parts():
+    """Test the new DPS pointing kernel filename parsing."""
+    filename = "imap_dps_2025_121_repoint00023_007.ah.bc"
+    file_path = SPICEFilePath(filename)
+
+    assert file_path.spice_metadata["version"] == "007"
+    assert file_path.spice_metadata["type"] == "dps_history"
+    assert file_path.spice_metadata["repointing"] == "00023"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime("2025_121", "%Y_%j")
+    assert file_path.spice_metadata["end_date"] is None
+
 
 def test_spice_extract_spin_parts():
     # Test spin
