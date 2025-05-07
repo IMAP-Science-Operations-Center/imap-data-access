@@ -536,7 +536,7 @@ class ProcessingInputCollection:
             download(path)
 
     def get_valid_inputs_for_start_date(
-        self, start_date: datetime, return_latest: bool = False
+        self, start_date: datetime, return_latest_ancillary: bool = False
     ) -> ProcessingInputCollection:
         """Return collection containing only ImapFilePaths valid for the start date.
 
@@ -544,8 +544,11 @@ class ProcessingInputCollection:
         ----------
         start_date : datetime
             The time to filter the collection with.
-        return_latest : bool, optional
-            Return the latest file for each ProcessingInput, by default False.
+        return_latest_ancillary : bool, optional
+            Return the latest ancillary file for each AncillaryInput, by default False.
+            This is irrelevant to Science inputs since there should be only one valid
+            science file for each start date. For SPICE files, we do not want to filter
+            any that are valid for the given date.
 
         Returns
         -------
@@ -563,7 +566,7 @@ class ProcessingInputCollection:
 
             # if return_latest is True, then only return the file with the most recent
             # start_date
-            if return_latest:
+            if return_latest_ancillary and input_type == AncillaryInput:
                 # Get the latest file for each ProcessingInput
                 valid_filepaths = sorted(
                     valid_filepaths,
