@@ -536,7 +536,7 @@ class ProcessingInputCollection:
             download(path)
 
     def get_valid_inputs_for_start_date(
-        self, start_date: datetime
+        self, start_date: datetime, return_latest: bool = False
     ) -> ProcessingInputCollection:
         """Return collection containing only ImapFilePaths valid for the start date.
 
@@ -544,6 +544,8 @@ class ProcessingInputCollection:
         ----------
         start_date : datetime
             The time to filter the collection with.
+        return_latest : bool, optional
+            Return the latest file for each ProcessingInput, by default False.
 
         Returns
         -------
@@ -552,15 +554,26 @@ class ProcessingInputCollection:
         """
         valid_date_collection = ProcessingInputCollection()
         for processing_input in self.processing_input:
-            valid_date_filepaths = []
+            valid_filepaths = []
             input_type = type(processing_input)
             for filepath in processing_input.imap_file_paths:
                 # Check if each file in the ProcessingInput is valid for the start date
                 if filepath.is_valid_for_start_date(start_date):
-                    valid_date_filepaths.append(str(filepath.filename))
+                    valid_filepaths.append(filepath)
+
+            # if return_latest is True, then only return the file with the most recent
+            # start_date
+            if return_latest:
+                # Get the latest file for each ProcessingInput
+                valid_filepaths = sorted(
+                    valid_filepaths,
+                    key=lambda x: datetime.strptime(x.start_date, "%Y%m%d"),
+                    reverse=True,
+                )[0:1]
             # Create a new ProcessingInput from the valid filepaths and add it to the
             # collection.
-            if valid_date_filepaths:
-                valid_date_collection.add(input_type(*valid_date_filepaths))
+            if valid_filepaths:
+                valid_files = [str(f.filename) for f in valid_filepaths]
+                valid_date_collection.add(input_type(*valid_files))
 
         return valid_date_collection

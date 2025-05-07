@@ -448,6 +448,8 @@ def test_get_valid_inputs_for_start_date():
     )
     hit_anc = AncillaryInput(
         "imap_hit_l1b-cal_20250101_v000.cdf",
+        "imap_hit_l1b-cal_20240102_20260101_v000.cdf",
+        "imap_hit_l1b-cal_20250103_v000.cdf",
     )
     hit_sci = ScienceInput(
         "imap_hit_l1b_sci_20250101_v000.cdf",
@@ -458,34 +460,38 @@ def test_get_valid_inputs_for_start_date():
     )
     date = datetime(2025, 1, 1)
 
+    valid_collection_latest = input_collection.get_valid_inputs_for_start_date(
+        date, return_latest=True
+    )
     valid_collection = input_collection.get_valid_inputs_for_start_date(date)
+    for collection in [valid_collection, valid_collection_latest]:
+        assert len(collection.processing_input) == 3
+        assert collection.processing_input[0].descriptor == "norm-magi"
+        assert len(collection.processing_input[0].imap_file_paths) == 1
+        assert (
+            datetime.strptime(
+                collection.processing_input[0].imap_file_paths[0].start_date, "%Y%m%d"
+            )
+            == date
+        )
+        assert collection.processing_input[1].descriptor == "l1b-cal"
+        assert (
+            datetime.strptime(
+                collection.processing_input[1].imap_file_paths[0].start_date, "%Y%m%d"
+            )
+            == date
+        )
+        assert collection.processing_input[2].descriptor == "sci"
+        assert len(collection.processing_input[2].imap_file_paths) == 1
+        assert (
+            datetime.strptime(
+                collection.processing_input[2].imap_file_paths[0].start_date, "%Y%m%d"
+            )
+            == date
+        )
 
-    assert len(valid_collection.processing_input) == 3
-    assert valid_collection.processing_input[0].descriptor == "norm-magi"
-    assert len(valid_collection.processing_input[0].imap_file_paths) == 1
-    assert (
-        datetime.strptime(
-            valid_collection.processing_input[0].imap_file_paths[0].start_date, "%Y%m%d"
-        )
-        == date
-    )
-    assert len(valid_collection.processing_input[1].imap_file_paths) == 1
-    assert valid_collection.processing_input[1].descriptor == "l1b-cal"
-    assert (
-        datetime.strptime(
-            valid_collection.processing_input[1].imap_file_paths[0].start_date, "%Y%m%d"
-        )
-        == date
-    )
-    assert valid_collection.processing_input[2].descriptor == "sci"
-    assert len(valid_collection.processing_input[2].imap_file_paths) == 1
-    assert (
-        datetime.strptime(
-            valid_collection.processing_input[2].imap_file_paths[0].start_date, "%Y%m%d"
-        )
-        == date
-    )
-
+    assert len(valid_collection.processing_input[1].imap_file_paths) == 2
+    assert len(valid_collection_latest.processing_input[1].imap_file_paths) == 1
 
 def test_get_processing_inputs():
     ultra_sci_45sensor = ScienceInput(
