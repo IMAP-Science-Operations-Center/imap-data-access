@@ -461,7 +461,7 @@ def test_get_valid_inputs_for_start_date():
     date = datetime(2025, 1, 1)
 
     valid_collection_latest = input_collection.get_valid_inputs_for_start_date(
-        date, return_latest=True
+        date, return_latest_ancillary=True
     )
     valid_collection = input_collection.get_valid_inputs_for_start_date(date)
     for collection in [valid_collection, valid_collection_latest]:
