@@ -409,7 +409,7 @@ _SPICE_TYPE_MAPPING = {
     "de": "planetary_ephemeris",
     "pck": "planetary_constants",
     "naif": "leapseconds",
-    "imap_dps": "dps_history",
+    "imap_dps": "pointing_attitude",
     "imap_sclk_": "spacecraft_clock",
     "tf": "frames",
     "mk": "metakernel",
@@ -419,7 +419,7 @@ _SPICE_TYPE_MAPPING = {
 
 _SPICE_DIR_MAPPING = {
     "attitude_history": "ck",
-    "dps_history": "ck",
+    "pointing_attitude": "ck",
     "attitude_predict": "ck",
     "spin": "spin",
     "repoint": "repoint",

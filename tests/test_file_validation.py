@@ -245,7 +245,7 @@ def test_spice_extract_dps_pointing_parts():
     file_path = SPICEFilePath(filename)
 
     assert file_path.spice_metadata["version"] == "007"
-    assert file_path.spice_metadata["type"] == "dps_history"
+    assert file_path.spice_metadata["type"] == "pointing_attitude"
     assert file_path.spice_metadata["repointing"] == "00023"
     assert file_path.spice_metadata["start_date"] == datetime.strptime(
         "2025_121", "%Y_%j")
