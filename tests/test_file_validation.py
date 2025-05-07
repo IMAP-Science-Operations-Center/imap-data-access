@@ -234,9 +234,8 @@ def test_spice_file_path():
 
     dps_pointing_file = SPICEFilePath("imap_dps_2025_121-repoint00023_007.ah.bc")
     assert dps_pointing_file.construct_path() == imap_data_access.config[
-        "DATA_DIR"] / Path(
-        "imap/spice/ck/imap_dps_2025_121-repoint00023_007.ah.bc"
-    )
+        "DATA_DIR"
+    ] / Path("imap/spice/ck/imap_dps_2025_121-repoint00023_007.ah.bc")
 
 
 def test_spice_extract_dps_pointing_parts():
@@ -248,7 +247,8 @@ def test_spice_extract_dps_pointing_parts():
     assert file_path.spice_metadata["type"] == "pointing_attitude"
     assert file_path.spice_metadata["repointing"] == "00023"
     assert file_path.spice_metadata["start_date"] == datetime.strptime(
-        "2025_121", "%Y_%j")
+        "2025_121", "%Y_%j"
+    )
     assert file_path.spice_metadata["end_date"] is None
 
 
