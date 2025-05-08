@@ -493,6 +493,7 @@ def test_get_valid_inputs_for_start_date():
     assert len(valid_collection.processing_input[1].imap_file_paths) == 2
     assert len(valid_collection_latest.processing_input[1].imap_file_paths) == 1
 
+
 def test_get_processing_inputs():
     ultra_sci_45sensor = ScienceInput(
         "imap_ultra_l1c_45sensor-pset_20240312_v000.cdf",
