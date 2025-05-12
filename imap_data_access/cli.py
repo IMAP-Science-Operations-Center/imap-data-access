@@ -351,7 +351,11 @@ def main():  # noqa: PLR0915
         help="Ingestion end date for a range of file timestamps in YYYYMMDD format",
     )
     query_parser.add_argument(
-        "--repointing", type=int, required=False, help="Repointing number (int)"
+        "--repointing",
+        type=str,
+        required=False,
+        help="Repointing number (repoint00000)",
+
     )
     query_parser.add_argument(
         "--version",
@@ -455,7 +459,7 @@ def main():  # noqa: PLR0915
         args.func(args)
     except Exception as e:
         # Make sure we are exiting with non-zero exit code and printing the message
-        parser.exit(status=1, message=str(e) + "\n")
+        parser.exit(status=1, message=f"{e!r}\n")
 
 
 if __name__ == "__main__":

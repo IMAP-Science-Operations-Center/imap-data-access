@@ -1,5 +1,6 @@
 """Tests for the ``file_validataion`` module."""
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -109,6 +110,10 @@ def test_construct_sciencefilepathmanager():
     assert sfm.version == "v001"
     assert sfm.extension == "cdf"
 
+    # Test valid date for given start_date
+    assert sfm.is_valid_for_start_date(datetime(2021, 1, 1))
+    assert not sfm.is_valid_for_start_date(datetime(2021, 1, 3))
+
 
 def test_is_valid_date():
     """Tests the ``is_valid_date`` method."""
@@ -177,9 +182,13 @@ def test_generate_from_inputs():
 
 def test_spice_file_path():
     """Tests the ``SPICEFilePath`` class."""
-    file_path = SPICEFilePath("test.bc")
+    file_path = SPICEFilePath("imap_1000_100_1000_100_01.ap.bc")
     assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/ck/test.bc"
+        "imap/spice/ck/imap_1000_100_1000_100_01.ap.bc"
+    )
+    file_path = SPICEFilePath("IMAP_1000_100_1000_100_01.ap.bc")
+    assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/ck/IMAP_1000_100_1000_100_01.ap.bc"
     )
 
     # Test a bad file extension too
@@ -190,22 +199,185 @@ def test_spice_file_path():
     spin_file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
     assert spin_file_path.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/spin/imap_2025_122_2025_122_01.spin.csv")
+    ] / Path("imap/spice/spin/imap_2025_122_2025_122_01.spin.csv")
 
-    repoint_file_path = SPICEFilePath("imap_2025_122_2025_122_01.repoint.csv")
+    repoint_file_path = SPICEFilePath("imap_2025_122_01.repoint.csv")
     assert repoint_file_path.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/repoint/imap_2025_122_2025_122_01.repoint.csv")
+    ] / Path("imap/spice/repoint/imap_2025_122_01.repoint.csv")
 
-    metakernel_file = SPICEFilePath("imap_yyyy_doy_e00.mk")
+    metakernel_file = SPICEFilePath("imap_sdc_metakernel_1000_v000.tm")
     assert metakernel_file.construct_path() == imap_data_access.config[
         "DATA_DIR"
-    ] / Path("spice/mk/imap_yyyy_doy_e00.mk")
+    ] / Path("imap/spice/mk/imap_sdc_metakernel_1000_v000.tm")
 
-    thruster_file = SPICEFilePath("imap_yyyy_doy_hist_00.sff")
+    thruster_file = SPICEFilePath("imap_2026_267_2026_267_sff_hist_02.csv")
     assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "spice/activities/imap_yyyy_doy_hist_00.sff"
+        "imap/spice/activities/imap_2026_267_2026_267_sff_hist_02.csv"
     )
+    assert thruster_file.spice_metadata["type"] == "thruster"
+
+    # MOC attitude and ephemeris metakernel files tests
+    moc_att_mk = SPICEFilePath("imap_2025_005_a01.spice.mk")
+    assert moc_att_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/mk/imap_2025_005_a01.spice.mk"
+    )
+
+    moc_ephem_mk = SPICEFilePath("IMAP_2025_005_e01.mk")
+    assert moc_ephem_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/mk/IMAP_2025_005_e01.mk"
+    )
+    moc_ephem_mk = SPICEFilePath("imap_2025_005_e01.mk")
+    assert moc_ephem_mk.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/mk/imap_2025_005_e01.mk"
+    )
+
+    dps_pointing_file = SPICEFilePath("imap_dps_2025_121-repoint00023_007.ah.bc")
+    assert dps_pointing_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("imap/spice/ck/imap_dps_2025_121-repoint00023_007.ah.bc")
+
+
+def test_spice_extract_dps_pointing_parts():
+    """Test the new DPS pointing kernel filename parsing."""
+    filename = "imap_dps_2025_121-repoint00023_007.ah.bc"
+    file_path = SPICEFilePath(filename)
+
+    assert file_path.spice_metadata["version"] == "007"
+    assert file_path.spice_metadata["type"] == "pointing_attitude"
+    assert file_path.spice_metadata["repointing"] == "00023"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "2025_121", "%Y_%j"
+    )
+    assert file_path.spice_metadata["end_date"] is None
+
+
+def test_spice_extract_spin_parts():
+    # Test spin
+    file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
+    assert file_path.spice_metadata["version"] == "01"
+    assert file_path.spice_metadata["type"] == "spin"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "2025_122", "%Y_%j"
+    )
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "2025_122", "%Y_%j"
+    )
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_metakernel_parts():
+    file_path = SPICEFilePath("imap_sdc_metakernel_2025_v100.tm")
+    assert file_path.spice_metadata["version"] == "100"
+    assert file_path.spice_metadata["type"] == "metakernel"
+    assert file_path.spice_metadata["start_date"] == datetime(2025, 1, 1)
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_attitude_parts():
+    file_path = SPICEFilePath("imap_2025_032_2025_034_003.ah.bc")
+    assert file_path.spice_metadata["version"] == "003"
+    assert file_path.spice_metadata["type"] == "attitude_history"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "2025_032", "%Y_%j"
+    )
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "2025_034", "%Y_%j"
+    )
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_leapsecond_parts():
+    file_path = SPICEFilePath("naif0012.tls")
+    assert file_path.spice_metadata["version"] == "0012"
+    assert file_path.spice_metadata["type"] == "leapseconds"
+    assert file_path.spice_metadata["extension"] == "tls"
+    assert file_path.spice_metadata["start_date"] is None
+    assert file_path.spice_metadata["end_date"] is None
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_clock_parts():
+    file_path = SPICEFilePath("imap_sclk_0012.tsc")
+    assert file_path.spice_metadata["version"] == "0012"
+    assert file_path.spice_metadata["type"] == "spacecraft_clock"
+    assert file_path.spice_metadata["extension"] == "tsc"
+    assert file_path.spice_metadata["start_date"] is None
+    assert file_path.spice_metadata["end_date"] is None
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_planetary_ephemeris_parts():
+    file_path = SPICEFilePath("de440.bsp")
+    assert file_path.spice_metadata["version"] == "440"
+    assert file_path.spice_metadata["type"] == "planetary_ephemeris"
+    assert file_path.spice_metadata["extension"] == "bsp"
+    assert file_path.spice_metadata["start_date"] is None
+    assert file_path.spice_metadata["end_date"] is None
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_pck_parts():
+    file_path = SPICEFilePath("pck00010.tpc")
+    assert file_path.spice_metadata["version"] == "00010"
+    assert file_path.spice_metadata["type"] == "planetary_constants"
+    assert file_path.spice_metadata["extension"] == "tpc"
+    assert file_path.spice_metadata["start_date"] is None
+    assert file_path.spice_metadata["end_date"] is None
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_ephemeris_parts():
+    file_path = SPICEFilePath("imap_90days_20251120_20260220_v01.bsp")
+    assert file_path.spice_metadata["version"] == "01"
+    assert file_path.spice_metadata["type"] == "ephemeris_90days"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "20251120", "%Y%m%d"
+    )
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "20260220", "%Y%m%d"
+    )
+    assert file_path.spice_metadata["extension"] == "bsp"
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_repoint_parts():
+    file_path = SPICEFilePath("imap_2025_230_01.repoint.csv")
+    assert file_path.spice_metadata["version"] == "01"
+    assert file_path.spice_metadata["type"] == "repoint"
+    assert file_path.spice_metadata["extension"] == "csv"
+    assert file_path.spice_metadata["start_date"] is None
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "2025_230", "%Y_%j"
+    )
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_invalid_dates():
+    # Ensure the DOY is valid (DOY 410??)
+    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+        SPICEFilePath("imap_2025_032_2025_410_003.ah.bc")
+
+    # Ensure dates are valid (Month 13??)
+    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+        SPICEFilePath("imap_90days_20251320_20260220_v01.bsp")
+
+    # Ensure valid ephemeris type (type taco??)
+    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+        SPICEFilePath("imap_taco_20251320_20260220_v01.bsp")
+
+
+def test_spice_extract_parts_static_method():
+    # Making sure the function works without an instance
+    file_parts = SPICEFilePath.extract_filename_components(
+        "imap_2025_122_2025_122_01.spin.csv"
+    )
+    assert file_parts["version"] == "01"
+    file_parts = SPICEFilePath.extract_filename_components(
+        "imap_2025_032_2025_034_003.ah.bc",
+    )
+    assert file_parts["version"] == "003"
+    assert file_parts["type"] == "attitude_history"
 
 
 def test_ancillary_file_path():
@@ -261,6 +433,18 @@ def test_ancillary_file_path():
     )
     assert ancillary_file_csv.construct_path() == expected_output_csv
 
+    # Test with dat extension
+    assert (
+        AncillaryFilePath.generate_from_inputs(
+            instrument="glows",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="dat",
+        ).extension
+        == "dat"
+    )
+
     # Test with no end date
     ancillary_file_no_end_date = AncillaryFilePath.generate_from_inputs(
         instrument="mag",
@@ -279,3 +463,7 @@ def test_ancillary_file_path():
     ancillary_file = AncillaryFilePath(anc_file)
     assert ancillary_file.instrument == "mag"
     assert ancillary_file.end_date == "20210102"
+
+    # Test valid date for given start_date
+    assert ancillary_file.is_valid_for_start_date(datetime(2021, 1, 2))
+    assert not ancillary_file.is_valid_for_start_date(datetime(2021, 1, 3))

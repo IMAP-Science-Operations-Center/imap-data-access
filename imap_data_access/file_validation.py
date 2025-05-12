@@ -99,6 +99,11 @@ class ImapFilePath:
         """Construct valid path from class variables and data_dir."""
         raise NotImplementedError
 
+    @abstractmethod
+    def is_valid_for_start_date(self, start_date):
+        """Check if the file is valid for the given time."""
+        pass
+
 
 class ScienceFilePath(ImapFilePath):
     """Class for building and validating filepaths for science files."""
@@ -167,7 +172,7 @@ class ScienceFilePath(ImapFilePath):
         descriptor: str,
         start_time: str,
         version: str,
-        repointing: int | None = None,
+        repointing: int | str | None = None,
     ) -> ScienceFilePath:
         """Generate a filename from given inputs and return a ScienceFilePath instance.
 
@@ -192,7 +197,8 @@ class ScienceFilePath(ImapFilePath):
             The version of the data
         repointing : int, optional
             The repointing number for this file, optional field that
-            is not always present
+            is not always present. Should be either a string like "repointXXXXX" or an
+            integer like 12345.
 
         Returns
         -------
@@ -203,8 +209,12 @@ class ScienceFilePath(ImapFilePath):
         if data_level == "l0":
             extension = "pkts"
         time_field = start_time
-        if repointing:
-            time_field += f"-repoint{repointing:05d}"
+        if repointing is not None:
+            if ScienceFilePath.is_valid_repointing(repointing):
+                time_field += f"-{repointing}"
+            elif isinstance(repointing, int):
+                time_field += f"-repoint{repointing:05d}"
+
         filename = (
             f"imap_{instrument}_{data_level}_{descriptor}_{time_field}_"
             f"{version}.{extension}"
@@ -318,6 +328,8 @@ class ScienceFilePath(ImapFilePath):
         components : dict
             Dictionary containing components.
         """
+        # Pipe these together for optional matching in the regex below
+        extension_regex = "|".join(imap_data_access.VALID_FILE_EXTENSION)
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
@@ -326,7 +338,7 @@ class ScienceFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             r"(-repoint(?P<repointing>\d{5}))?"  # Optional repointing field
             r"_(?P<version>v\d{3})"
-            r"\.(?P<extension>cdf|pkts)$"
+            rf"\.(?P<extension>{extension_regex})$"
         )
         if isinstance(filename, Path):
             filename = filename.name
@@ -360,25 +372,70 @@ class ScienceFilePath(ImapFilePath):
         """
         return re.fullmatch(r"repoint\d{5}", str(input_repointing))
 
+    def is_valid_for_start_date(self, start_date: datetime) -> bool:
+        """Check if the file is valid for the given science file start_date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The science time to check in YYYYMMDD format.
+
+        Returns
+        -------
+        bool
+            True if the file start_date is equal to the given time, False otherwise.
+        """
+        if datetime.strptime(self.start_date, "%Y%m%d") == start_date:
+            return True
+        else:
+            return False
+
 
 # Transform the suffix to the directory structure we are using
 # Commented out mappings are not being used on IMAP
+
+
+_SPICE_TYPE_MAPPING = {
+    "ah.bc": "attitude_history",
+    "ap.bc": "attitude_predict",
+    "spin.csv": "spin",
+    "repoint.csv": "repoint",
+    "recon": "ephemeris_reconstructed",
+    "nom": "ephemeris_nominal",
+    "pred": "ephemeris_predicted",
+    "90days": "ephemeris_90days",
+    "long": "ephemeris_long",
+    "launch": "ephemeris_launch",
+    "de": "planetary_ephemeris",
+    "pck": "planetary_constants",
+    "naif": "leapseconds",
+    "imap_dps": "pointing_attitude",
+    "imap_sclk_": "spacecraft_clock",
+    "tf": "frames",
+    "mk": "metakernel",
+    "tm": "metakernel",
+    "sff": "thruster",
+}
+
 _SPICE_DIR_MAPPING = {
-    ".bc": "ck",
-    # ".bds": "dsk",
-    # ".bes": "ek",
-    ".bpc": "pck",
-    ".bsp": "spk",
-    ".mk": "mk",
-    ".repoint.csv": "repoint",
-    ".sff": "activities",
-    ".spin.csv": "spin",
-    ".tf": "fk",
-    # "ti": "ik",
-    ".tls": "lsk",
-    ".tm": "mk",
-    ".tpc": "pck",
-    ".tsc": "sclk",
+    "attitude_history": "ck",
+    "pointing_attitude": "ck",
+    "attitude_predict": "ck",
+    "spin": "spin",
+    "repoint": "repoint",
+    "ephemeris_reconstructed": "spk",
+    "ephemeris_nominal": "spk",
+    "ephemeris_predicted": "spk",
+    "ephemeris_90days": "spk",
+    "ephemeris_long": "spk",
+    "ephemeris_launch": "spk",
+    "planetary_ephemeris": "spk",
+    "planetary_constants": "pck",
+    "leapseconds": "lsk",
+    "spacecraft_clock": "sclk",
+    "frames": "fk",
+    "metakernel": "mk",
+    "thruster": "activities",
 }
 """These are the valid extensions for SPICE files according to NAIF
 https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
@@ -400,6 +457,113 @@ https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
 class SPICEFilePath(ImapFilePath):
     """Class for building and validating filepaths for SPICE files."""
 
+    # Covers:
+    # Historical Attitude (type: ah.bc)
+    # Predicted Attitude (type: ap.bc)
+    # Spin Files (type: spin.csv)
+    attitude_file_pattern = (
+        r"(imap)_"
+        r"(?P<start_year_doy>[\d]{4}_[\d]{3})_"
+        r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
+        r"(?P<version>[\d]+)\."
+        r"(?P<type>ah.bc|ap.bc|spin.csv)"
+    )
+    # Covers:
+    # DPS kernel (type: ah.bc)
+    dps_file_pattern = (
+        r"(?P<type>imap_dps)_"
+        r"(?P<start_year_doy>\d{4}_\d{3})-"
+        r"repoint(?P<repointing>\d{5})_"
+        r"(?P<version>\d+)\."
+        r"(?P<extension>ah\.bc)"
+    )
+    # Covers:
+    # Repoint Files (type: repoint.csv)
+    repoint_file_pattern = (
+        r"(imap)_"
+        r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
+        r"(?P<version>[\d]+)\."
+        r"(?P<type>repoint.csv)"
+    )
+    # Covers:
+    # Reconstructed (type: recon)
+    # Nominal (type: nom)
+    # Predict (type: pred)
+    # 90 Day Predict (type: 90days)
+    # Long Term Predict (type: long)
+    # Launch Predict (type: launch)
+    spacecraft_ephemeris_file_pattern = (
+        r"(imap)_"
+        r"(?P<type>[a-zA-Z0-9\-]+)_"
+        r"(?P<start_date>[\d]{8})_"
+        r"(?P<end_date>[\d]{8})"
+        r"(?:|_v(?P<version>[\d]*))\."
+        r"(?P<extension>bsp)"
+    )
+    # Covers:
+    # Planetary Ephemeris (type: "de")
+    # Planetary Constants (type: "pck")
+    # Leapsecond kernel (type: "naif")
+    # Spacecraft clock kernel (type: "imap_sclk_")
+    spice_prod_ver_pattern = (
+        r"(?P<type>[a-zA-Z\-_]+)"
+        r"(?P<version>[\d]+)\."
+        r"(?P<extension>tls|tpc|bsp|tsc)"
+    )
+
+    # Covers:
+    # Frame: (type: 'tf')
+    spice_frame_pattern = r"(imap)_(?P<version>[\d]+)\.(?P<type>tf)"
+
+    # Covers:
+    # Thruster files (type: sff)
+    sff_filename_pattern = (
+        r"(imap)_"
+        r"(?P<start_year_doy>[\d]{4}_[\d]{3})_"
+        r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
+        r"(?P<type>sff)_"
+        r"([a-zA-Z0-9\-_]+)_"
+        r"(?P<version>[\d]{2})\."
+        r"(?P<extension>csv)"
+    )
+
+    # Covers:
+    # SDC generated metakernels (type: 'tm')
+    sdc_mk_filename_pattern = (
+        r"(imap)_sdc_metakernel_"
+        r"(?P<start_year>[\d]{4})_"
+        r"v(?P<version>[\d]{3})\."
+        r"(?P<type>tm)"
+    )
+
+    # Covers:
+    # MOC metakernels (type: 'mk')
+    attitude_mk_filename_pattern = (
+        r"imap_"
+        r"(?P<start_year_doy>\d{4}_\d{3})_"
+        r"a(?P<version>\d{2})\.spice\."
+        r"(?P<type>mk)"
+    )
+    ephemeris_mk_filename_pattern = (
+        r"IMAP_"
+        r"(?P<start_year_doy>\d{4}_\d{3})_"
+        r"e(?P<version>\d{2})\."
+        r"(?P<type>mk)"
+    )
+
+    valid_spice_regexes = (
+        re.compile(attitude_file_pattern, re.IGNORECASE),
+        re.compile(dps_file_pattern, re.IGNORECASE),
+        re.compile(repoint_file_pattern, re.IGNORECASE),
+        re.compile(spacecraft_ephemeris_file_pattern, re.IGNORECASE),
+        re.compile(spice_prod_ver_pattern, re.IGNORECASE),
+        re.compile(spice_frame_pattern, re.IGNORECASE),
+        re.compile(sff_filename_pattern, re.IGNORECASE),
+        re.compile(sdc_mk_filename_pattern),
+        re.compile(attitude_mk_filename_pattern, re.IGNORECASE),
+        re.compile(ephemeris_mk_filename_pattern, re.IGNORECASE),
+    )
+
     class InvalidSPICEFileError(Exception):
         """Indicates a bad file type."""
 
@@ -420,17 +584,7 @@ class SPICEFilePath(ImapFilePath):
             SPICE data filename or file path.
         """
         self.filename = Path(filename)
-        if self.filename.suffix == ".csv":
-            all_suffixes = self.filename.suffixes  # Returns ['.spin', '.csv']
-            self.file_extension = "".join(all_suffixes)  # Returns '.spin.csv'
-        else:
-            self.file_extension = self.filename.suffix
-
-        if self.file_extension not in _SPICE_DIR_MAPPING:
-            raise self.InvalidSPICEFileError(
-                f"Invalid SPICE file. Expected file to have one of the following "
-                f"extensions {list(_SPICE_DIR_MAPPING.keys())}"
-            )
+        self.spice_metadata = SPICEFilePath.extract_filename_components(self.filename)
 
     def construct_path(self) -> Path:
         """Construct valid path from the class variables and data_dir.
@@ -443,11 +597,124 @@ class SPICEFilePath(ImapFilePath):
         Path
             Upload path
         """
-        spice_dir = imap_data_access.config["DATA_DIR"] / "spice"
-        subdir = _SPICE_DIR_MAPPING[self.file_extension]
+        spice_dir = imap_data_access.config["DATA_DIR"] / "imap/spice"
+        subdir = _SPICE_DIR_MAPPING[self.spice_metadata["type"]]
         # Use the file suffix to determine the directory structure
         # IMAP_DATA_DIR/spice/<subdir>/filename
         return spice_dir / subdir / self.filename
+
+    @staticmethod
+    def _spice_parts_handler(components):
+        """Validate and transform SPICE file compents.
+
+        Parameters
+        ----------
+        components : dict
+            Dictionary containing components of the file.
+
+        Returns
+        -------
+        components : dict | None
+            Dictionary containing components, validated and transformed.
+            If
+        """
+        if components["type"] not in _SPICE_TYPE_MAPPING:
+            raise SPICEFilePath.InvalidSPICEFileError(
+                f"Invalid SPICE file. Expected file to have one of the following "
+                f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
+                f"the documentation to ensure the file has the "
+                f"proper naming convention."
+            )
+
+        components["type"] = _SPICE_TYPE_MAPPING[components["type"]]
+
+        try:
+            if "start_date" in components:  # Convert to datetime
+                components["start_date"] = datetime.strptime(
+                    components["start_date"], "%Y%m%d"
+                )
+            if "end_date" in components:
+                components["end_date"] = datetime.strptime(
+                    components["end_date"], "%Y%m%d"
+                )
+            if "start_year_doy" in components:
+                components["start_date"] = datetime.strptime(
+                    components.pop("start_year_doy"), "%Y_%j"
+                )
+            if "end_year_doy" in components:
+                components["end_date"] = datetime.strptime(
+                    components.pop("end_year_doy"), "%Y_%j"
+                )
+            if "start_year" in components:
+                components["start_date"] = datetime(
+                    int(components.pop("start_year")), 1, 1
+                )
+        except ValueError:
+            raise SPICEFilePath.InvalidSPICEFileError(
+                "Invalid date detect in product file name, ensure date exists"
+            ) from None
+
+        if "start_date" not in components:
+            components["start_date"] = None
+        if "end_date" not in components:
+            components["end_date"] = None
+        return components
+
+    @staticmethod
+    def extract_filename_components(filename: Path | str) -> dict | None:
+        """Extract all components from filename.
+
+        Will return a dictionary in the form:
+            version - string
+            type - string
+            extension - string
+            start_date - datetime or None
+            end_date - datetime or None
+
+        If a match is not found, InvalidSPICEFileError will be raised.
+
+        Parameters
+        ----------
+        filename : Path | str
+            The filename to parse
+
+        Returns
+        -------
+        components : dict
+            Dictionary containing components.
+        """
+        filename = Path(filename)
+        for regex in SPICEFilePath.valid_spice_regexes:
+            m = regex.match(filename.name)
+            if m is not None:
+                spice_metadata = SPICEFilePath._spice_parts_handler(m.groupdict())
+                # Add the extension to the metadata
+                spice_metadata["extension"] = filename.suffix[1:]
+                return spice_metadata
+
+        # Error if no match found to accepted types
+        raise SPICEFilePath.InvalidSPICEFileError(
+            f"Invalid SPICE file. Expected file to have one of the following "
+            f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
+            f"the documentation to ensure the file has the "
+            f"proper naming convention "
+        )
+
+    def is_valid_for_start_date(self, start_date: datetime) -> bool:
+        """Check if the SPICE file is valid for the given science start_date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The science time to check in YYYYMMDD format.
+
+        Returns
+        -------
+        bool
+            True if the SPICE file date range covers the given time, False otherwise.
+        """
+        # TODO implement this
+        return True
 
 
 class AncillaryFilePath(ImapFilePath):
@@ -602,7 +869,8 @@ class AncillaryFilePath(ImapFilePath):
 
         if self.extension not in imap_data_access.VALID_ANCILLARY_FILE_EXTENSION:
             error_message += (
-                "Invalid extension. Extension should be cdf. \n"  # TODO: Change this
+                f"Invalid extension. Extension should be one of "
+                f"{imap_data_access.VALID_ANCILLARY_FILE_EXTENSION}.\n"
             )
 
         if not ScienceFilePath.is_valid_date(self.start_date):
@@ -659,6 +927,8 @@ class AncillaryFilePath(ImapFilePath):
         components : dict
             Dictionary containing components.
         """
+        # Pipe these together for optional matching in the regex below
+        extension_regex = "|".join(imap_data_access.VALID_ANCILLARY_FILE_EXTENSION)
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
@@ -666,7 +936,7 @@ class AncillaryFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             r"(_(?P<end_date>\d{8}))?"  # Optional end_date
             r"_(?P<version>v\d{3})"
-            r"\.(?P<extension>cdf|csv|json)$"
+            rf"\.(?P<extension>{extension_regex})$"
         )
         if isinstance(filename, Path):
             filename = filename.name
@@ -680,3 +950,28 @@ class AncillaryFilePath(ImapFilePath):
 
         components = match.groupdict()
         return components
+
+    def is_valid_for_start_date(self, start_date: datetime) -> bool:
+        """Check if the Ancillary file is valid for the given science start_date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The science time to check in YYYYMMDD format.
+
+        Returns
+        -------
+        bool
+            True if the Ancillary file date range covers the given time, False
+            otherwise.
+        """
+        start_date_anc = datetime.strptime(self.start_date, "%Y%m%d")
+        if self.end_date:
+            # If end_date is set, check to see weather the time is between start and end
+            end_date_anc = datetime.strptime(self.end_date, "%Y%m%d")
+            if start_date_anc <= start_date <= end_date_anc:
+                return True
+        # If end_date is not set, check to see if the time is after start_date
+        elif start_date_anc <= start_date:
+            return True
+        return False

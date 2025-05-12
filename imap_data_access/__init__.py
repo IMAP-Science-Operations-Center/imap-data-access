@@ -18,17 +18,17 @@ from imap_data_access.file_validation import (
 from imap_data_access.io import download, query, upload
 
 __all__ = [
-    "query",
-    "download",
-    "upload",
-    "ImapFilePath",
-    "ScienceFilePath",
-    "SPICEFilePath",
-    "AncillaryFilePath",
-    "VALID_INSTRUMENTS",
+    "FILENAME_CONVENTION",
     "VALID_DATALEVELS",
     "VALID_FILE_EXTENSION",
-    "FILENAME_CONVENTION",
+    "VALID_INSTRUMENTS",
+    "AncillaryFilePath",
+    "ImapFilePath",
+    "SPICEFilePath",
+    "ScienceFilePath",
+    "download",
+    "query",
+    "upload",
 ]
 
 __version__ = importlib.metadata.version("imap-data-access")
@@ -88,11 +88,13 @@ VALID_DATALEVELS = {
     "l2",
     "l2a",
     "l2b",
+    "l2c",
     "l3",
     "l3a",
     "l3b",
     "l3c",
     "l3d",
+    "l3e",
 }
 
 VALID_FILE_EXTENSION = {"pkts", "cdf"}
@@ -107,4 +109,4 @@ ANCILLARY_FILENAME_CONVENTION = (
     "<start_date>(_<end_date>)_<version>.<extension>"
 )
 
-VALID_ANCILLARY_FILE_EXTENSION = {"cdf", "csv", "json"}
+VALID_ANCILLARY_FILE_EXTENSION = {"cdf", "csv", "dat", "json", "zip"}

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 import pytest
@@ -84,15 +85,95 @@ def test_create_ancillary_files():
         )
 
 
-@pytest.mark.xfail(reason="SPICE not completed")
-def test_create_spice_files():
-    one_file = processing_input.SPICEInput("test.bc")
+def test_spice_input():
+    """Test SPICEInput class for different SPICE file types."""
+    one_file = processing_input.SPICEInput("imap_1000_100_1000_100_01.ah.bc")
 
-    assert one_file.filename_list == ["test.bc"]
+    assert one_file.filename_list == ["imap_1000_100_1000_100_01.ah.bc"]
     assert len(one_file.imap_file_paths) == 1
     assert isinstance(one_file.imap_file_paths[0], SPICEFilePath)
     assert one_file.input_type == ProcessingInputType.SPICE_FILE
     assert one_file.source == "spice"
+    assert one_file.descriptor == "historical"
+
+    # Test with multiple SPICE files of the same type
+    multiple_files = processing_input.SPICEInput(
+        "imap_1000_100_1000_100_01.ah.bc",
+        "imap_1000_100_1000_100_02.ap.bc",
+    )
+
+    assert multiple_files.filename_list == [
+        "imap_1000_100_1000_100_01.ah.bc",
+        "imap_1000_100_1000_100_02.ap.bc",
+    ]
+    assert len(multiple_files.imap_file_paths) == 2
+    assert multiple_files.input_type == ProcessingInputType.SPICE_FILE
+    assert multiple_files.source == "spice"
+    assert multiple_files.descriptor == "best"
+
+    # Adding few more kernel types to test
+    multiple_files = processing_input.SPICEInput(
+        "naif0012.tls",
+        "imap_sclk_0001.tsc",
+        "pck00010.tpc",
+        "imap_001.tf",
+        "de440.bsp",
+        "imap_90days_20260922_20261221_v01.bsp",
+        "imap_1000_100_1000_100_01.ah.bc",
+        "imap_1000_100_1000_100_02.ap.bc",
+    )
+    assert len(multiple_files.imap_file_paths) == 8
+    assert multiple_files.input_type == ProcessingInputType.SPICE_FILE
+    assert multiple_files.source == "spice"
+    assert multiple_files.descriptor == "best"
+
+    # Test historical ephemeris files
+    ephemeris_file = processing_input.SPICEInput(
+        "imap_recon_20260922_20261221_v01.bsp",
+    )
+    assert ephemeris_file.descriptor == "historical"
+
+    # Test with multiple ephemeris files
+    ephemeris_files = processing_input.SPICEInput(
+        "imap_recon_20260922_20261221_v01.bsp",
+        "imap_nom_20260922_20261221_v02.bsp",
+        "imap_pred_20260922_20261221_v02.bsp",
+    )
+    assert ephemeris_files.descriptor == "best"
+
+    # Test with a SPICE file containing "spin" in the source
+    spin_file = processing_input.SPICEInput("imap_1000_100_1000_100_01.spin.csv")
+
+    assert spin_file.filename_list == ["imap_1000_100_1000_100_01.spin.csv"]
+    assert len(spin_file.imap_file_paths) == 1
+    assert spin_file.input_type == ProcessingInputType.SPICE_FILE
+    assert spin_file.source == "spin"
+    assert spin_file.descriptor == "historical"
+
+    # Test with a SPICE file containing "repoint" in the source
+    repoint_file = processing_input.SPICEInput("imap_1000_100_01.repoint.csv")
+
+    assert repoint_file.filename_list == ["imap_1000_100_01.repoint.csv"]
+    assert len(repoint_file.imap_file_paths) == 1
+    assert repoint_file.input_type == ProcessingInputType.SPICE_FILE
+    assert repoint_file.source == "repoint"
+    assert repoint_file.descriptor == "historical"
+
+    # Test with invalid SPICE files (different sources)
+    with pytest.raises(
+        ValueError, match="If spin data in the list, it should only contain spin files"
+    ):
+        processing_input.SPICEInput(
+            "imap_1000_100_1000_100_01.spin.csv",
+            "imap_1000_001_02.repoint.csv",
+        )
+
+    # Test with multiple "repoint" files (should raise an error)
+    with pytest.raises(ValueError, match="There should only be one repoint file"):
+        processing_input.SPICEInput(
+            "imap_1000_001_02.repoint.csv",
+            "imap_1000_001_03.repoint.csv",
+        )
 
 
 def test_create_collection():
@@ -133,6 +214,63 @@ def test_create_collection():
     assert science_files[1].descriptor == "hist"
     assert len(science_files[0].imap_file_paths) == 2
     assert len(science_files[1].imap_file_paths) == 1
+
+    glows_science_files = deser.get_science_inputs("glows")
+    assert len(glows_science_files) == 1
+    assert science_files[1].descriptor == "hist"
+    assert len(science_files[1].imap_file_paths) == 1
+
+    # Test collection with spice files
+    spice_files = processing_input.SPICEInput(
+        "naif0012.tls",
+        "imap_sclk_0001.tsc",
+        "pck00010.tpc",
+        "imap_001.tf",
+        "de440.bsp",
+        "imap_90days_20260922_20261221_v01.bsp",
+        "imap_1000_100_1000_100_01.ah.bc",
+        "imap_1000_100_1000_100_02.ap.bc",
+    )
+    spin_files = processing_input.SPICEInput(
+        "imap_1000_100_1000_100_01.spin.csv",
+        "imap_1000_100_1000_101_01.spin.csv",
+    )
+    repoint_files = processing_input.SPICEInput(
+        "imap_1000_001_03.repoint.csv",
+    )
+    spice_collection = processing_input.ProcessingInputCollection(
+        spice_files, spin_files, repoint_files
+    )
+    assert len(spice_collection.processing_input) == 3
+    expected_deserialized = [
+        {
+            "type": "spice",
+            "files": [
+                "naif0012.tls",
+                "imap_sclk_0001.tsc",
+                "pck00010.tpc",
+                "imap_001.tf",
+                "de440.bsp",
+                "imap_90days_20260922_20261221_v01.bsp",
+                "imap_1000_100_1000_100_01.ah.bc",
+                "imap_1000_100_1000_100_02.ap.bc",
+            ],
+        },
+        {
+            "type": "spin",
+            "files": [
+                "imap_1000_100_1000_100_01.spin.csv",
+                "imap_1000_100_1000_101_01.spin.csv",
+            ],
+        },
+        {
+            "type": "repoint",
+            "files": [
+                "imap_1000_001_03.repoint.csv",
+            ],
+        },
+    ]
+    assert spice_collection.serialize() == json.dumps(expected_deserialized)
 
 
 def test_get_time_range():
@@ -188,8 +326,89 @@ def test_get_file_paths():
     assert len(all_files) == 4
 
 
-# Add a test for download()
-def test_download_all_files(mock_urlopen):
+def test_get_file_paths_descriptor():
+    # Example where we have 2 ultra 45 sensor files, 1 ultra 90 sensor file.
+    # Also have an unrelated mag file and 1 hi 45, 1 hi 90 file.
+    # Test that we can get all the ultra 45/90 files, hi 45/90 files, etc.
+    # by filtering by sensor and/or instrument.
+    ultra_sci_45sensor = ScienceInput(
+        "imap_ultra_l1c_45sensor-pset_20240312_v000.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240313_v000.cdf",
+    )
+    ultra_sci_90sensor = ScienceInput(
+        "imap_ultra_l1c_90sensor-pset_20240312_v000.cdf",
+    )
+    hi_sci_45sensor = ScienceInput(
+        "imap_hi_l1c_45sensor-pset_20240312_v000.cdf",
+    )
+    hi_sci_90sensor = ScienceInput(
+        "imap_hi_l1c_90sensor-pset_20240312_v000.cdf",
+    )
+    mag_sci_anc = ScienceInput(
+        "imap_mag_l1a_norm-magi_20240312_v000.cdf",
+    )
+    spice_files = processing_input.SPICEInput(
+        "imap_1000_100_1000_100_01.ah.bc",
+        "imap_1000_100_1000_100_02.ap.bc",
+    )
+    spin_files = processing_input.SPICEInput(
+        "imap_1000_100_1000_100_01.spin.csv",
+        "imap_1000_100_1000_101_01.spin.csv",
+    )
+    repoint_files = processing_input.SPICEInput(
+        "imap_1000_001_03.repoint.csv",
+    )
+
+    input_collection = processing_input.ProcessingInputCollection(
+        ultra_sci_45sensor,
+        ultra_sci_90sensor,
+        hi_sci_45sensor,
+        hi_sci_90sensor,
+        mag_sci_anc,
+        spice_files,
+        spin_files,
+        repoint_files,
+    )
+
+    all_ultra_files = input_collection.get_file_paths(
+        source="ultra", descriptor="sensor-pset"
+    )
+    assert len(all_ultra_files) == 3
+
+    all_ultra_files = input_collection.get_file_paths(descriptor="sensor-pset")
+    assert len(all_ultra_files) == 5
+
+    all_ultra45_files = input_collection.get_file_paths(
+        source="ultra", descriptor="45se"
+    )
+    assert len(all_ultra45_files) == 2
+
+    all_ultra90_files = input_collection.get_file_paths(
+        source="ultra", descriptor="90sens"
+    )
+    assert len(all_ultra90_files) == 1
+
+    all_hi_files = input_collection.get_file_paths(source="hi")
+    assert len(all_hi_files) == 2
+
+    all_hi45_files = input_collection.get_file_paths(source="hi", descriptor="45se")
+    assert len(all_hi45_files) == 1
+
+    all_hi90_files = input_collection.get_file_paths(source="hi", descriptor="90se")
+    assert len(all_hi90_files) == 1
+
+    all_files = input_collection.get_file_paths()
+    assert len(all_files) == 11
+
+    all_spice_files = input_collection.get_file_paths(source="spice")
+    assert len(all_spice_files) == 2
+    all_spin_files = input_collection.get_file_paths(source="spin")
+    assert len(all_spin_files) == 2
+    all_repoint_files = input_collection.get_file_paths(source="repoint")
+    assert len(all_repoint_files) == 1
+
+
+def test_download_all_files():
     # This example is fake example where we are processing HIT L2
     # and it has three dependencies, one primary dependent (HIT l1b)
     # and two ancillary dependents, MAG l1a and HIT ancillary.
@@ -203,11 +422,133 @@ def test_download_all_files(mock_urlopen):
     hit_sci = ScienceInput(
         "imap_hit_l1b_sci_20240312_v000.cdf",
     )
+    spice_files = processing_input.SPICEInput(
+        "naif0012.tls", "imap_sclk_0001.tsc", "imap_1000_100_1000_100_01.ah.bc"
+    )
+    spin_files = processing_input.SPICEInput(
+        "imap_1000_100_1000_100_01.spin.csv",
+    )
+    repoint_files = processing_input.SPICEInput(
+        "imap_1000_001_03.repoint.csv",
+    )
 
     input_collection = processing_input.ProcessingInputCollection(
-        mag_sci_anc, hit_anc, hit_sci
+        mag_sci_anc, hit_anc, hit_sci, spice_files, spin_files, repoint_files
     )
     input_collection.download_all_files()
     # Check that the files are downloaded
     for file in input_collection.get_file_paths():
         assert file.exists()
+
+
+def test_get_valid_inputs_for_start_date():
+    mag_sci_anc = ScienceInput(
+        "imap_mag_l1a_norm-magi_20250101_v000.cdf",
+        "imap_mag_l1a_norm-magi_20250102_v001.cdf",
+    )
+    hit_anc = AncillaryInput(
+        "imap_hit_l1b-cal_20250101_v000.cdf",
+        "imap_hit_l1b-cal_20240102_20260101_v000.cdf",
+        "imap_hit_l1b-cal_20250103_v000.cdf",
+    )
+    hit_sci = ScienceInput(
+        "imap_hit_l1b_sci_20250101_v000.cdf",
+        "imap_hit_l1b_sci_20250102_v000.cdf",
+    )
+    input_collection = processing_input.ProcessingInputCollection(
+        mag_sci_anc, hit_anc, hit_sci
+    )
+    date = datetime(2025, 1, 1)
+
+    valid_collection_latest = input_collection.get_valid_inputs_for_start_date(
+        date, return_latest_ancillary=True
+    )
+    valid_collection = input_collection.get_valid_inputs_for_start_date(date)
+    for collection in [valid_collection, valid_collection_latest]:
+        assert len(collection.processing_input) == 3
+        assert collection.processing_input[0].descriptor == "norm-magi"
+        assert len(collection.processing_input[0].imap_file_paths) == 1
+        assert (
+            datetime.strptime(
+                collection.processing_input[0].imap_file_paths[0].start_date, "%Y%m%d"
+            )
+            == date
+        )
+        assert collection.processing_input[1].descriptor == "l1b-cal"
+        assert (
+            datetime.strptime(
+                collection.processing_input[1].imap_file_paths[0].start_date, "%Y%m%d"
+            )
+            == date
+        )
+        assert collection.processing_input[2].descriptor == "sci"
+        assert len(collection.processing_input[2].imap_file_paths) == 1
+        assert (
+            datetime.strptime(
+                collection.processing_input[2].imap_file_paths[0].start_date, "%Y%m%d"
+            )
+            == date
+        )
+
+    assert len(valid_collection.processing_input[1].imap_file_paths) == 2
+    assert len(valid_collection_latest.processing_input[1].imap_file_paths) == 1
+
+
+def test_get_processing_inputs():
+    ultra_sci_45sensor = ScienceInput(
+        "imap_ultra_l1c_45sensor-pset_20240312_v000.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240313_v000.cdf",
+    )
+    ultra_sci_90sensor = ScienceInput(
+        "imap_ultra_l1c_90sensor-pset_20240312_v000.cdf",
+    )
+    hi_sci_45sensor = ScienceInput(
+        "imap_hi_l1c_45sensor-pset_20240312_v000.cdf",
+    )
+    hi_sci_90sensor = ScienceInput(
+        "imap_hi_l1c_90sensor-pset_20240312_v000.cdf",
+    )
+    mag_sci_anc = ScienceInput(
+        "imap_mag_l1a_norm-magi_20240312_v000.cdf",
+    )
+    hit_anc = AncillaryInput(
+        "imap_hit_l1b-cal_20250101_v000.cdf",
+    )
+
+    input_collection = processing_input.ProcessingInputCollection(
+        ultra_sci_45sensor,
+        ultra_sci_90sensor,
+        hi_sci_45sensor,
+        hi_sci_90sensor,
+        mag_sci_anc,
+        hit_anc,
+    )
+
+    # Get all inputs
+    all_inputs = input_collection.get_processing_inputs()
+    assert len(all_inputs) == 6
+
+    # Get all science inputs
+    science_inputs = input_collection.get_processing_inputs(
+        input_type=ProcessingInputType.SCIENCE_FILE
+    )
+    assert len(science_inputs) == 5
+
+    # Get all ancillary inputs
+    ancillary_inputs = input_collection.get_processing_inputs(
+        input_type=ProcessingInputType.ANCILLARY_FILE
+    )
+    assert len(ancillary_inputs) == 1
+
+    # Get all ultra inputs
+    ultra_inputs = input_collection.get_processing_inputs(source="ultra")
+    assert len(ultra_inputs) == 2
+
+    # multiple filters
+    hit_anc_inputs = input_collection.get_processing_inputs(
+        source="hit", input_type=ProcessingInputType.ANCILLARY_FILE
+    )
+    assert len(hit_anc_inputs) == 1
+
+    data_level_inputs = input_collection.get_processing_inputs(data_type="l1c")
+    assert len(data_level_inputs) == 4
