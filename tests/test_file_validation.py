@@ -8,6 +8,7 @@ import pytest
 import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
+    QuicklookFilePath,
     ScienceFilePath,
     SPICEFilePath,
 )
@@ -45,12 +46,6 @@ def test_extract_filename_components():
 
     # Descriptor is required
     invalid_filename = "imap_mag_l1a_20210101_v001.cdf"
-
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
-        ScienceFilePath.extract_filename_components(invalid_filename)
-
-    # start and end time are required
-    invalid_filename = "imap_mag_l1a_20210101_v001"
     with pytest.raises(ScienceFilePath.InvalidScienceFileError):
         ScienceFilePath.extract_filename_components(invalid_filename)
 
@@ -59,10 +54,6 @@ def test_extract_filename_components():
     assert (
         ScienceFilePath.extract_filename_components(valid_filepath) == expected_output
     )
-
-    invalid_ext = "imap_mag_l1a_burst_20210101_v001.txt"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
-        ScienceFilePath.extract_filename_components(invalid_ext)
 
 
 def test_construct_sciencefilepathmanager():
@@ -84,7 +75,7 @@ def test_construct_sciencefilepathmanager():
         ScienceFilePath(invalid_filename)
 
     # invalid extension
-    invalid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
+    invalid_filename = "imap_mag_l1a_burst_20210101_v001.abc"
     with pytest.raises(ScienceFilePath.InvalidScienceFileError):
         ScienceFilePath(invalid_filename)
 
@@ -506,3 +497,62 @@ def test_science_file_creation_data_dir(monkeypatch):
         new_data_dir_location,
     )
     assert science_file.construct_path().is_relative_to(new_data_dir_location)
+
+
+def test_quicklook_file_path():
+    """Tests the ``QuicklookFilePath`` class for different scenarios."""
+
+    # Test for an invalid quicklook file (incorrect instrument type)
+    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+        QuicklookFilePath.generate_from_inputs(
+            instrument="invalid_instrument",  # Invalid instrument
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="png",
+        )
+    # Test for an invalid quicklook file (incorrect extension type)
+    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+        QuicklookFilePath.generate_from_inputs(
+            instrument="mag",
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="cdf",
+        )
+
+    # Test with no repointing
+    file_no_repointing = QuicklookFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        version="v001",
+        extension="png",
+    )
+    expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v001.png"
+    )
+    assert file_no_repointing.construct_path() == expected_output_no_end_date
+
+    # Test with repointing number
+    file_all_params = QuicklookFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        repointing=1,
+        version="v001",
+        extension="png",
+    )
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v001.png"
+    )
+    assert file_all_params.construct_path() == expected_output
+
+    # Test by passing the file
+    file = QuicklookFilePath("imap_mag_l1a_test_20210101_v001.png")
+    assert file.instrument == "mag"
+    assert file.start_date == "20210101"

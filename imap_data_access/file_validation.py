@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import typing
 import warnings
 from abc import abstractmethod
 from datetime import datetime
@@ -15,8 +16,8 @@ import imap_data_access
 def generate_imap_file_path(filename: str) -> ImapFilePath:
     """Generate an ImapFilePath object from a filename.
 
-    This method determines if the filename is a SPICE, Science, or Ancillary file and
-    returns a SPICEFilePath, ScienceFilePath, or AncillaryFilePath object respectively.
+    This method determines if the filename is a SPICE, Science, Ancillary, or
+    Quicklook file and returns the corresponding class.
 
     Parameters
     ----------
@@ -27,26 +28,18 @@ def generate_imap_file_path(filename: str) -> ImapFilePath:
     -------
     A FilePath object
     """
-    try:
-        # SPICE
-        path_obj = imap_data_access.SPICEFilePath(filename)
-    except SPICEFilePath.InvalidSPICEFileError:
-        # Science and Ancillary
+    for cls in (ScienceFilePath, AncillaryFilePath, SPICEFilePath, QuicklookFilePath):
         try:
-            path_obj = imap_data_access.ScienceFilePath(filename)
-        except ScienceFilePath.InvalidScienceFileError:
-            # If Science file fails, then process as an Ancillary file
-            try:
-                path_obj = imap_data_access.AncillaryFilePath(filename)
-            except AncillaryFilePath.InvalidAncillaryFileError as e:
-                # Matches neither file format
-                error_message = (
-                    f"Invalid file type for {filename}. It does not match"
-                    f"Spice, Science or Ancillary file formats"
-                )
-                raise ValueError(error_message) from e
-
-    return path_obj
+            return cls(filename)
+        except (
+            ScienceFilePath.InvalidScienceFileError,
+            AncillaryFilePath.InvalidAncillaryFileError,
+            SPICEFilePath.InvalidSPICEFileError,
+        ):
+            continue
+    raise ValueError(
+        f"Invalid file type for {filename}. It does not matchany file formats."
+    )
 
 
 class ImapFilePath:
@@ -123,6 +116,9 @@ class ImapFilePath:
 class ScienceFilePath(ImapFilePath):
     """Class for building and validating filepaths for science files."""
 
+    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
+    _dir_prefix = "imap"
+
     class InvalidScienceFileError(Exception):
         """Indicates a bad file type."""
 
@@ -186,6 +182,7 @@ class ScienceFilePath(ImapFilePath):
         descriptor: str,
         start_time: str,
         version: str,
+        extension: str = "cdf",
         repointing: int | str | None = None,
     ) -> ScienceFilePath:
         """Generate a filename from given inputs and return a ScienceFilePath instance.
@@ -209,6 +206,9 @@ class ScienceFilePath(ImapFilePath):
             The start time for the filename
         version : str
             The version of the data
+        extension : str, optional
+            The extension type of the file. Default is "cdf"
+            For l0 files, the extension is always "pkts"
         repointing : int, optional
             The repointing number for this file, optional field that
             is not always present. Should be either a string like "repointXXXXX" or an
@@ -219,7 +219,6 @@ class ScienceFilePath(ImapFilePath):
         str
             The generated filename
         """
-        extension = "cdf"
         if data_level == "l0":
             extension = "pkts"
         time_field = start_time
@@ -287,13 +286,10 @@ class ScienceFilePath(ImapFilePath):
         if self.repointing and not isinstance(self.repointing, int):
             error_message += "The repointing number should be an integer.\n"
 
-        if self.extension not in imap_data_access.VALID_FILE_EXTENSION or (
-            (self.data_level == "l0" and self.extension != "pkts")
-            or (self.data_level != "l0" and self.extension != "cdf")
-        ):
+        if self.extension not in self.VALID_EXTENSIONS:
             error_message += (
-                "Invalid extension. Extension should be pkts for data "
-                "level l0 and cdf for data level higher than l0 \n"
+                f"Invalid extension. Extension should be one of "
+                f"{self.VALID_EXTENSIONS}\n"
             )
 
         return error_message
@@ -312,7 +308,7 @@ class ScienceFilePath(ImapFilePath):
             Upload path
         """
         upload_path = Path(
-            f"{self.mission}/{self.instrument}/{self.data_level}/"
+            f"{self._dir_prefix}/{self.instrument}/{self.data_level}/"
             f"{self.start_date[:4]}/{self.start_date[4:6]}/{self.filename}"
         )
 
@@ -340,8 +336,6 @@ class ScienceFilePath(ImapFilePath):
         components : dict
             Dictionary containing components.
         """
-        # Pipe these together for optional matching in the regex below
-        extension_regex = "|".join(imap_data_access.VALID_FILE_EXTENSION)
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
@@ -350,7 +344,7 @@ class ScienceFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             r"(-repoint(?P<repointing>\d{5}))?"  # Optional repointing field
             r"_(?P<version>v\d{3})"
-            rf"\.(?P<extension>{extension_regex})$"
+            r"\.(?P<extension>[^.]+)$"
         )
         if isinstance(filename, Path):
             filename = filename.name
@@ -468,6 +462,8 @@ https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
 
 class SPICEFilePath(ImapFilePath):
     """Class for building and validating filepaths for SPICE files."""
+
+    _dir_prefix = "imap/spice"
 
     # Covers:
     # Historical Attitude (type: ah.bc)
@@ -609,7 +605,7 @@ class SPICEFilePath(ImapFilePath):
         Path
             Upload path
         """
-        spice_dir = imap_data_access.config["DATA_DIR"] / "imap/spice"
+        spice_dir = imap_data_access.config["DATA_DIR"] / f"{self._dir_prefix}"
         subdir = _SPICE_DIR_MAPPING[self.spice_metadata["type"]]
         # Use the file suffix to determine the directory structure
         # IMAP_DATA_DIR/spice/<subdir>/filename
@@ -731,6 +727,9 @@ class SPICEFilePath(ImapFilePath):
 
 class AncillaryFilePath(ImapFilePath):
     """Class for building and validating filepaths for Ancillary files."""
+
+    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "csv", "dat", "json", "zip"}
+    _dir_prefix = "imap/ancillary"
 
     class InvalidAncillaryFileError(Exception):
         """Indicates a bad file type."""
@@ -878,10 +877,10 @@ class AncillaryFilePath(ImapFilePath):
                 f"{imap_data_access.VALID_INSTRUMENTS} \n"
             )
 
-        if self.extension not in imap_data_access.VALID_ANCILLARY_FILE_EXTENSION:
+        if self.extension not in self.VALID_EXTENSIONS:
             error_message += (
                 f"Invalid extension. Extension should be one of "
-                f"{imap_data_access.VALID_ANCILLARY_FILE_EXTENSION}.\n"
+                f"{self.VALID_EXTENSIONS}.\n"
             )
 
         if not ScienceFilePath.is_valid_date(self.start_date):
@@ -908,10 +907,7 @@ class AncillaryFilePath(ImapFilePath):
         Path
             Upload path
         """
-        upload_path = Path(
-            f"{self.mission}/ancillary/{self.instrument}/{self.filename}"
-        )
-
+        upload_path = Path(f"{self._dir_prefix}/{self.instrument}/{self.filename}")
         return imap_data_access.config["DATA_DIR"] / upload_path
 
     @staticmethod
@@ -937,7 +933,9 @@ class AncillaryFilePath(ImapFilePath):
             Dictionary containing components.
         """
         # Pipe these together for optional matching in the regex below
-        extension_regex = "|".join(imap_data_access.VALID_ANCILLARY_FILE_EXTENSION)
+        extension_regex = "|".join(
+            AncillaryFilePath.VALID_EXTENSIONS.union(QuicklookFilePath.VALID_EXTENSIONS)
+        )
         pattern = (
             r"^(?P<mission>imap)_"
             r"(?P<instrument>[^_]+)_"
@@ -984,3 +982,10 @@ class AncillaryFilePath(ImapFilePath):
         elif start_date_anc <= start_date:
             return True
         return False
+
+
+class QuicklookFilePath(ScienceFilePath):
+    """Class for building and validating filepaths for Quicklook files."""
+
+    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"jpg", "pdf", "png"}
+    _dir_prefix = "imap/quicklook"

@@ -9,7 +9,7 @@ import requests
 
 import imap_data_access
 from imap_data_access import file_validation
-from imap_data_access.file_validation import generate_imap_file_path
+from imap_data_access.file_validation import ScienceFilePath, generate_imap_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -217,8 +217,10 @@ def query(
         query_params["repointing"] = int(repointing[-5:])
 
     # check extension
-    if extension is not None and extension not in imap_data_access.VALID_FILE_EXTENSION:
-        raise ValueError("Not a valid extension, choose from ('pkts', 'cdf').")
+    if extension is not None and extension not in ScienceFilePath.VALID_EXTENSIONS:
+        raise ValueError(
+            f"Not a valid extension, choose from {ScienceFilePath.VALID_EXTENSIONS}."
+        )
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}/query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()

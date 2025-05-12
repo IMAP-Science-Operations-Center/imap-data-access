@@ -28,7 +28,6 @@ from imap_data_access.processing_input import (
 __all__ = [
     "FILENAME_CONVENTION",
     "VALID_DATALEVELS",
-    "VALID_FILE_EXTENSION",
     "VALID_INSTRUMENTS",
     "AncillaryFilePath",
     "AncillaryInput",
@@ -112,8 +111,6 @@ VALID_DATALEVELS = {
     "l3e",
 }
 
-VALID_FILE_EXTENSION = {"pkts", "cdf"}
-
 FILENAME_CONVENTION = (
     "<mission>_<instrument>_<datalevel>_<descriptor>_"
     "<startdate>(-<repointing>)_<version>.<extension>"
@@ -123,5 +120,3 @@ ANCILLARY_FILENAME_CONVENTION = (
     "<mission>_<instrument>_<description>_"
     "<start_date>(_<end_date>)_<version>.<extension>"
 )
-
-VALID_ANCILLARY_FILE_EXTENSION = {"cdf", "csv", "dat", "json", "zip"}
