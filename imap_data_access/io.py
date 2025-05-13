@@ -126,7 +126,7 @@ def query(
         Ingestion end date in YYYYMMDD format. Note this is to search
         for all files with ingestion start dates before the requested end_date.
     repointing : str, optional
-        Repointing string, in the format 'repoint00000'
+        Repointing string, in the format 'repoint00000'.
     version : str, optional
         Data version in the format ``vXXX`` or 'latest'.
     extension : str, optional
