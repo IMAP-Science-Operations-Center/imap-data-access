@@ -351,7 +351,6 @@ def main():  # noqa: PLR0915
         type=str,
         required=False,
         help="Ingestion start date for a range of file timestamps in YYYYMMDD format",
-
     )
     query_parser.add_argument(
         "--ingestion-end-date",
