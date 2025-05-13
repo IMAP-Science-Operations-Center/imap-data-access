@@ -355,7 +355,6 @@ def main():  # noqa: PLR0915
         type=str,
         required=False,
         help="Repointing number (repoint00000)",
-
     )
     query_parser.add_argument(
         "--version",
