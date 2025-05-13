@@ -33,6 +33,7 @@ __all__ = [
 
 __version__ = importlib.metadata.version("imap-data-access")
 
+
 config = {
     "DATA_ACCESS_URL": os.getenv("IMAP_DATA_ACCESS_URL")
     or "https://api.dev.imap-mission.com",
