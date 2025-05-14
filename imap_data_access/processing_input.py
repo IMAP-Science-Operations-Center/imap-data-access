@@ -40,6 +40,7 @@ def generate_imap_input(filename: str) -> ProcessingInput:
             ScienceFilePath.InvalidScienceFileError,
             AncillaryFilePath.InvalidAncillaryFileError,
             SPICEFilePath.InvalidSPICEFileError,
+            ProcessingInput.ProcessingInputError,
         ):
             continue
     raise ValueError(
@@ -201,11 +202,6 @@ class ScienceInput(ProcessingInput):
     The class can contain multiple files, but they must have the same source, data type,
      and descriptor.
     """
-
-    class InvalidScienceInputError(Exception):
-        """Indicate that the ScienceInput is invalid."""
-
-        pass
 
     def __init__(self, *args):
         """Set the processing type to ScienceFile and then calls super().
