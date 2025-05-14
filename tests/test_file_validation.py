@@ -467,3 +467,42 @@ def test_ancillary_file_path():
     # Test valid date for given start_date
     assert ancillary_file.is_valid_for_start_date(datetime(2021, 1, 2))
     assert not ancillary_file.is_valid_for_start_date(datetime(2021, 1, 3))
+
+
+def test_deprecated_data_dir():
+    """Tests the deprecated data directory."""
+    # Test for deprecated data directory
+    science_file = ScienceFilePath.generate_from_inputs(
+        "mag",
+        "l1a",
+        "burst",
+        "20210101",
+        "v001",
+    )
+    with pytest.deprecated_call():
+        assert imap_data_access.config["DATA_DIR"] == science_file.data_dir
+
+
+def test_science_file_creation_data_dir(monkeypatch):
+    # Make sure that if we are updating our DATA_DIR, we respect that
+    # and create the file relative to our configuration dictionary all the time
+    science_file = ScienceFilePath.generate_from_inputs(
+        "mag",
+        "l1a",
+        "burst",
+        "20210101",
+        "v001",
+    )
+    # Typical case
+    assert science_file.construct_path().is_relative_to(
+        imap_data_access.config["DATA_DIR"]
+    )
+    # Update the config directory and our path should be relative to the new
+    # location, not the old one the file was initialized with
+    new_data_dir_location = Path("/new/path/to/data")
+    monkeypatch.setitem(
+        imap_data_access.config,
+        "DATA_DIR",
+        new_data_dir_location,
+    )
+    assert science_file.construct_path().is_relative_to(new_data_dir_location)

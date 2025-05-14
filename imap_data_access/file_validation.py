@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
@@ -54,6 +55,20 @@ class ImapFilePath:
     Includes shared static methods and provides correct typing for ScienceFilePath,
     AncillaryFilePath, and SPICEFilePath.
     """
+
+    @property
+    def data_dir(self) -> Path:
+        """Return the data directory for the file.
+
+        .. NOTE::
+            This is deprecated, use `imap_data_access.config["DATA_DIR"]` instead.
+        """
+        warnings.warn(
+            "data_dir is deprecated. Use imap_data_access.config['DATA_DIR'] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return imap_data_access.config["DATA_DIR"]
 
     @staticmethod
     def is_valid_date(input_date: str) -> bool:
@@ -141,7 +156,6 @@ class ScienceFilePath(ImapFilePath):
             Science data filename or file path.
         """
         self.filename = Path(filename)
-        self.data_dir = imap_data_access.config["DATA_DIR"]
 
         try:
             split_filename = self.extract_filename_components(self.filename)
@@ -301,10 +315,8 @@ class ScienceFilePath(ImapFilePath):
             f"{self.mission}/{self.instrument}/{self.data_level}/"
             f"{self.start_date[:4]}/{self.start_date[4:6]}/{self.filename}"
         )
-        if self.data_dir:
-            upload_path = self.data_dir / upload_path
 
-        return upload_path
+        return imap_data_access.config["DATA_DIR"] / upload_path
 
     @staticmethod
     def extract_filename_components(filename: str | Path) -> dict:
@@ -755,7 +767,6 @@ class AncillaryFilePath(ImapFilePath):
             Ancillary data filename or file path.
         """
         self.filename = Path(filename)
-        self.data_dir = imap_data_access.config["DATA_DIR"]
 
         try:
             split_filename = self.extract_filename_components(self.filename)
@@ -900,10 +911,8 @@ class AncillaryFilePath(ImapFilePath):
         upload_path = Path(
             f"{self.mission}/ancillary/{self.instrument}/{self.filename}"
         )
-        if self.data_dir:
-            upload_path = self.data_dir / upload_path
 
-        return upload_path
+        return imap_data_access.config["DATA_DIR"] / upload_path
 
     @staticmethod
     def extract_filename_components(filename: str | Path) -> dict:
