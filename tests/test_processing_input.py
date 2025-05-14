@@ -95,7 +95,7 @@ def test_spice_input():
     assert len(one_file.imap_file_paths) == 1
     assert isinstance(one_file.imap_file_paths[0], SPICEFilePath)
     assert one_file.input_type == ProcessingInputType.SPICE_FILE
-    assert one_file.source == "attitude_history"
+    assert one_file.source == ["attitude_history"]
     assert one_file.descriptor == "historical"
 
     # Test with multiple SPICE files of the same type
@@ -110,7 +110,7 @@ def test_spice_input():
     ]
     assert len(multiple_files.imap_file_paths) == 2
     assert multiple_files.input_type == ProcessingInputType.SPICE_FILE
-    assert multiple_files.source == "attitude_history,attitude_predict"
+    assert multiple_files.source == ["attitude_history", "attitude_predict"]
     assert multiple_files.descriptor == "best"
 
     # Adding few more kernel types to test
@@ -126,10 +126,16 @@ def test_spice_input():
     )
     assert len(multiple_files.imap_file_paths) == 8
     assert multiple_files.input_type == ProcessingInputType.SPICE_FILE
-    assert multiple_files.source == (
-        "leapseconds,spacecraft_clock,planetary_constants,"
-        "frames,planetary_ephemeris,ephemeris_90days,attitude_history,attitude_predict"
-    )
+    assert multiple_files.source == [
+        "leapseconds",
+        "spacecraft_clock",
+        "planetary_constants",
+        "frames",
+        "planetary_ephemeris",
+        "ephemeris_90days",
+        "attitude_history",
+        "attitude_predict",
+    ]
     assert multiple_files.descriptor == "best"
 
     # Test historical ephemeris files
@@ -147,7 +153,7 @@ def test_spice_input():
     assert ephemeris_files.descriptor == "best"
 
     # Test with a SPICE file containing "spin" in the source
-    spin_file = processing_input.SPICEInput("imap_1000_100_1000_100_01.spin.csv")
+    spin_file = processing_input.SpinInput("imap_1000_100_1000_100_01.spin.csv")
 
     assert spin_file.filename_list == ["imap_1000_100_1000_100_01.spin.csv"]
     assert len(spin_file.imap_file_paths) == 1
@@ -156,7 +162,7 @@ def test_spice_input():
     assert spin_file.descriptor == "historical"
 
     # Test with a SPICE file containing "repoint" in the source
-    repoint_file = processing_input.SPICEInput("imap_1000_100_01.repoint.csv")
+    repoint_file = processing_input.RepointInput("imap_1000_100_01.repoint.csv")
 
     assert repoint_file.filename_list == ["imap_1000_100_01.repoint.csv"]
     assert len(repoint_file.imap_file_paths) == 1
@@ -165,18 +171,26 @@ def test_spice_input():
     assert repoint_file.descriptor == "historical"
 
     # Test with invalid SPICE files (different sources)
-    with pytest.raises(
-        ValueError, match="If spin data in the list, it should only contain spin files"
-    ):
-        processing_input.SPICEInput(
+    with pytest.raises(ValueError, match="SpinInput can only contain spin files."):
+        processing_input.SpinInput(
             "imap_1000_100_1000_100_01.spin.csv",
             "imap_1000_001_02.repoint.csv",
         )
 
     # Test with multiple "repoint" files (should raise an error)
-    with pytest.raises(ValueError, match="There should only be one repoint file"):
-        processing_input.SPICEInput(
+    with pytest.raises(
+        ValueError, match="RepointInput can only contain one repoint file."
+    ):
+        processing_input.RepointInput(
             "imap_1000_001_02.repoint.csv",
+            "imap_1000_001_03.repoint.csv",
+        )
+    # Try passing in spin or repoint files to the SPICEInput class
+    with pytest.raises(
+        ValueError, match="SPICEInput can only contain ephemeris or attitude file"
+    ):
+        processing_input.SPICEInput(
+            "imap_1000_100_1000_100_01.spin.csv",
             "imap_1000_001_03.repoint.csv",
         )
 
@@ -236,11 +250,11 @@ def test_create_collection():
         "imap_1000_100_1000_100_01.ah.bc",
         "imap_1000_100_1000_100_02.ap.bc",
     )
-    spin_files = processing_input.SPICEInput(
+    spin_files = processing_input.SpinInput(
         "imap_1000_100_1000_100_01.spin.csv",
         "imap_1000_100_1000_101_01.spin.csv",
     )
-    repoint_files = processing_input.SPICEInput(
+    repoint_files = processing_input.RepointInput(
         "imap_1000_001_03.repoint.csv",
     )
     spice_collection = processing_input.ProcessingInputCollection(
@@ -356,11 +370,11 @@ def test_get_file_paths_descriptor():
         "imap_1000_100_1000_100_01.ah.bc",
         "imap_1000_100_1000_100_02.ap.bc",
     )
-    spin_files = processing_input.SPICEInput(
+    spin_files = processing_input.SpinInput(
         "imap_1000_100_1000_100_01.spin.csv",
         "imap_1000_100_1000_101_01.spin.csv",
     )
-    repoint_files = processing_input.SPICEInput(
+    repoint_files = processing_input.RepointInput(
         "imap_1000_001_03.repoint.csv",
     )
 
@@ -430,10 +444,10 @@ def test_download_all_files():
     spice_files = processing_input.SPICEInput(
         "naif0012.tls", "imap_sclk_0001.tsc", "imap_1000_100_1000_100_01.ah.bc"
     )
-    spin_files = processing_input.SPICEInput(
+    spin_files = processing_input.SpinInput(
         "imap_1000_100_1000_100_01.spin.csv",
     )
-    repoint_files = processing_input.SPICEInput(
+    repoint_files = processing_input.RepointInput(
         "imap_1000_001_03.repoint.csv",
     )
 
@@ -566,7 +580,7 @@ def test_generate_imap_input():
     spice_file = "imap_1000_100_1000_100_01.ah.bc"
     result = generate_imap_input(spice_file)
     assert isinstance(result, SPICEInput)
-    assert result.source == "attitude_history"
+    assert result.source == ["attitude_history"]
     assert result.descriptor == "historical"
     assert result.data_type == "spice"
 
