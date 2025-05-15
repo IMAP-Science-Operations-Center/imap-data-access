@@ -93,12 +93,23 @@ class ProcessingInput(ABC):
     input_type : ProcessingInputType
         The type of input file.
     source : str
-        The source of the file, for example, instrument name, "sc_attitude", or
-        "ancillary".
+        The source of the file. Eg.
+            instrument_name, 'spice', 'spin', 'repoint', list of kernel types
     data_type : str
-        The type of data, for example, "l1a" or "l1b" or "predict".
+        The type of data. Eg. instrument data level, ancillary, spice, spin,
+        repoint. This data type is used to help serialize() output
+        and querying 'spice' or 'spin' or 'repoint' files in processing code.
+        Eg.
+        [
+            {"type": "spice", "files":[ordered list of SPICE files]},
+            {"type": "spin", "files": [<list of spin files>]},
+            {"type": "repoint", "files": [<latest repoint file>]},
+            {"type": "science", "files": [<list of science files>]},
+            {"type": "ancillary", "files": [<list of ancillary files>]}
+        ]
     descriptor : str
-        A descriptor for the file, for example, "burst" or "cal".
+        A descriptor for the file, for example, "burst" or "cal". In SPICE,
+        spin and repoint file types, descriptor 'historical' or predict.
     """
 
     filename_list: list[str] = None
@@ -311,11 +322,8 @@ class AncillaryInput(ProcessingInput):
 class SPICEInput(ProcessingInput):
     """SPICE kernel file subclass for ProcessingInput."""
 
-    def __init__(self, *args) -> None:
-        """Initialize the attributes from the kernel file name."""
-        self.input_type = ProcessingInputType.SPICE_FILE
-        self.descriptor = "historical"
-        super().__init__(*args)
+    input_type = ProcessingInputType.SPICE_FILE
+    descriptor = "historical"
 
     def _set_attributes_from_filenames(self) -> None:
         """Set the source, data type, and descriptor attributes based on filename."""
@@ -355,13 +363,10 @@ class SPICEInput(ProcessingInput):
 class SpinInput(ProcessingInput):
     """Spin file subclass for ProcessingInput."""
 
-    def __init__(self, *args) -> None:
-        """Initialize the attributes for spin files."""
-        self.input_type = ProcessingInputType.SPICE_FILE
-        self.source = SPICESource.SPIN.value
-        self.data_type = SPICESource.SPIN.value
-        self.descriptor = "historical"
-        super().__init__(*args)
+    input_type = ProcessingInputType.SPICE_FILE
+    source = SPICESource.SPIN.value
+    data_type = SPICESource.SPIN.value
+    descriptor = "historical"
 
     def _set_attributes_from_filenames(self) -> None:
         """Validate that only spin files are included."""
@@ -388,13 +393,10 @@ class SpinInput(ProcessingInput):
 class RepointInput(ProcessingInput):
     """Repoint file subclass for ProcessingInput."""
 
-    def __init__(self, *args) -> None:
-        """Initialize the attributes for repoint files."""
-        self.input_type = ProcessingInputType.SPICE_FILE
-        self.source = SPICESource.REPOINT.value
-        self.data_type = SPICESource.REPOINT.value
-        self.descriptor = "historical"
-        super().__init__(*args)
+    input_type = ProcessingInputType.SPICE_FILE
+    source = SPICESource.REPOINT.value
+    data_type = SPICESource.REPOINT.value
+    descriptor = "historical"
 
     def _set_attributes_from_filenames(self) -> None:
         """Validate that only one repoint file is included."""
