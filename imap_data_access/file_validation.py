@@ -116,6 +116,10 @@ class ImapFilePath:
 class ScienceFilePath(ImapFilePath):
     """Class for building and validating filepaths for science files."""
 
+    FILENAME_CONVENTION = (
+        "<mission>_<instrument>_<datalevel>_<descriptor>_"
+        "<startdate>(-<repointing>)_<version>.<extension>"
+    )
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
     _dir_prefix = "imap"
 
@@ -158,7 +162,7 @@ class ScienceFilePath(ImapFilePath):
         except ValueError as err:
             raise self.InvalidScienceFileError(
                 f"Invalid filename. Expected file to match format: "
-                f"{imap_data_access.FILENAME_CONVENTION}"
+                f"{ScienceFilePath.FILENAME_CONVENTION}"
             ) from err
 
         self.mission = split_filename["mission"]
@@ -262,7 +266,7 @@ class ScienceFilePath(ImapFilePath):
         ):
             error_message = (
                 f"Invalid filename, missing attribute. Filename "
-                f"convention is {imap_data_access.FILENAME_CONVENTION} \n"
+                f"convention is {ScienceFilePath.FILENAME_CONVENTION} \n"
             )
         if self.mission != "imap":
             error_message += f"Invalid mission {self.mission}. Please use imap \n"
@@ -353,7 +357,7 @@ class ScienceFilePath(ImapFilePath):
         if match is None:
             raise ScienceFilePath.InvalidScienceFileError(
                 f"Filename {filename} does not match expected pattern: "
-                f"{imap_data_access.FILENAME_CONVENTION}"
+                f"{ScienceFilePath.FILENAME_CONVENTION}"
             )
 
         components = match.groupdict()
@@ -728,6 +732,10 @@ class SPICEFilePath(ImapFilePath):
 class AncillaryFilePath(ImapFilePath):
     """Class for building and validating filepaths for Ancillary files."""
 
+    FILENAME_CONVENTION = (
+        "<mission>_<instrument>_<description>_"
+        "<start_date>(_<end_date>)_<version>.<extension>"
+    )
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "csv", "dat", "json", "zip"}
     _dir_prefix = "imap/ancillary"
 
@@ -772,7 +780,7 @@ class AncillaryFilePath(ImapFilePath):
         except ValueError as err:
             raise self.InvalidAncillaryFileError(
                 f"Invalid filename. Expected file to match format: "
-                f"{imap_data_access.ANCILLARY_FILENAME_CONVENTION}"
+                f"{AncillaryFilePath.FILENAME_CONVENTION}"
             ) from err
 
         self.mission = split_filename["mission"]
@@ -866,7 +874,7 @@ class AncillaryFilePath(ImapFilePath):
         ):
             error_message = (
                 f"Invalid filename, missing attribute. Filename "
-                f"convention is {imap_data_access.ANCILLARY_FILENAME_CONVENTION} \n"
+                f"convention is {AncillaryFilePath.FILENAME_CONVENTION} \n"
             )
         if self.mission != "imap":
             error_message += f"Invalid mission {self.mission}. Please use imap \n"
@@ -952,7 +960,7 @@ class AncillaryFilePath(ImapFilePath):
         if match is None:
             raise AncillaryFilePath.InvalidAncillaryFileError(
                 f"Filename {filename} does not match expected pattern: "
-                f"{imap_data_access.ANCILLARY_FILENAME_CONVENTION}"
+                f"{AncillaryFilePath.FILENAME_CONVENTION}"
             )
 
         components = match.groupdict()

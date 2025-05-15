@@ -26,7 +26,6 @@ from imap_data_access.processing_input import (
 )
 
 __all__ = [
-    "FILENAME_CONVENTION",
     "VALID_DATALEVELS",
     "VALID_INSTRUMENTS",
     "AncillaryFilePath",
@@ -110,13 +109,3 @@ VALID_DATALEVELS = {
     "l3d",
     "l3e",
 }
-
-FILENAME_CONVENTION = (
-    "<mission>_<instrument>_<datalevel>_<descriptor>_"
-    "<startdate>(-<repointing>)_<version>.<extension>"
-)
-
-ANCILLARY_FILENAME_CONVENTION = (
-    "<mission>_<instrument>_<description>_"
-    "<start_date>(_<end_date>)_<version>.<extension>"
-)
