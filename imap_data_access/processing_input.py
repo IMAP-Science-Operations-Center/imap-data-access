@@ -37,10 +37,8 @@ def generate_imap_input(filename: str) -> ProcessingInput:
         try:
             return cls(filename)
         except (
-            ScienceFilePath.InvalidScienceFileError,
-            AncillaryFilePath.InvalidAncillaryFileError,
-            SPICEFilePath.InvalidSPICEFileError,
             ProcessingInput.ProcessingInputError,
+            ImapFilePath.InvalidImapFileError,
         ):
             continue
     raise ValueError(

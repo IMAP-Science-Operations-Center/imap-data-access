@@ -46,7 +46,7 @@ def test_extract_filename_components():
 
     # Descriptor is required
     invalid_filename = "imap_mag_l1a_20210101_v001.cdf"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath.extract_filename_components(invalid_filename)
 
     valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.cdf")
@@ -71,22 +71,22 @@ def test_construct_sciencefilepathmanager():
 
     # no extension
     invalid_filename = "imap_mag_l1a_burst_20210101_v001"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # invalid extension
     invalid_filename = "imap_mag_l1a_burst_20210101_v001.abc"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # invalid instrument
     invalid_filename = "imap_sdc_l1a_burst_20210101_v001.cdf"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # Bad repointing, not 5 digits
     invalid_filename = "imap_mag_l1a_burst_20210101-repoint0001_v001.cdf"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # good path with an extra "test" directory
@@ -183,7 +183,7 @@ def test_spice_file_path():
     )
 
     # Test a bad file extension too
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("test.txt")
 
     # Test that spin and repoint goes into their own directories
@@ -346,15 +346,15 @@ def test_spice_extract_repoint_parts():
 
 def test_spice_invalid_dates():
     # Ensure the DOY is valid (DOY 410??)
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("imap_2025_032_2025_410_003.ah.bc")
 
     # Ensure dates are valid (Month 13??)
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("imap_90days_20251320_20260220_v01.bsp")
 
     # Ensure valid ephemeris type (type taco??)
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("imap_taco_20251320_20260220_v01.bsp")
 
 
@@ -375,7 +375,7 @@ def test_ancillary_file_path():
     """Tests the ``AncillaryFilePath`` class for different scenarios."""
 
     # Test for an invalid ancillary file (incorrect instrument type)
-    with pytest.raises(AncillaryFilePath.InvalidAncillaryFileError):
+    with pytest.raises(AncillaryFilePath.InvalidImapFileError):
         AncillaryFilePath.generate_from_inputs(
             instrument="invalid_instrument",  # Invalid instrument
             descriptor="test",
@@ -503,7 +503,7 @@ def test_quicklook_file_path():
     """Tests the ``QuicklookFilePath`` class for different scenarios."""
 
     # Test for an invalid quicklook file (incorrect instrument type)
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         QuicklookFilePath.generate_from_inputs(
             instrument="invalid_instrument",  # Invalid instrument
             data_level="l1a",
@@ -513,7 +513,7 @@ def test_quicklook_file_path():
             extension="png",
         )
     # Test for an invalid quicklook file (incorrect extension type)
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         QuicklookFilePath.generate_from_inputs(
             instrument="mag",
             data_level="l1a",

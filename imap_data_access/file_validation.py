@@ -31,11 +31,7 @@ def generate_imap_file_path(filename: str) -> ImapFilePath:
     for cls in (ScienceFilePath, AncillaryFilePath, SPICEFilePath, QuicklookFilePath):
         try:
             return cls(filename)
-        except (
-            ScienceFilePath.InvalidScienceFileError,
-            AncillaryFilePath.InvalidAncillaryFileError,
-            SPICEFilePath.InvalidSPICEFileError,
-        ):
+        except ImapFilePath.InvalidImapFileError:
             continue
     raise ValueError(
         f"Invalid file type for {filename}. It does not matchany file formats."
@@ -48,6 +44,11 @@ class ImapFilePath:
     Includes shared static methods and provides correct typing for ScienceFilePath,
     AncillaryFilePath, and SPICEFilePath.
     """
+
+    class InvalidImapFileError(Exception):
+        """Indicates a bad file type."""
+
+        pass
 
     @property
     def data_dir(self) -> Path:
@@ -119,8 +120,8 @@ class ScienceFilePath(ImapFilePath):
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
     _dir_prefix = "imap"
 
-    class InvalidScienceFileError(Exception):
-        """Indicates a bad file type."""
+    class InvalidScienceFileError(ImapFilePath.InvalidImapFileError):
+        """DEPRECATED: Use ImapFilePath.InvalidImapFileError instead."""
 
         pass
 
@@ -156,7 +157,7 @@ class ScienceFilePath(ImapFilePath):
         try:
             split_filename = self.extract_filename_components(self.filename)
         except ValueError as err:
-            raise self.InvalidScienceFileError(
+            raise self.InvalidImapFileError(
                 f"Invalid filename. Expected file to match format: "
                 f"{imap_data_access.FILENAME_CONVENTION}"
             ) from err
@@ -172,7 +173,7 @@ class ScienceFilePath(ImapFilePath):
 
         self.error_message = self.validate_filename()
         if self.error_message:
-            raise self.InvalidScienceFileError(f"{self.error_message}")
+            raise self.InvalidImapFileError(f"{self.error_message}")
 
     @classmethod
     def generate_from_inputs(
@@ -351,7 +352,7 @@ class ScienceFilePath(ImapFilePath):
 
         match = re.match(pattern, filename)
         if match is None:
-            raise ScienceFilePath.InvalidScienceFileError(
+            raise ScienceFilePath.InvalidImapFileError(
                 f"Filename {filename} does not match expected pattern: "
                 f"{imap_data_access.FILENAME_CONVENTION}"
             )
@@ -572,8 +573,8 @@ class SPICEFilePath(ImapFilePath):
         re.compile(ephemeris_mk_filename_pattern, re.IGNORECASE),
     )
 
-    class InvalidSPICEFileError(Exception):
-        """Indicates a bad file type."""
+    class InvalidSPICEFileError(ImapFilePath.InvalidImapFileError):
+        """DEPRECATED: Use ImapFilePath.InvalidImapFileError instead."""
 
         pass
 
@@ -627,7 +628,7 @@ class SPICEFilePath(ImapFilePath):
             If
         """
         if components["type"] not in _SPICE_TYPE_MAPPING:
-            raise SPICEFilePath.InvalidSPICEFileError(
+            raise SPICEFilePath.InvalidImapFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
                 f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
                 f"the documentation to ensure the file has the "
@@ -658,7 +659,7 @@ class SPICEFilePath(ImapFilePath):
                     int(components.pop("start_year")), 1, 1
                 )
         except ValueError:
-            raise SPICEFilePath.InvalidSPICEFileError(
+            raise SPICEFilePath.InvalidImapFileError(
                 "Invalid date detect in product file name, ensure date exists"
             ) from None
 
@@ -679,7 +680,7 @@ class SPICEFilePath(ImapFilePath):
             start_date - datetime or None
             end_date - datetime or None
 
-        If a match is not found, InvalidSPICEFileError will be raised.
+        If a match is not found, InvalidImapFileError will be raised.
 
         Parameters
         ----------
@@ -701,7 +702,7 @@ class SPICEFilePath(ImapFilePath):
                 return spice_metadata
 
         # Error if no match found to accepted types
-        raise SPICEFilePath.InvalidSPICEFileError(
+        raise SPICEFilePath.InvalidImapFileError(
             f"Invalid SPICE file. Expected file to have one of the following "
             f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
             f"the documentation to ensure the file has the "
@@ -731,8 +732,8 @@ class AncillaryFilePath(ImapFilePath):
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "csv", "dat", "json", "zip"}
     _dir_prefix = "imap/ancillary"
 
-    class InvalidAncillaryFileError(Exception):
-        """Indicates a bad file type."""
+    class InvalidAncillaryFileError(ImapFilePath.InvalidImapFileError):
+        """DEPRECATED: Use ImapFilePath.InvalidImapFileError instead."""
 
         pass
 
@@ -770,7 +771,7 @@ class AncillaryFilePath(ImapFilePath):
         try:
             split_filename = self.extract_filename_components(self.filename)
         except ValueError as err:
-            raise self.InvalidAncillaryFileError(
+            raise self.InvalidImapFileError(
                 f"Invalid filename. Expected file to match format: "
                 f"{imap_data_access.ANCILLARY_FILENAME_CONVENTION}"
             ) from err
@@ -785,7 +786,7 @@ class AncillaryFilePath(ImapFilePath):
 
         self.error_message = self.validate_filename()
         if self.error_message:
-            raise self.InvalidAncillaryFileError(f"{self.error_message}")
+            raise self.InvalidImapFileError(f"{self.error_message}")
 
     @classmethod
     def generate_from_inputs(
@@ -950,7 +951,7 @@ class AncillaryFilePath(ImapFilePath):
 
         match = re.match(pattern, filename)
         if match is None:
-            raise AncillaryFilePath.InvalidAncillaryFileError(
+            raise AncillaryFilePath.InvalidImapFileError(
                 f"Filename {filename} does not match expected pattern: "
                 f"{imap_data_access.ANCILLARY_FILENAME_CONVENTION}"
             )
