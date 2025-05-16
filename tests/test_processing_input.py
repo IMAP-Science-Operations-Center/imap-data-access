@@ -16,8 +16,8 @@ from imap_data_access.processing_input import (
     RepointInput,
     ScienceInput,
     SPICEInput,
-    SpinInput,
     SPICESource,
+    SpinInput,
     generate_imap_input,
 )
 
