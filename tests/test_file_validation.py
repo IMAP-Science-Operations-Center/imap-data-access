@@ -8,6 +8,7 @@ import pytest
 import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
+    CandenceFilePath,
     QuicklookFilePath,
     ScienceFilePath,
     SPICEFilePath,
@@ -554,5 +555,63 @@ def test_quicklook_file_path():
 
     # Test by passing the file
     file = QuicklookFilePath("imap_mag_l1a_test_20210101_v001.png")
+    assert file.instrument == "mag"
+    assert file.start_date == "20210101"
+
+
+def test_candence_file_path():
+    """Tests the ``CandenceFilePath`` class scenarios."""
+    # Test for an invalid cadence file (incorrect instrument type)
+    with pytest.raises(CandenceFilePath.InvalidImapFileError):
+        CandenceFilePath.generate_from_inputs(
+            instrument="invalid_instrument",  # Invalid instrument
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="json",
+        )
+    # Test for an invalid cadence file (incorrect extension type)
+    with pytest.raises(CandenceFilePath.InvalidImapFileError):
+        CandenceFilePath.generate_from_inputs(
+            instrument="mag",
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="cdf",
+        )
+
+    # Test with no repointing
+    file_no_repointing = CandenceFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        version="v001",
+        extension="json",
+    )
+    expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/candence/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v001.json"
+    )
+    assert file_no_repointing.construct_path() == expected_output_no_end_date
+
+    # Test with repointing number
+    file_all_params = CandenceFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        repointing=1,
+        version="v001",
+        extension="json",
+    )
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/candence/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v001.json"
+    )
+    assert file_all_params.construct_path() == expected_output
+
+    # Test by passing the file
+    file = CandenceFilePath("imap_mag_l1a_test_20210101_v001.json")
     assert file.instrument == "mag"
     assert file.start_date == "20210101"
