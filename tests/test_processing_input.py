@@ -11,9 +11,12 @@ from imap_data_access import (
 )
 from imap_data_access.processing_input import (
     AncillaryInput,
+    ProcessingInput,
     ProcessingInputType,
+    RepointInput,
     ScienceInput,
     SPICEInput,
+    SpinInput,
     generate_imap_input,
 )
 
@@ -44,7 +47,7 @@ def test_create_science_files():
     assert two_files.descriptor == "burst-magi"
     assert two_files.data_type == "l1a"
 
-    with pytest.raises(ValueError, match="same source"):
+    with pytest.raises(ProcessingInput.ProcessingInputError, match="same source"):
         processing_input.ScienceInput(
             "imap_mag_l1a_burst-magi_20240312_v000.cdf",
             "imap_mag_l1a_norm-magi_20240312_v000.cdf",
@@ -79,7 +82,7 @@ def test_create_ancillary_files():
     assert two_files.descriptor == "l1b-cal"
     assert two_files.data_type == "ancillary"
 
-    with pytest.raises(ValueError, match="same source"):
+    with pytest.raises(ProcessingInput.ProcessingInputError, match="same source"):
         processing_input.AncillaryInput(
             "imap_mag_l1b-cal_20250101_v001.cdf",
             "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
@@ -171,7 +174,10 @@ def test_spice_input():
     assert repoint_file.descriptor == "historical"
 
     # Test with invalid SPICE files (different sources)
-    with pytest.raises(ValueError, match="SpinInput can only contain spin files."):
+    with pytest.raises(
+        ProcessingInput.ProcessingInputError,
+        match="SpinInput can only contain spin files.",
+    ):
         processing_input.SpinInput(
             "imap_1000_100_1000_100_01.spin.csv",
             "imap_1000_001_02.repoint.csv",
@@ -179,7 +185,8 @@ def test_spice_input():
 
     # Test with multiple "repoint" files (should raise an error)
     with pytest.raises(
-        ValueError, match="RepointInput can only contain one repoint file."
+        ProcessingInput.ProcessingInputError,
+        match="RepointInput can only contain one repoint file.",
     ):
         processing_input.RepointInput(
             "imap_1000_001_02.repoint.csv",
@@ -187,7 +194,8 @@ def test_spice_input():
         )
     # Try passing in spin or repoint files to the SPICEInput class
     with pytest.raises(
-        ValueError, match="SPICEInput can only contain ephemeris or attitude file"
+        ProcessingInput.ProcessingInputError,
+        match="SPICEInput can only contain ephemeris or attitude file",
     ):
         processing_input.SPICEInput(
             "imap_1000_100_1000_100_01.spin.csv",
@@ -584,6 +592,20 @@ def test_generate_imap_input():
     assert result.descriptor == "historical"
     assert result.data_type == "spice"
 
+    spin_file = "imap_1000_100_1000_100_01.spin.csv"
+    result = generate_imap_input(spin_file)
+    assert isinstance(result, SpinInput)
+    assert result.source == "spin"
+    assert result.descriptor == "historical"
+    assert result.data_type == "spin"
+
+    repoint_file = "imap_1000_001_03.repoint.csv"
+    result = generate_imap_input(repoint_file)
+    assert isinstance(result, RepointInput)
+    assert result.source == "repoint"
+    assert result.descriptor == "historical"
+    assert result.data_type == "repoint"
+
     # Test with a Science file
     science_file = "imap_mag_l1a_norm-magi_20250101_v000.cdf"
     result = generate_imap_input(science_file)
@@ -602,5 +624,7 @@ def test_generate_imap_input():
 
     # Test with an invalid file type
     invalid_file = "invalid_file_type.txt"
-    with pytest.raises(ValueError, match="Invalid input type"):
+    with pytest.raises(
+        ProcessingInput.ProcessingInputError, match="Invalid input type"
+    ):
         generate_imap_input(invalid_file)

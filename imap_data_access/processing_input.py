@@ -41,7 +41,7 @@ def generate_imap_input(filename: str) -> ProcessingInput:
             ImapFilePath.InvalidImapFileError,
         ):
             continue
-    raise ValueError(
+    raise ProcessingInput.ProcessingInputError(
         f"Invalid input type for {filename}. It does not match any file formats."
     )
 
@@ -139,11 +139,15 @@ class ProcessingInput(ABC):
         self.filename_list = []
         for filename in args:
             if not isinstance(filename, str):
-                raise ValueError("All arguments must be strings")
+                raise ProcessingInput.ProcessingInputError(
+                    "All arguments must be strings"
+                )
             self.filename_list.append(filename)
         self._set_attributes_from_filenames()
         if len(args) < 1:
-            raise ValueError("At least one file must be provided.")
+            raise ProcessingInput.ProcessingInputError(
+                "At least one file must be provided."
+            )
 
     @abstractmethod
     def get_time_range(self):
@@ -187,7 +191,7 @@ class ProcessingInput(ABC):
             file_obj_list.append(path_validator)
 
         if len(source) != 1 or len(data_type) != 1 or len(descriptor) != 1:
-            raise ValueError(
+            raise ProcessingInput.ProcessingInputError(
                 "All files must have the same source, data type, and descriptor."
             )
 
@@ -332,7 +336,7 @@ class SPICEInput(ProcessingInput):
             path_validator = SPICEFilePath(file)
             kernel_type = path_validator.spice_metadata["type"]
             if kernel_type in {"spin", "repoint"}:
-                raise ValueError(
+                raise ProcessingInput.ProcessingInputError(
                     "SPICEInput can only contain ephemeris or attitude files."
                     "Use SpinInput or RepointInput instead."
                 )
@@ -374,7 +378,9 @@ class SpinInput(ProcessingInput):
             path_validator = SPICEFilePath(file)
             kernel_type = path_validator.spice_metadata["type"]
             if kernel_type != "spin":
-                raise ValueError("SpinInput can only contain spin files.")
+                raise ProcessingInput.ProcessingInputError(
+                    "SpinInput can only contain spin files."
+                )
             file_obj_list.append(path_validator)
 
         self.imap_file_paths = file_obj_list
@@ -399,7 +405,9 @@ class RepointInput(ProcessingInput):
     def _set_attributes_from_filenames(self) -> None:
         """Validate that only one repoint file is included."""
         if len(self.filename_list) != 1:
-            raise ValueError("RepointInput can only contain one repoint file.")
+            raise ProcessingInput.ProcessingInputError(
+                "RepointInput can only contain one repoint file."
+            )
 
         file_obj_list = [SPICEFilePath(file) for file in self.filename_list]
         self.imap_file_paths = file_obj_list
