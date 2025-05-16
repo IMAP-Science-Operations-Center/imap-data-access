@@ -34,9 +34,12 @@ def _make_request(request: requests.PreparedRequest):
             response.raise_for_status()
             yield response
     except requests.exceptions.HTTPError as e:
-        raise IMAPDataAccessError(str(e)) from e
+        # e.response.reason captures the error message from the API
+        error_msg = f"{e.response.status_code} {e.response.reason}: {e.response.text}"
+        raise IMAPDataAccessError(error_msg) from e
     except requests.exceptions.RequestException as e:
-        raise IMAPDataAccessError(str(e)) from e
+        error_msg = f"{e.response.status_code} {e.response.reason}: {e.response.text}"
+        raise IMAPDataAccessError(error_msg) from e
 
 
 def download(file_path: Union[Path, str]) -> Path:
@@ -279,6 +282,7 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
         "PUT", s3_url, data=file_path.read_bytes(), headers={"Content-Type": ""}
     ).prepare()
     with _make_request(upload_request) as response:
+        print(response)
         logger.debug(
             "Received status code [%s] with response: %s",
             response.status_code,
