@@ -624,7 +624,5 @@ def test_generate_imap_input():
 
     # Test with an invalid file type
     invalid_file = "invalid_file_type.txt"
-    with pytest.raises(
-        ProcessingInput.ProcessingInputError, match="Invalid input type"
-    ):
+    with pytest.raises(ValueError, match="Invalid input type"):
         generate_imap_input(invalid_file)

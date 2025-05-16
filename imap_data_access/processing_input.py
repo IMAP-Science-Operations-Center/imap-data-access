@@ -41,7 +41,7 @@ def generate_imap_input(filename: str) -> ProcessingInput:
             ImapFilePath.InvalidImapFileError,
         ):
             continue
-    raise ProcessingInput.ProcessingInputError(
+    raise ValueError(
         f"Invalid input type for {filename}. It does not match any file formats."
     )
 
