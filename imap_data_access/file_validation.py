@@ -998,3 +998,10 @@ class QuicklookFilePath(ScienceFilePath):
 
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"jpg", "pdf", "png"}
     _dir_prefix = "imap/quicklook"
+
+
+class CandenceFilePath(ScienceFilePath):
+    """Class for building and validating filepaths for Quicklook files."""
+
+    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"json"}
+    _dir_prefix = "imap/candence"
