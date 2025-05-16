@@ -28,7 +28,13 @@ def generate_imap_file_path(filename: str) -> ImapFilePath:
     -------
     A FilePath object
     """
-    for cls in (ScienceFilePath, AncillaryFilePath, SPICEFilePath, QuicklookFilePath):
+    for cls in (
+        ScienceFilePath,
+        AncillaryFilePath,
+        SPICEFilePath,
+        QuicklookFilePath,
+        CadenceFilePath,
+    ):
         try:
             return cls(filename)
         except ImapFilePath.InvalidImapFileError:
@@ -1000,8 +1006,14 @@ class QuicklookFilePath(ScienceFilePath):
     _dir_prefix = "imap/quicklook"
 
 
-class CandenceFilePath(ScienceFilePath):
-    """Class for building and validating filepaths for Quicklook files."""
+class CadenceFilePath(ScienceFilePath):
+    """Class for building and validating filepaths for Cadence files.
+
+    These files store the processing input for the data product they
+    are associated with. This approach avoids hitting the character
+    limit imposed by batch job commands and ensures the input format
+    remains compatible with what ProcessingInputCollection expects.
+    """
 
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"json"}
     _dir_prefix = "imap/candence"

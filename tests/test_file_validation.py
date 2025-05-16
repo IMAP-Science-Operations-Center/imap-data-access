@@ -8,7 +8,7 @@ import pytest
 import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
-    CandenceFilePath,
+    CadenceFilePath,
     QuicklookFilePath,
     ScienceFilePath,
     SPICEFilePath,
@@ -560,10 +560,10 @@ def test_quicklook_file_path():
 
 
 def test_candence_file_path():
-    """Tests the ``CandenceFilePath`` class scenarios."""
+    """Tests the ``CadenceFilePath`` class scenarios."""
     # Test for an invalid cadence file (incorrect instrument type)
-    with pytest.raises(CandenceFilePath.InvalidImapFileError):
-        CandenceFilePath.generate_from_inputs(
+    with pytest.raises(CadenceFilePath.InvalidImapFileError):
+        CadenceFilePath.generate_from_inputs(
             instrument="invalid_instrument",  # Invalid instrument
             data_level="l1a",
             descriptor="test",
@@ -572,8 +572,8 @@ def test_candence_file_path():
             extension="json",
         )
     # Test for an invalid cadence file (incorrect extension type)
-    with pytest.raises(CandenceFilePath.InvalidImapFileError):
-        CandenceFilePath.generate_from_inputs(
+    with pytest.raises(CadenceFilePath.InvalidImapFileError):
+        CadenceFilePath.generate_from_inputs(
             instrument="mag",
             data_level="l1a",
             descriptor="test",
@@ -583,7 +583,7 @@ def test_candence_file_path():
         )
 
     # Test with no repointing
-    file_no_repointing = CandenceFilePath.generate_from_inputs(
+    file_no_repointing = CadenceFilePath.generate_from_inputs(
         instrument="mag",
         data_level="l1a",
         descriptor="test",
@@ -597,7 +597,7 @@ def test_candence_file_path():
     assert file_no_repointing.construct_path() == expected_output_no_end_date
 
     # Test with repointing number
-    file_all_params = CandenceFilePath.generate_from_inputs(
+    file_all_params = CadenceFilePath.generate_from_inputs(
         instrument="mag",
         data_level="l1a",
         descriptor="test",
@@ -612,6 +612,6 @@ def test_candence_file_path():
     assert file_all_params.construct_path() == expected_output
 
     # Test by passing the file
-    file = CandenceFilePath("imap_mag_l1a_test_20210101_v001.json")
+    file = CadenceFilePath("imap_mag_l1a_test_20210101_v001.json")
     assert file.instrument == "mag"
     assert file.start_date == "20210101"
