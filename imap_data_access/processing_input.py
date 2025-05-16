@@ -485,6 +485,15 @@ class ProcessingInputCollection:
         ----------
         json_input : str
             JSON input matching the output of ProcessingInputCollection.serialize()
+            Input json are organized by input type (science and ancillary) or
+            data type (SPICE file types). Eg.
+            [
+                {"type": "spice", "files":[ordered list of SPICE files]},
+                {"type": "spin", "files": [<list of spin files>]},
+                {"type": "repoint", "files": [<latest repoint file>]},
+                {"type": "science", "files": [<list of science files>]},
+                {"type": "ancillary", "files": [<list of ancillary files>]}
+            ]
         """
         full_input = json.loads(json_input)
 
@@ -495,6 +504,10 @@ class ProcessingInputCollection:
                 self.add(AncillaryInput(*file_creator["files"]))
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
+            elif file_creator["type"] == SPICESource.SPIN.value:
+                self.add(SpinInput(*file_creator["files"]))
+            elif file_creator["type"] == SPICESource.REPOINT.value:
+                self.add(RepointInput(*file_creator["files"]))
 
     def get_science_inputs(self, source: str | None = None) -> list[ProcessingInput]:
         """Return just the science files from the collection.

@@ -17,6 +17,7 @@ from imap_data_access.processing_input import (
     ScienceInput,
     SPICEInput,
     SpinInput,
+    SPICESource,
     generate_imap_input,
 )
 
@@ -298,6 +299,40 @@ def test_create_collection():
         },
     ]
     assert spice_collection.serialize() == json.dumps(expected_deserialized)
+
+    input_collection_str = [
+        {"type": "spice", "files": ["naif0012.tls", "imap_sclk_0001.tsc"]},
+        {"type": "science", "files": ["imap_swe_l0_raw_20260924_v007.pkts"]},
+        {"type": "spin", "files": ["imap_1000_100_1000_100_01.spin.csv"]},
+        {"type": "repoint", "files": ["imap_1000_001_03.repoint.csv"]},
+    ]
+    input_collection = processing_input.ProcessingInputCollection()
+    input_collection.deserialize(json.dumps(input_collection_str))
+    assert len(input_collection.processing_input) == 4
+    assert (
+        input_collection.processing_input[0].input_type
+        == ProcessingInputType.SPICE_FILE
+    )
+    assert (
+        input_collection.processing_input[1].input_type
+        == ProcessingInputType.SCIENCE_FILE
+    )
+    assert (
+        input_collection.processing_input[2].input_type
+        == ProcessingInputType.SPICE_FILE
+    )
+    assert (
+        input_collection.processing_input[3].input_type
+        == ProcessingInputType.SPICE_FILE
+    )
+
+    # test get_file_paths
+    assert len(input_collection.get_file_paths(data_type=SPICESource.SPIN.value)) == 1
+    assert len(input_collection.get_file_paths(data_type=SPICESource.SPICE.value)) == 2
+    assert len(input_collection.get_file_paths(data_type="l0")) == 1
+    assert (
+        len(input_collection.get_file_paths(data_type=SPICESource.REPOINT.value)) == 1
+    )
 
 
 def test_get_time_range():
