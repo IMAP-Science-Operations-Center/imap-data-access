@@ -370,7 +370,6 @@ def test_upload(
     # An API key needs to be added to the header for uploads
     assert request_sent.headers == expected_header
 
-    print(mock_calls)
     # Verify that we put that response into our second request
     request_sent = mock_calls[1].args[0]
     called_url = request_sent.url

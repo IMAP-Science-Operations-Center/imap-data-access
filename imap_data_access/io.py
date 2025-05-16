@@ -282,7 +282,6 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
         "PUT", s3_url, data=file_path.read_bytes(), headers={"Content-Type": ""}
     ).prepare()
     with _make_request(upload_request) as response:
-        print(response)
         logger.debug(
             "Received status code [%s] with response: %s",
             response.status_code,
