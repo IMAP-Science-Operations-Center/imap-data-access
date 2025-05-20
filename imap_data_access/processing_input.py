@@ -18,6 +18,34 @@ from imap_data_access import (
 from imap_data_access.io import download
 
 
+def generate_imap_input(filename: str) -> ProcessingInput:
+    """Generate an ProcessingInput object from a filename.
+
+    This method determines if the filename is a SPICE, Science, or Ancillary file and
+    returns a SPICEInput, ScienceInput, or AncillaryInput object respectively.
+
+    Parameters
+    ----------
+    filename : str
+        The filename to generate a path for.
+
+    Returns
+    -------
+    A FilePath object
+    """
+    for cls in (ScienceInput, AncillaryInput, SPICEInput, SpinInput, RepointInput):
+        try:
+            return cls(filename)
+        except (
+            ProcessingInput.ProcessingInputError,
+            ImapFilePath.InvalidImapFileError,
+        ):
+            continue
+    raise ValueError(
+        f"Invalid input type for {filename}. It does not match any file formats."
+    )
+
+
 class ProcessingInputType(Enum):
     """Enum matching types of ProcessingInputs to output strings describing them."""
 
@@ -63,12 +91,23 @@ class ProcessingInput(ABC):
     input_type : ProcessingInputType
         The type of input file.
     source : str
-        The source of the file, for example, instrument name, "sc_attitude", or
-        "ancillary".
+        The source of the file. Eg.
+            instrument_name, 'spice', 'spin', 'repoint', list of kernel types
     data_type : str
-        The type of data, for example, "l1a" or "l1b" or "predict".
+        The type of data. Eg. instrument data level, ancillary, spice, spin,
+        repoint. This data type is used to help serialize() output
+        and querying 'spice' or 'spin' or 'repoint' files in processing code.
+        Eg.
+        [
+            {"type": "spice", "files":[ordered list of SPICE files]},
+            {"type": "spin", "files": [<list of spin files>]},
+            {"type": "repoint", "files": [<latest repoint file>]},
+            {"type": "science", "files": [<list of science files>]},
+            {"type": "ancillary", "files": [<list of ancillary files>]}
+        ]
     descriptor : str
-        A descriptor for the file, for example, "burst" or "cal".
+        A descriptor for the file, for example, "burst" or "cal". In SPICE,
+        spin and repoint file types, descriptor 'historical' or predict.
     """
 
     filename_list: list[str] = None
@@ -79,6 +118,11 @@ class ProcessingInput(ABC):
     source: str = field(init=False)
     data_type: str = field(init=False)  # should be data level or "ancillary" or "spice"
     descriptor: str = field(init=False)
+
+    class ProcessingInputError(Exception):
+        """Indicate that the ProcessingInput is invalid."""
+
+        pass
 
     def __init__(self, *args):
         """Initialize using a list of filepaths and sets the attributes of the class.
@@ -95,11 +139,15 @@ class ProcessingInput(ABC):
         self.filename_list = []
         for filename in args:
             if not isinstance(filename, str):
-                raise ValueError("All arguments must be strings")
+                raise ProcessingInput.ProcessingInputError(
+                    "All arguments must be strings"
+                )
             self.filename_list.append(filename)
         self._set_attributes_from_filenames()
         if len(args) < 1:
-            raise ValueError("At least one file must be provided.")
+            raise ProcessingInput.ProcessingInputError(
+                "At least one file must be provided."
+            )
 
     @abstractmethod
     def get_time_range(self):
@@ -143,7 +191,7 @@ class ProcessingInput(ABC):
             file_obj_list.append(path_validator)
 
         if len(source) != 1 or len(data_type) != 1 or len(descriptor) != 1:
-            raise ValueError(
+            raise ProcessingInput.ProcessingInputError(
                 "All files must have the same source, data type, and descriptor."
             )
 
@@ -274,83 +322,99 @@ class AncillaryInput(ProcessingInput):
 
 
 class SPICEInput(ProcessingInput):
-    """SPICE file subclass for ProcessingInput."""
+    """SPICE kernel file subclass for ProcessingInput."""
 
-    def __init__(self, *args) -> None:
-        """Initialize the attributes from the SPICE file name.
-
-        The SPICEInput class customizes the initialization process to handle
-        SPICE-specific requirements. It sets attributes such as input type,
-        source, data type, and descriptor based on the provided filenames.
-        These attributes are used to group and manage SPICE files effectively.
-
-        Key Attributes:
-        1. input_type: Identifies the type of input. ProcessingInputType.SPICE_FILE
-        2. source: Specifies the source of the files
-            (e.g., 'spice', 'spin', 'repoint'). This helps in serialize() output. Eg.
-           [
-                {"type": "spice", "files": [ordered list of SPICE files]},
-                {"type": "spin", "files": [<list of spin files>]},
-                {"type": "repoint", "files": [<latest repoint file>]}
-           ]
-        3. data_type: Indicates the type of data. ProcessingInputType.SPICE_FILE.value
-        4. descriptor: Indicates the file descriptor ('historical' by default, or 'best'
-            if predictive kernels are included).
-
-        Parameters
-        ----------
-        args : str
-            Input SPICE filenames.
-        """
-        self.input_type = ProcessingInputType.SPICE_FILE
-        self.data_type = ProcessingInputType.SPICE_FILE.value
-        self.descriptor = "historical"
-        super().__init__(*args)
+    input_type = ProcessingInputType.SPICE_FILE
+    descriptor = "historical"
 
     def _set_attributes_from_filenames(self) -> None:
         """Set the source, data type, and descriptor attributes based on filename."""
-        source = set()
+        source = []
         file_obj_list = []
 
         for file in self.filename_list:
             path_validator = SPICEFilePath(file)
             kernel_type = path_validator.spice_metadata["type"]
-            source.add(kernel_type)
+            if kernel_type in {"spin", "repoint"}:
+                raise ProcessingInput.ProcessingInputError(
+                    "SPICEInput can only contain ephemeris or attitude files."
+                    "Use SpinInput or RepointInput instead."
+                )
+            if kernel_type not in source:
+                source.append(kernel_type)
             file_obj_list.append(path_validator)
 
-            # Set the descriptor to be predict if it contains any predict kernel types
             if (
                 "ephemeris" in kernel_type and kernel_type != "ephemeris_reconstructed"
             ) or kernel_type == "attitude_predict":
                 self.descriptor = "best"
 
-        if "spin" in source:
-            # Update the source to be spin
-            self.source = SPICESource.SPIN.value
-            if len(source) != 1:
-                raise ValueError(
-                    "If spin data in the list, it should only contain spin files"
+        self.source = source
+        self.data_type = ProcessingInputType.SPICE_FILE.value
+        self.imap_file_paths = file_obj_list
+
+    def construct_json_output(self):
+        """Construct a JSON output."""
+        return {"type": self.data_type, "files": self.filename_list}
+
+    def get_time_range(self):
+        """Not yet complete."""
+        pass
+
+
+class SpinInput(ProcessingInput):
+    """Spin file subclass for ProcessingInput."""
+
+    input_type = ProcessingInputType.SPICE_FILE
+    source = SPICESource.SPIN.value
+    data_type = SPICESource.SPIN.value
+    descriptor = "historical"
+
+    def _set_attributes_from_filenames(self) -> None:
+        """Validate that only spin files are included."""
+        file_obj_list = []
+
+        for file in self.filename_list:
+            path_validator = SPICEFilePath(file)
+            kernel_type = path_validator.spice_metadata["type"]
+            if kernel_type != "spin":
+                raise ProcessingInput.ProcessingInputError(
+                    "SpinInput can only contain spin files."
                 )
-        elif "repoint" in source:
-            # Update the source to be repoint
-            self.source = SPICESource.REPOINT.value
-            # Latest file will contain all the repointing data.
-            if len(file_obj_list) != 1:
-                raise ValueError(
-                    "There should only be one repoint file in the list of files"
-                )
-        else:
-            self.source = SPICESource.SPICE.value
+            file_obj_list.append(path_validator)
 
         self.imap_file_paths = file_obj_list
 
     def construct_json_output(self):
-        """Construct a JSON output.
+        """Construct a JSON output."""
+        return {"type": self.data_type, "files": self.filename_list}
 
-        This contains the minimum information needed to construct an identical
-        ProcessingInput instance (input_type and filename)
-        """
-        return {"type": self.source, "files": self.filename_list}
+    def get_time_range(self):
+        """Not yet complete."""
+        pass
+
+
+class RepointInput(ProcessingInput):
+    """Repoint file subclass for ProcessingInput."""
+
+    input_type = ProcessingInputType.SPICE_FILE
+    source = SPICESource.REPOINT.value
+    data_type = SPICESource.REPOINT.value
+    descriptor = "historical"
+
+    def _set_attributes_from_filenames(self) -> None:
+        """Validate that only one repoint file is included."""
+        if len(self.filename_list) != 1:
+            raise ProcessingInput.ProcessingInputError(
+                "RepointInput can only contain one repoint file."
+            )
+
+        file_obj_list = [SPICEFilePath(file) for file in self.filename_list]
+        self.imap_file_paths = file_obj_list
+
+    def construct_json_output(self):
+        """Construct a JSON output."""
+        return {"type": self.data_type, "files": self.filename_list}
 
     def get_time_range(self):
         """Not yet complete."""
@@ -421,6 +485,15 @@ class ProcessingInputCollection:
         ----------
         json_input : str
             JSON input matching the output of ProcessingInputCollection.serialize()
+            Input json are organized by input type (science and ancillary) or
+            data type (SPICE file types). Eg.
+            [
+                {"type": "spice", "files":[ordered list of SPICE files]},
+                {"type": "spin", "files": [<list of spin files>]},
+                {"type": "repoint", "files": [<latest repoint file>]},
+                {"type": "science", "files": [<list of science files>]},
+                {"type": "ancillary", "files": [<list of ancillary files>]}
+            ]
         """
         full_input = json.loads(json_input)
 
@@ -431,6 +504,10 @@ class ProcessingInputCollection:
                 self.add(AncillaryInput(*file_creator["files"]))
             elif file_creator["type"] == ProcessingInputType.SPICE_FILE.value:
                 self.add(SPICEInput(*file_creator["files"]))
+            elif file_creator["type"] == SPICESource.SPIN.value:
+                self.add(SpinInput(*file_creator["files"]))
+            elif file_creator["type"] == SPICESource.REPOINT.value:
+                self.add(RepointInput(*file_creator["files"]))
 
     def get_science_inputs(self, source: str | None = None) -> list[ProcessingInput]:
         """Return just the science files from the collection.
@@ -500,6 +577,7 @@ class ProcessingInputCollection:
         self,
         source: str | None = None,
         descriptor: str | None = None,
+        data_type: str | None = None,
     ) -> list[Path]:
         """Get the dependency files path from the collection.
 
@@ -512,6 +590,9 @@ class ProcessingInputCollection:
             Instrument name or 'spice' or 'spin' or 'repoint'.
         descriptor : str, optional
             Descriptor for the file.
+        data_type : str, optional
+            Data type for the file. data level or ancillary or spice or spin
+            or repoint.
 
         Returns
         -------
@@ -520,7 +601,7 @@ class ProcessingInputCollection:
         """
         out = []
         for processing_input in self.get_processing_inputs(
-            source=source, descriptor=descriptor
+            source=source, descriptor=descriptor, data_type=data_type
         ):
             out.extend(
                 file.construct_path() for file in processing_input.imap_file_paths

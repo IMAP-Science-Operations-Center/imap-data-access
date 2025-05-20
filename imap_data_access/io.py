@@ -9,7 +9,7 @@ import requests
 
 import imap_data_access
 from imap_data_access import file_validation
-from imap_data_access.file_validation import generate_imap_file_path
+from imap_data_access.file_validation import ScienceFilePath, generate_imap_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +34,12 @@ def _make_request(request: requests.PreparedRequest):
             response.raise_for_status()
             yield response
     except requests.exceptions.HTTPError as e:
-        raise IMAPDataAccessError(str(e)) from e
+        # e.response.reason captures the error message from the API
+        error_msg = f"{e.response.status_code} {e.response.reason}: {e.response.text}"
+        raise IMAPDataAccessError(error_msg) from e
     except requests.exceptions.RequestException as e:
-        raise IMAPDataAccessError(str(e)) from e
+        error_msg = f"{e.response.status_code} {e.response.reason}: {e.response.text}"
+        raise IMAPDataAccessError(error_msg) from e
 
 
 def download(file_path: Union[Path, str]) -> Path:
@@ -217,8 +220,10 @@ def query(
         query_params["repointing"] = int(repointing[-5:])
 
     # check extension
-    if extension is not None and extension not in imap_data_access.VALID_FILE_EXTENSION:
-        raise ValueError("Not a valid extension, choose from ('pkts', 'cdf').")
+    if extension is not None and extension not in ScienceFilePath.VALID_EXTENSIONS:
+        raise ValueError(
+            f"Not a valid extension, choose from {ScienceFilePath.VALID_EXTENSIONS}."
+        )
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}/query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()

@@ -46,16 +46,27 @@ def test_request_errors(mock_send_request):
     mock_send_request : unittest.mock.MagicMock
         Mock object for requests.Session
     """
-    # Set up the mock to raise an HTTPError
-    mock_send_request.side_effect = requests.exceptions.HTTPError("404 Not found")
-    with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="404"):
+    # Set up the mock to raise an HTTPError with a response
+    mock_response = MagicMock()
+    mock_response.status_code = 404
+    mock_response.reason = "Not Found"
+    mock_response.text = "The requested resource was not found."
+    mock_send_request.side_effect = requests.exceptions.HTTPError(
+        response=mock_response
+    )
+    with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="404 Not Found"):
         imap_data_access.download(test_science_path)
 
     # Set up the mock to raise a RequestException
+    mock_response.status_code = 400
+    mock_response.reason = "Request failed"
+    mock_response.text = ""
     mock_send_request.side_effect = requests.exceptions.RequestException(
-        "Request failed"
+        response=mock_response
     )
-    with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="Request failed"):
+    with pytest.raises(
+        imap_data_access.io.IMAPDataAccessError, match="400 Request failed"
+    ):
         imap_data_access.download(test_science_path)
 
 
@@ -359,7 +370,6 @@ def test_upload(
     # An API key needs to be added to the header for uploads
     assert request_sent.headers == expected_header
 
-    print(mock_calls)
     # Verify that we put that response into our second request
     request_sent = mock_calls[1].args[0]
     called_url = request_sent.url
