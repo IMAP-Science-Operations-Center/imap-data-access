@@ -1016,4 +1016,4 @@ class CadenceFilePath(ScienceFilePath):
     """
 
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"json"}
-    _dir_prefix = "imap/candence"
+    _dir_prefix = "imap/cadence"
