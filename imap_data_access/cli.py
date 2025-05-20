@@ -141,6 +141,8 @@ def _query_parser(args: argparse.Namespace):
     # Checking to see if a table was selected.
     if args.table is not None:
         query_table = args.table
+    # Ensure table param is always set and included in query params.
+    args.table = query_table
 
     # ancillary file query
     if query_table == "ancillary":
