@@ -8,6 +8,8 @@ import pytest
 import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
+    CadenceFilePath,
+    QuicklookFilePath,
     ScienceFilePath,
     SPICEFilePath,
 )
@@ -45,13 +47,7 @@ def test_extract_filename_components():
 
     # Descriptor is required
     invalid_filename = "imap_mag_l1a_20210101_v001.cdf"
-
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
-        ScienceFilePath.extract_filename_components(invalid_filename)
-
-    # start and end time are required
-    invalid_filename = "imap_mag_l1a_20210101_v001"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath.extract_filename_components(invalid_filename)
 
     valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.cdf")
@@ -59,10 +55,6 @@ def test_extract_filename_components():
     assert (
         ScienceFilePath.extract_filename_components(valid_filepath) == expected_output
     )
-
-    invalid_ext = "imap_mag_l1a_burst_20210101_v001.txt"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
-        ScienceFilePath.extract_filename_components(invalid_ext)
 
 
 def test_construct_sciencefilepathmanager():
@@ -80,22 +72,22 @@ def test_construct_sciencefilepathmanager():
 
     # no extension
     invalid_filename = "imap_mag_l1a_burst_20210101_v001"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # invalid extension
-    invalid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    invalid_filename = "imap_mag_l1a_burst_20210101_v001.abc"
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # invalid instrument
     invalid_filename = "imap_sdc_l1a_burst_20210101_v001.cdf"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # Bad repointing, not 5 digits
     invalid_filename = "imap_mag_l1a_burst_20210101-repoint0001_v001.cdf"
-    with pytest.raises(ScienceFilePath.InvalidScienceFileError):
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # good path with an extra "test" directory
@@ -192,7 +184,7 @@ def test_spice_file_path():
     )
 
     # Test a bad file extension too
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("test.txt")
 
     # Test that spin and repoint goes into their own directories
@@ -355,15 +347,15 @@ def test_spice_extract_repoint_parts():
 
 def test_spice_invalid_dates():
     # Ensure the DOY is valid (DOY 410??)
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("imap_2025_032_2025_410_003.ah.bc")
 
     # Ensure dates are valid (Month 13??)
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("imap_90days_20251320_20260220_v01.bsp")
 
     # Ensure valid ephemeris type (type taco??)
-    with pytest.raises(SPICEFilePath.InvalidSPICEFileError):
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("imap_taco_20251320_20260220_v01.bsp")
 
 
@@ -384,7 +376,7 @@ def test_ancillary_file_path():
     """Tests the ``AncillaryFilePath`` class for different scenarios."""
 
     # Test for an invalid ancillary file (incorrect instrument type)
-    with pytest.raises(AncillaryFilePath.InvalidAncillaryFileError):
+    with pytest.raises(AncillaryFilePath.InvalidImapFileError):
         AncillaryFilePath.generate_from_inputs(
             instrument="invalid_instrument",  # Invalid instrument
             descriptor="test",
@@ -467,3 +459,159 @@ def test_ancillary_file_path():
     # Test valid date for given start_date
     assert ancillary_file.is_valid_for_start_date(datetime(2021, 1, 2))
     assert not ancillary_file.is_valid_for_start_date(datetime(2021, 1, 3))
+
+
+def test_deprecated_data_dir():
+    """Tests the deprecated data directory."""
+    # Test for deprecated data directory
+    science_file = ScienceFilePath.generate_from_inputs(
+        "mag",
+        "l1a",
+        "burst",
+        "20210101",
+        "v001",
+    )
+    with pytest.deprecated_call():
+        assert imap_data_access.config["DATA_DIR"] == science_file.data_dir
+
+
+def test_science_file_creation_data_dir(monkeypatch):
+    # Make sure that if we are updating our DATA_DIR, we respect that
+    # and create the file relative to our configuration dictionary all the time
+    science_file = ScienceFilePath.generate_from_inputs(
+        "mag",
+        "l1a",
+        "burst",
+        "20210101",
+        "v001",
+    )
+    # Typical case
+    assert science_file.construct_path().is_relative_to(
+        imap_data_access.config["DATA_DIR"]
+    )
+    # Update the config directory and our path should be relative to the new
+    # location, not the old one the file was initialized with
+    new_data_dir_location = Path("/new/path/to/data")
+    monkeypatch.setitem(
+        imap_data_access.config,
+        "DATA_DIR",
+        new_data_dir_location,
+    )
+    assert science_file.construct_path().is_relative_to(new_data_dir_location)
+
+
+def test_quicklook_file_path():
+    """Tests the ``QuicklookFilePath`` class for different scenarios."""
+
+    # Test for an invalid quicklook file (incorrect instrument type)
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
+        QuicklookFilePath.generate_from_inputs(
+            instrument="invalid_instrument",  # Invalid instrument
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="png",
+        )
+    # Test for an invalid quicklook file (incorrect extension type)
+    with pytest.raises(ScienceFilePath.InvalidImapFileError):
+        QuicklookFilePath.generate_from_inputs(
+            instrument="mag",
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="cdf",
+        )
+
+    # Test with no repointing
+    file_no_repointing = QuicklookFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        version="v001",
+        extension="png",
+    )
+    expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v001.png"
+    )
+    assert file_no_repointing.construct_path() == expected_output_no_end_date
+
+    # Test with repointing number
+    file_all_params = QuicklookFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        repointing=1,
+        version="v001",
+        extension="png",
+    )
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v001.png"
+    )
+    assert file_all_params.construct_path() == expected_output
+
+    # Test by passing the file
+    file = QuicklookFilePath("imap_mag_l1a_test_20210101_v001.png")
+    assert file.instrument == "mag"
+    assert file.start_date == "20210101"
+
+
+def test_cadence_file_path():
+    """Tests the ``CadenceFilePath`` class scenarios."""
+    # Test for an invalid cadence file (incorrect instrument type)
+    with pytest.raises(CadenceFilePath.InvalidImapFileError):
+        CadenceFilePath.generate_from_inputs(
+            instrument="invalid_instrument",  # Invalid instrument
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="json",
+        )
+    # Test for an invalid cadence file (incorrect extension type)
+    with pytest.raises(CadenceFilePath.InvalidImapFileError):
+        CadenceFilePath.generate_from_inputs(
+            instrument="mag",
+            data_level="l1a",
+            descriptor="test",
+            start_time="20210101",
+            version="v001",
+            extension="cdf",
+        )
+
+    # Test with no repointing
+    file_no_repointing = CadenceFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        version="v001",
+        extension="json",
+    )
+    expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/cadence/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v001.json"
+    )
+    assert file_no_repointing.construct_path() == expected_output_no_end_date
+
+    # Test with repointing number
+    file_all_params = CadenceFilePath.generate_from_inputs(
+        instrument="mag",
+        data_level="l1a",
+        descriptor="test",
+        start_time="20210101",
+        repointing=1,
+        version="v001",
+        extension="json",
+    )
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/cadence/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v001.json"
+    )
+    assert file_all_params.construct_path() == expected_output
+
+    # Test by passing the file
+    file = CadenceFilePath("imap_mag_l1a_test_20210101_v001.json")
+    assert file.instrument == "mag"
+    assert file.start_date == "20210101"
