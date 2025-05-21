@@ -245,6 +245,94 @@ def query(
     return items
 
 
+def reprocess(
+    *,
+    start_date: str,
+    end_date: str,
+    instrument: Optional[str] = None,
+    data_level: Optional[str] = None,
+    descriptor: Optional[str] = None,
+):
+    """Trigger reprocessing of files in the IMAP data archive.
+
+    Start date and end date are required for a reprocessing Event. If data_level is
+    provided, instrument and descriptor are required. If descriptor is specified,
+    instrument must be specified as well.
+
+    Parameters
+    ----------
+    start_date : str
+        Start date in YYYYMMDD format. Note this is the date to search for files to
+        reprocess.
+    end_date : str
+        End date in YYYYMMDD format. Note this is the end date to search for files to
+        reprocess.
+    instrument : str, optional
+        Instrument name (e.g. ``mag``)
+    data_level : str, optional
+        Data level (e.g. ``l1a``)
+    descriptor : str, optional
+        Descriptor of the data product / product name (e.g. ``burst``)
+    """
+    # locals() gives us the keyword arguments passed to the function
+    # and allows us to filter out the None values
+    reprocess_params = {
+        key: value for key, value in locals().items() if value is not None
+    }
+    logger.debug("Input reprocessing parameters: %s", reprocess_params)
+
+    # ensuring other parameters are passed
+    if not end_date or not start_date:
+        raise ValueError(
+            "Start date and end date are required for a reprocessing Event."
+        )
+    if data_level:
+        if not instrument or not descriptor:
+            raise ValueError(
+                "If data_level is provided, instrument and descriptor are required."
+            )
+    elif not instrument and descriptor:
+        raise ValueError("If descriptor is provided, instrument must also be provided.")
+    # Check instrument name
+    if instrument is not None and instrument not in imap_data_access.VALID_INSTRUMENTS:
+        raise ValueError(
+            "Not a valid instrument, please choose from "
+            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
+        )
+    # Check data-level
+    # do an if statement that checks that data_level was passed in,
+    # then check it against all options, l0, l1a, l1b, l2, l3 etc.
+    if data_level is not None and data_level not in imap_data_access.VALID_DATALEVELS:
+        raise ValueError(
+            "Not a valid data level, choose from "
+            + ", ".join(imap_data_access.VALID_DATALEVELS)
+        )
+    # Check start-date
+    if start_date is not None and not file_validation.ImapFilePath.is_valid_date(
+        start_date
+    ):
+        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+
+    # Check end-date
+    if end_date is not None and not file_validation.ImapFilePath.is_valid_date(
+        end_date
+    ):
+        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+    reprocess_params["reprocessing"] = "True"
+    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/reprocess"
+    request = requests.Request(
+        method="POST", url=url, params=reprocess_params
+    ).prepare()
+
+    logger.info(
+        "Triggering reprocessing for %s with url %s", reprocess_params, request.url
+    )
+    with _make_request(request) as response:
+        # Decode the JSON response as a list of items
+        items = response.json()
+        logger.debug("Received JSON: %s", items)
+
+
 def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> None:
     """Upload a file to the data archive.
 
