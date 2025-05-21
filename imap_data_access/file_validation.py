@@ -496,7 +496,6 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<version>\d+)\."
         r"(?P<extension>ah\.bc)"
     )
-
     # Covers:
     # Repoint Files (type: repoint.csv)
     repoint_file_pattern = (
