@@ -349,6 +349,7 @@ def test_spice_extract_repoint_parts():
     )
     assert len(file_path.spice_metadata) == 5
 
+
 def test_spice_extract_science_frame_parts():
     file_path = SPICEFilePath("imap_science_0001.tf")
     assert file_path.spice_metadata["version"] == "0001"
@@ -358,6 +359,7 @@ def test_spice_extract_science_frame_parts():
     assert file_path.spice_metadata["end_date"] is None
 
     assert len(file_path.spice_metadata) == 5
+
 
 def test_spice_invalid_dates():
     # Ensure the DOY is valid (DOY 410??)
