@@ -496,6 +496,7 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<version>\d+)\."
         r"(?P<extension>ah\.bc)"
     )
+
     # Covers:
     # Repoint Files (type: repoint.csv)
     repoint_file_pattern = (
@@ -533,6 +534,10 @@ class SPICEFilePath(ImapFilePath):
     # Covers:
     # Frame: (type: 'tf')
     spice_frame_pattern = r"(imap)_(?P<version>[\d]+)\.(?P<type>tf)"
+
+    # Covers:
+    # Science Frame: (type: 'tf')
+    science_frame_pattern = r"(imap_science)_(?P<version>[\d]+)\.(?P<type>tf)"
 
     # Covers:
     # Thruster files (type: sff)
@@ -581,6 +586,7 @@ class SPICEFilePath(ImapFilePath):
         re.compile(sdc_mk_filename_pattern),
         re.compile(attitude_mk_filename_pattern, re.IGNORECASE),
         re.compile(ephemeris_mk_filename_pattern, re.IGNORECASE),
+        re.compile(science_frame_pattern, re.IGNORECASE),
     )
 
     class InvalidSPICEFileError(ImapFilePath.InvalidImapFileError):
