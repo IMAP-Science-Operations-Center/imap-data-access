@@ -144,36 +144,27 @@ def _query_parser(args: argparse.Namespace):
     # Ensure table param is always set and included in query params.
     args.table = query_table
 
+    valid_args = [
+        "table",
+        "instrument",
+        "data_level",
+        "descriptor",
+        "start_date",
+        "end_date",
+        "ingestion_start_date",
+        "ingestion_end_date",
+        "repointing",
+        "version",
+        "extension",
+        "filename",
+    ]
     # ancillary file query
     if query_table == "ancillary":
         # Filter to get the arguments of interest from the namespace
-        valid_args_ancillary = [  # todo: double check ancillary table columns
-            "table",
-            "instrument",
-            "descriptor",
-            "start_date",
-            "end_date",
-            "ingestion_start_date",
-            "ingestion_end_date",
-            "version",
-            "extension",
-            "filename",
-        ]
-        # Ensure parameters passed to Ancillary query are valid
-        invalid_args = [
-            key
-            for key, value in vars(args).items()
-            if value is not None and key not in valid_args_ancillary
-        ]
-        if invalid_args:
-            raise ValueError(
-                f"The following arguments are not valid for the "
-                f"'{query_table}' table: {', '.join(invalid_args)}"
-            )
         query_params = {
             key: value
             for key, value in vars(args).items()
-            if key in valid_args_ancillary and value is not None
+            if key in valid_args and value is not None
         }
 
         # Checking to see if a filename was passed.
@@ -195,42 +186,16 @@ def _query_parser(args: argparse.Namespace):
             }
 
     # SPICE query table
-    elif query_table == "SPICE":
+    elif query_table == "spice":
         raise NotImplementedError("SPICE query not implemented yet.")
 
     # default science table query
     else:
         # Filter to get the arguments of interest from the namespace
-        valid_args_science = [
-            "table",
-            "instrument",
-            "data_level",
-            "descriptor",
-            "start_date",
-            "end_date",
-            "ingestion_start_date",
-            "ingestion_end_date",
-            "repointing",
-            "version",
-            "extension",
-            "filename",
-        ]
-
-        # Ensure parameters passed to Science query are valid
-        invalid_args = [
-            key
-            for key, value in vars(args).items()
-            if value is not None and key not in valid_args_science
-        ]
-        if invalid_args:
-            raise ValueError(
-                f"The following arguments are not valid for the "
-                f"'{query_table}' table: {', '.join(invalid_args)}"
-            )
         query_params = {
             key: value
             for key, value in vars(args).items()
-            if key in valid_args_science and value is not None
+            if key in valid_args and value is not None
         }
 
         # Checking to see if a filename was passed.
@@ -310,7 +275,7 @@ def add_query_args(subparser: ArgumentParser) -> None:
         required=False,
         help="Query a specific table within the IMAP SDC storage bucket. "
         "This subcommand is optional, with the Science table being the default.",
-        choices=["science", "ancillary", "SPICE"],
+        choices=["science", "ancillary", "spice"],
         default="science",
     )
     subparser.add_argument(
