@@ -379,3 +379,79 @@ def test_upload(
 
     # Assert that the original data from the test file was sent
     assert request_sent.body == b"test file content"
+
+
+@pytest.mark.parametrize(
+    "reprocess_params",
+    [
+        {
+            "start_date": "20100101",
+            "end_date": "20100102",
+            "instrument": "idex",
+            "data_level": "l0",
+            "descriptor": "sci",
+        },
+        {"start_date": "20100101", "end_date": "20100102"},
+        {"start_date": "20100101", "end_date": "20100102", "instrument": "idex"},
+    ],
+)
+def test_reprocess(mock_send_request, reprocess_params: dict):
+    """Test a basic call to the reprocess API.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for requests.Session
+    reprocess_params : dict
+        Dictionary of key/value pairs that set the reprocessing parameters
+    """
+    mock_response = MagicMock()
+    mock_response.json.return_value = []
+    mock_send_request.return_value = mock_response
+
+    imap_data_access.reprocess(**reprocess_params)
+
+    # Should have only been one call to send
+    mock_send_request.assert_called_once()
+    # Assert that the correct URL was used for the query
+    sent_request = mock_send_request.call_args[0][0]
+    called_url = sent_request.url
+    fixed_query = reprocess_params.copy()
+    str_params = "&".join(f"{k}={v}" for k, v in fixed_query.items())
+    expected_url_encoded = (
+        f"https://api.test.com/reprocess?{str_params}&reprocessing=True"
+    )
+    assert called_url == expected_url_encoded
+
+
+def test_reprocess_only_data_level(mock_send_request):
+    """Test a call to the reprocess API that has only the data level.
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for ``requests.session``
+    """
+    with pytest.raises(
+        ValueError,
+        match="If data_level is provided, instrument and descriptor are required.",
+    ):
+        imap_data_access.reprocess(
+            start_date="20251017", end_date="20251017", data_level="l1a"
+        )
+    # Should not have made any calls to mock_send_request
+    assert mock_send_request.call_count == 0
+
+
+def test_reprocess_bad_instrument(mock_send_request):
+    """Test a call to the reprocess API that has an invalid instrument.
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for ``requests.session``
+    """
+    with pytest.raises(ValueError, match="Not a valid instrument"):
+        imap_data_access.reprocess(
+            start_date="20251017", end_date="20251017", instrument="sdc"
+        )
+    # Should not have made any calls to urlopen
+    assert mock_send_request.call_count == 0
