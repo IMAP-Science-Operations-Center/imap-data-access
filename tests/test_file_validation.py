@@ -353,7 +353,7 @@ def test_spice_extract_repoint_parts():
 def test_spice_extract_science_frame_parts():
     file_path = SPICEFilePath("imap_science_0001.tf")
     assert file_path.spice_metadata["version"] == "0001"
-    assert file_path.spice_metadata["type"] == "frames"
+    assert file_path.spice_metadata["type"] == "science_frames"
     assert file_path.spice_metadata["extension"] == "tf"
     assert file_path.spice_metadata["start_date"] is None
     assert file_path.spice_metadata["end_date"] is None
