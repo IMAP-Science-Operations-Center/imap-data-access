@@ -216,7 +216,6 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
-
     query_results = imap_data_access.query(**query_params)
 
     if args.output_format == "table":

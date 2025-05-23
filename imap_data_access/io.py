@@ -90,6 +90,7 @@ def download(file_path: Union[Path, str]) -> Path:
 # ruff: noqa: PLR0912
 def query(
     *,
+    table: Optional[str] = None,
     instrument: Optional[str] = None,
     data_level: Optional[str] = None,
     descriptor: Optional[str] = None,
@@ -110,6 +111,9 @@ def query(
 
     Parameters
     ----------
+    table : str, optional
+        The desired table for the query to be performed against.
+        Defaults to the science table.
     instrument : str, optional
         Instrument name (e.g. ``mag``)
     data_level : str, optional
@@ -156,6 +160,12 @@ def query(
         raise ValueError(
             "At least one query parameter must be provided. "
             "Run 'query -h' for more information."
+        )
+    # Check table name
+    if table is not None and table not in ("science", "ancillary", "spice"):
+        raise ValueError(
+            "Not a valid database table, please choose from "
+            "'science', 'ancillary', or 'spice'."
         )
     # Check instrument name
     if instrument is not None and instrument not in imap_data_access.VALID_INSTRUMENTS:
