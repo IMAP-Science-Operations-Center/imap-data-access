@@ -206,7 +206,7 @@ def test_spice_input():
         )
 
 
-def test_create_collection():
+def test_create_collection(): # noqa: PLR0915
     ancillary = processing_input.AncillaryInput(
         "imap_mag_l1b-cal_20250101_v001.cdf",
         "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
