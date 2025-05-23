@@ -300,8 +300,8 @@ def reprocess(
             + ", ".join(imap_data_access.VALID_INSTRUMENTS)
         )
     # Check data-level
-    # do an if statement that checks that data_level was passed in,
-    # then check it against all options, l0, l1a, l1b, l2, l3 etc.
+    # Validate the data_level parameter to ensure it is one of the allowed options
+    # (e.g., l0, l1a, l1b, l2, l3). Raise an error if the value is invalid.
     if data_level is not None and data_level not in imap_data_access.VALID_DATALEVELS:
         raise ValueError(
             "Not a valid data level, choose from "

@@ -33,8 +33,10 @@ __all__ = [
     "VALID_INSTRUMENTS",
     "AncillaryFilePath",
     "AncillaryInput",
+    "CadenceFilePath",
     "ImapFilePath",
     "ProcessingInputCollection",
+    "QuicklookFilePath",
     "RepointInput",
     "SPICEFilePath",
     "SPICEInput",
@@ -43,6 +45,7 @@ __all__ = [
     "SpinInput",
     "download",
     "query",
+    "reprocess",
     "upload",
 ]
 

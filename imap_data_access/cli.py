@@ -288,7 +288,7 @@ def main():  # noqa: PLR0915
         "given start and end date. Instrument, data-level, and descriptor are optional."
         " Start date and end date are required. If no instrument is specified, "
         "reprocessing will be triggered for all instruments. If no data-level is "
-        "specified, reprocessing will be triggered for all data-levels. "
+        "specified, reprocessing will be triggered for all data-levels."
         "Run 'reprocess -h' for more information."
     )
     help_menu_for_reprocess = (

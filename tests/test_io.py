@@ -438,7 +438,7 @@ def test_reprocess_only_data_level(mock_send_request):
         imap_data_access.reprocess(
             start_date="20251017", end_date="20251017", data_level="l1a"
         )
-    # Should not have made any calls to urlopen
+    # Should not have made any calls to mock_send_request
     assert mock_send_request.call_count == 0
 
 
