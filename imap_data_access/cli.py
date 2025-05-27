@@ -28,6 +28,7 @@ from imap_data_access.file_validation import (
     AncillaryFilePath,
     ScienceFilePath,
 )
+from imap_data_access.io import query
 from imap_data_access.webpoda import download_daily_data
 
 
@@ -59,7 +60,7 @@ def _print_query_results_table(query_results: list[dict], query_table: str):
         return
 
     # Use the query_results for the header
-    headers = [
+    headers_science = [
         "Instrument",
         "Data Level",
         "Descriptor",
@@ -69,6 +70,19 @@ def _print_query_results_table(query_results: list[dict], query_table: str):
         "Version",
         "Filename",
     ]
+    headers_ancillary = [
+        "Instrument",
+        "Descriptor",
+        "Start Date",
+        "End Date",
+        "Ingestion Date",
+        "Version",
+        "Filename",
+    ]
+    # Set appropriate headers for desired table
+    headers = headers_science
+    if query_table == "ancillary":
+        headers = headers_ancillary
 
     # Calculate the maximum width for each column based on the header and the data
     # have to adjust Ingestion Date and Filename to properly align
@@ -112,16 +126,28 @@ def _print_query_results_table(query_results: list[dict], query_table: str):
 
     # Print data
     for item in query_results:
-        values = [
-            str(item.get("instrument", "")),
-            str(item.get("data_level", "")),
-            str(item.get("descriptor", "")),
-            str(item.get("start_date", "")),
-            str(item.get("ingestion_date", "")),
-            str(item.get("repointing", "")) or "",
-            str(item.get("version", "")),
-            os.path.basename(item.get("file_path", "")),
-        ]
+        if query_table == "ancillary":
+            values = [
+                str(item.get("instrument", "")),
+                str(item.get("descriptor", "")),
+                str(item.get("start_date", "")),
+                str(item.get("end_date", "")),
+                str(item.get("ingestion_date", "")),
+                str(item.get("version", "")),
+                os.path.basename(item.get("file_path", "")),
+            ]
+        # Science table print
+        else:
+            values = [
+                str(item.get("instrument", "")),
+                str(item.get("data_level", "")),
+                str(item.get("descriptor", "")),
+                str(item.get("start_date", "")),
+                str(item.get("ingestion_date", "")),
+                str(item.get("repointing", "")) or "",
+                str(item.get("version", "")),
+                os.path.basename(item.get("file_path", "")),
+            ]
         print(format_string.format(*values))
 
     # Close the table
@@ -217,7 +243,7 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
-    query_results = imap_data_access.query(**query_params)
+    query_results = query(**query_params)
 
     if args.output_format == "table":
         _print_query_results_table(query_results, query_table)
@@ -356,6 +382,7 @@ def add_query_args(subparser: ArgumentParser) -> None:
     )
     subparser.set_defaults(func=_query_parser)
 
+
 def _reprocess_parser(args: argparse.Namespace):
     """Trigger reprocessing of data for a specific time range.
 
@@ -379,7 +406,6 @@ def _reprocess_parser(args: argparse.Namespace):
     }
     imap_data_access.reprocess(**reprocess_params)
     print("Successfully triggered reprocessing for the given parameters.")
-
 
 
 # PLR0915: too many statements
