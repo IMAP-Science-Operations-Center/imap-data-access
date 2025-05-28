@@ -27,6 +27,7 @@ import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
     ScienceFilePath,
+    generate_imap_file_path,
 )
 from imap_data_access.io import query
 from imap_data_access.webpoda import download_daily_data
@@ -44,18 +45,23 @@ def _download_parser(args: argparse.Namespace):
     print(f"Successfully downloaded the file to: {output_path}")
 
 
-def _print_query_results_table(query_results: list[dict], query_table: str):
+def _print_query_results_table(query_results: list[dict]):
     """Print the query results in a table.
 
     Parameters
     ----------
     query_results : list
         A list of dictionaries containing the query results
-    query_table : str
-        The table the query is performed against.
     """
     num_files = len(query_results)
-    print(f"Found [{num_files}] matching files in {query_table}")
+    # Get the database table
+    query_table = ""
+    if "end_date" in query_results[0]:
+        query_table = "ancillary"
+    elif "repointing" in query_results[0]:
+        query_table = "science"
+
+    print(f"Found [{num_files}] matching files in {query_table} table")
     if num_files == 0:
         return
 
@@ -162,14 +168,8 @@ def _query_parser(args: argparse.Namespace):
     args : argparse.Namespace
         An object containing the parsed arguments and their values
     """
-    # default table selection
-    query_table = "science"
-
-    # Checking to see if a table was selected.
-    if args.table is not None:
-        query_table = args.table
-    # Ensure table param is always set and included in query params.
-    args.table = query_table
+    # Sets table parameter to science if not provided.
+    args.table = getattr(args, "table", "science")
 
     valid_args = [
         "table",
@@ -185,25 +185,29 @@ def _query_parser(args: argparse.Namespace):
         "extension",
         "filename",
     ]
-    # ancillary file query
-    if query_table == "ancillary":
-        # Filter to get the arguments of interest from the namespace
-        query_params = {
-            key: value
-            for key, value in vars(args).items()
-            if key in valid_args and value is not None
-        }
 
-        # Checking to see if a filename was passed.
-        if args.filename is not None:
-            del query_params["filename"]
-            if query_params:
-                raise TypeError(
-                    "Too many arguments, '--filename' should be ran by itself"
-                )
+    # Filter to get the arguments of interest from the namespace
+    query_params = {
+        key: value
+        for key, value in vars(args).items()
+        if key in valid_args and value is not None
+    }
 
-            file_path = AncillaryFilePath(args.filename)
+    # Checking to see if a filename was passed.
+    if args.filename is not None:
+        del query_params["filename"]
+        # need to see if any other params besides table where provided
+        non_table_params = {k: v for k, v in query_params.items() if k != "table"}
+        if non_table_params:
+            raise TypeError(
+                "Too many arguments: '--filename' should be used by itself."
+            )
+
+        file_path = generate_imap_file_path(args.filename)
+        # ancillary file query
+        if isinstance(file_path, AncillaryFilePath):
             query_params = {
+                "table": "ancillary",
                 "instrument": file_path.instrument,
                 "descriptor": file_path.descriptor,
                 "start_date": file_path.start_date,
@@ -211,30 +215,11 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
-
-    # SPICE query table
-    elif query_table == "spice":
-        raise NotImplementedError("SPICE query not implemented yet.")
-
-    # default science table query
-    else:
-        # Filter to get the arguments of interest from the namespace
-        query_params = {
-            key: value
-            for key, value in vars(args).items()
-            if key in valid_args and value is not None
-        }
-
-        # Checking to see if a filename was passed.
-        if args.filename is not None:
-            del query_params["filename"]
-            if query_params:
-                raise TypeError(
-                    "Too many arguments, '--filename' should be ran by itself"
-                )
-
-            file_path = ScienceFilePath(args.filename)
+            # TODO: add an end_date value if not provided
+        # science table query
+        elif isinstance(file_path, ScienceFilePath):
             query_params = {
+                "table": "science",
                 "instrument": file_path.instrument,
                 "data_level": file_path.data_level,
                 "descriptor": file_path.descriptor,
@@ -243,10 +228,18 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
+            # TODO: add an end_date value if not provided
+        else:
+            raise ValueError("Unrecognized file path type.")
+
+    # SPICE query table
+    elif args.table == "spice":
+        raise NotImplementedError("SPICE query not implemented yet.")
+
     query_results = query(**query_params)
 
     if args.output_format == "table":
-        _print_query_results_table(query_results, query_table)
+        _print_query_results_table(query_results)
     elif args.output_format == "json":
         # Dump the content directly
         print(query_results)
