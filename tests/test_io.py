@@ -163,6 +163,7 @@ def test_download_already_exists(mock_send_request):
     [
         # All parameters should send full query
         {
+            "table": "science",
             "instrument": "swe",
             "data_level": "l0",
             "descriptor": "test-description",
