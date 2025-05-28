@@ -1,4 +1,4 @@
-"""Tests for the ``file_validataion`` module."""
+"""Tests for the ``file_validation`` module."""
 
 from datetime import datetime
 from pathlib import Path
@@ -229,6 +229,11 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("imap/spice/ck/imap_dps_2025_121_2025_202_07.ah.bc")
 
+    science_frame_file = SPICEFilePath("imap_science_0001.tf")
+    assert science_frame_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("imap/spice/fk/imap_science_0001.tf")
+
 
 def test_spice_extract_dps_pointing_parts():
     """Test the new DPS pointing kernel filename parsing."""
@@ -343,6 +348,17 @@ def test_spice_extract_repoint_parts():
     assert file_path.spice_metadata["end_date"] == datetime.strptime(
         "2025_230", "%Y_%j"
     )
+    assert len(file_path.spice_metadata) == 5
+
+
+def test_spice_extract_science_frame_parts():
+    file_path = SPICEFilePath("imap_science_0001.tf")
+    assert file_path.spice_metadata["version"] == "0001"
+    assert file_path.spice_metadata["type"] == "science_frames"
+    assert file_path.spice_metadata["extension"] == "tf"
+    assert file_path.spice_metadata["start_date"] is None
+    assert file_path.spice_metadata["end_date"] is None
+
     assert len(file_path.spice_metadata) == 5
 
 

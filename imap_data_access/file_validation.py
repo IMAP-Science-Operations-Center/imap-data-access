@@ -428,7 +428,8 @@ _SPICE_TYPE_MAPPING = {
     "naif": "leapseconds",
     "imap_dps": "pointing_attitude",
     "imap_sclk_": "spacecraft_clock",
-    "tf": "frames",
+    "tf": "imap_frames",
+    "imap_science": "science_frames",
     "mk": "metakernel",
     "tm": "metakernel",
     "sff": "thruster",
@@ -450,7 +451,8 @@ _SPICE_DIR_MAPPING = {
     "planetary_constants": "pck",
     "leapseconds": "lsk",
     "spacecraft_clock": "sclk",
-    "frames": "fk",
+    "imap_frames": "fk",
+    "science_frames": "fk",
     "metakernel": "mk",
     "thruster": "activities",
 }
@@ -532,7 +534,11 @@ class SPICEFilePath(ImapFilePath):
 
     # Covers:
     # Frame: (type: 'tf')
-    spice_frame_pattern = r"(imap)_(?P<version>[\d]+)\.(?P<type>tf)"
+    imap_frame_pattern = r"(imap)_(?P<version>[\d]+)\.(?P<type>tf)"
+
+    # Covers:
+    # Science Frame: (type: 'imap_science')
+    science_frame_pattern = r"(?P<type>imap_science)_(?P<version>[\d]+)\.tf"
 
     # Covers:
     # Thruster files (type: sff)
@@ -576,11 +582,12 @@ class SPICEFilePath(ImapFilePath):
         re.compile(repoint_file_pattern, re.IGNORECASE),
         re.compile(spacecraft_ephemeris_file_pattern, re.IGNORECASE),
         re.compile(spice_prod_ver_pattern, re.IGNORECASE),
-        re.compile(spice_frame_pattern, re.IGNORECASE),
+        re.compile(imap_frame_pattern, re.IGNORECASE),
         re.compile(sff_filename_pattern, re.IGNORECASE),
         re.compile(sdc_mk_filename_pattern),
         re.compile(attitude_mk_filename_pattern, re.IGNORECASE),
         re.compile(ephemeris_mk_filename_pattern, re.IGNORECASE),
+        re.compile(science_frame_pattern, re.IGNORECASE),
     )
 
     class InvalidSPICEFileError(ImapFilePath.InvalidImapFileError):

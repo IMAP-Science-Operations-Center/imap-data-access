@@ -123,18 +123,20 @@ def test_spice_input():
         "imap_sclk_0001.tsc",
         "pck00010.tpc",
         "imap_001.tf",
+        "imap_science_0001.tf",
         "de440.bsp",
         "imap_90days_20260922_20261221_v01.bsp",
         "imap_1000_100_1000_100_01.ah.bc",
         "imap_1000_100_1000_100_02.ap.bc",
     )
-    assert len(multiple_files.imap_file_paths) == 8
+    assert len(multiple_files.imap_file_paths) == 9
     assert multiple_files.input_type == ProcessingInputType.SPICE_FILE
     assert multiple_files.source == [
         "leapseconds",
         "spacecraft_clock",
         "planetary_constants",
-        "frames",
+        "imap_frames",
+        "science_frames",
         "planetary_ephemeris",
         "ephemeris_90days",
         "attitude_history",
@@ -204,7 +206,7 @@ def test_spice_input():
         )
 
 
-def test_create_collection():
+def test_create_collection():  # noqa: PLR0915
     ancillary = processing_input.AncillaryInput(
         "imap_mag_l1b-cal_20250101_v001.cdf",
         "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
@@ -333,6 +335,14 @@ def test_create_collection():
     assert (
         len(input_collection.get_file_paths(data_type=SPICESource.REPOINT.value)) == 1
     )
+
+    input_collection_str = [
+        {"type": "spice", "files": ["imap_001.tf", "imap_science_0001.tf"]},
+    ]
+    input_collection = processing_input.ProcessingInputCollection()
+    input_collection.deserialize(json.dumps(input_collection_str))
+    assert len(input_collection.processing_input) == 1
+    assert len(input_collection.get_file_paths(data_type="spice")) == 2
 
 
 def test_get_time_range():
