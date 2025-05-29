@@ -91,7 +91,8 @@ def download(file_path: Union[Path, str]) -> Path:
 
 
 # Too many branches error
-# ruff: noqa: PLR0912
+# TODO: refactor to pull out validation into a separate function
+# ruff: noqa: PLR0912, PLR0915
 def query(
     *,
     table: Optional[str] = None,
