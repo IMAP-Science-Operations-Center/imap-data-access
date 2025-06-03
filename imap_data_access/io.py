@@ -254,7 +254,10 @@ def query(
         if not query_params:
             raise ValueError("One other parameter must be run with 'version'")
 
-    if not query_params:
+    # Copy params and remove table to ensure one other param was passed
+    non_table_params = query_params.copy()
+    non_table_params.pop("table", None)
+    if not non_table_params:
         raise ValueError(
             "At least one query parameter must be provided. "
             "Run 'query -h' for more information."
