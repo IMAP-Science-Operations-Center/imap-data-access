@@ -85,13 +85,22 @@ def _print_query_results_table(query_results: list[dict]):
         "Version",
         "Filename",
     ]
+    # Boolean to check if CR is present in any science files
+    cr_flag = query_table == "science" and any(
+        item.get("cr") not in (None, "", []) for item in query_results
+    )
+    # Add CR to science header
+    if query_table == "science" and cr_flag:
+        headers_science.insert(-1, "CR")
+
     # Set appropriate headers for desired table
-    headers = headers_science
-    if query_table == "ancillary":
+    if query_table == "science":
+        headers = headers_science
+    else:
         headers = headers_ancillary
 
     # Calculate the maximum width for each column based on the header and the data
-    # have to adjust Ingestion Date and Filename to properly align
+    # have to adjust Ingestion Date, Filename, and CR to properly align
     column_widths = {}
     for header in headers[:-1]:
         column_widths[header] = max(
@@ -106,6 +115,10 @@ def _print_query_results_table(query_results: list[dict]):
                 for item in query_results
             ),
         )
+        if cr_flag:
+            column_widths["CR"] = max(
+                len("CR"), *(len(str(item.get("cr", ""))) for item in query_results)
+            )
 
         column_widths["Filename"] = max(
             len("Filename"),
@@ -154,6 +167,9 @@ def _print_query_results_table(query_results: list[dict]):
                 str(item.get("version", "")),
                 os.path.basename(item.get("file_path", "")),
             ]
+            if cr_flag:
+                # add CR to values
+                values.insert(-1, str(item.get("cr", "")))
         print(format_string.format(*values))
 
     # Close the table
@@ -228,7 +244,6 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
-            # TODO: add an end_date value if not provided
         else:
             raise ValueError("Unrecognized file path type.")
 
