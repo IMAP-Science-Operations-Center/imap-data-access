@@ -209,6 +209,12 @@ def test_query(mock_send_request, query_params: dict):
         fixed_query["repointing"] = 1
     if "table" not in fixed_query:
         fixed_query["table"] = "science"
+    # Move 'table' to front if it exists
+    if "table" in fixed_query:
+        fixed_query = {
+            "table": fixed_query["table"],
+            **{k: v for k, v in fixed_query.items() if k != "table"},
+        }
     str_params = "&".join(f"{k}={v}" for k, v in fixed_query.items())
     expected_url_encoded = f"https://api.test.com/query?{str_params}"
     assert called_url == expected_url_encoded
@@ -278,7 +284,8 @@ def test_query_bad_params(mock_send_request):
         (
             "extension",
             "badInput",
-            "Not a valid extension for 'science', choose from {'pkts', 'cdf'}.",
+            r"Not a valid extension for 'science', "
+            r"choose from \{'(cdf|pkts)', '(pkts|cdf)'\}.",
         ),
     ],
 )
