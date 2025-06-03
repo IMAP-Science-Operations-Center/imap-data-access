@@ -45,6 +45,7 @@ def _download_parser(args: argparse.Namespace):
     print(f"Successfully downloaded the file to: {output_path}")
 
 
+# ruff: noqa: PLR0912
 def _print_query_results_table(query_results: list[dict]):
     """Print the query results in a table.
 
@@ -72,7 +73,6 @@ def _print_query_results_table(query_results: list[dict]):
         "Descriptor",
         "Start Date",
         "Ingestion Date",
-        "Repointing",
         "Version",
         "Filename",
     ]
@@ -92,6 +92,13 @@ def _print_query_results_table(query_results: list[dict]):
     # Add CR to science header
     if query_table == "science" and cr_flag:
         headers_science.insert(-1, "CR")
+    # Boolean to check if repointing values are present
+    repointing_flag = query_table == "science" and any(
+        item.get("repointing") not in (None, "", []) for item in query_results
+    )
+    # Add Repointing to Science header
+    if query_table == "science" and repointing_flag:
+        headers_science.insert(-1, "Repointing")
 
     # Set appropriate headers for desired table
     if query_table == "science":
@@ -163,13 +170,15 @@ def _print_query_results_table(query_results: list[dict]):
                 str(item.get("descriptor", "")),
                 str(item.get("start_date", "")),
                 str(item.get("ingestion_date", "")),
-                str(item.get("repointing", "")) or "",
                 str(item.get("version", "")),
                 os.path.basename(item.get("file_path", "")),
             ]
             if cr_flag:
                 # add CR to values
                 values.insert(-1, str(item.get("cr", "")))
+            if repointing_flag:
+                # add repointing values
+                values.insert(-1, str(item.get("repointing", "")))
         print(format_string.format(*values))
 
     # Close the table
