@@ -92,20 +92,22 @@ def download(file_path: Union[Path, str]) -> Path:
 
 # Too many branches (16 >12)
 # ruff: noqa: PLR0912
-def _validate_query_parameters(
-    *,
-    table: Optional[str],
-    instrument: Optional[str],
-    data_level: Optional[str],
-    start_date: Optional[str],
-    end_date: Optional[str],
-    ingestion_start_date: Optional[str],
-    ingestion_end_date: Optional[str],
-    repointing: Optional[Union[str, int]],
-    version: Optional[str],
-    extension: Optional[str],
-) -> None:
-    """Validate all parameters used in the query function."""
+def _validate_query_parameters(**kwargs) -> None:
+    """Validate all parameters used in the query function.
+
+    This methods keyword arguments will match that of the query() parameters.
+    """
+    table = kwargs.get("table")
+    instrument = kwargs.get("instrument")
+    data_level = kwargs.get("data_level")
+    start_date = kwargs.get("start_date")
+    end_date = kwargs.get("end_date")
+    ingestion_start_date = kwargs.get("ingestion_start_date")
+    ingestion_end_date = kwargs.get("ingestion_end_date")
+    repointing = kwargs.get("repointing")
+    version = kwargs.get("version")
+    extension = kwargs.get("extension")
+
     # Check table name
     if table is not None and table not in ("science", "ancillary", "spice"):
         raise ValueError(
@@ -264,18 +266,7 @@ def query(
         )
 
     # Use validation function to check parameters
-    _validate_query_parameters(
-        table=table,
-        instrument=instrument,
-        data_level=data_level,
-        start_date=start_date,
-        end_date=end_date,
-        ingestion_start_date=ingestion_start_date,
-        ingestion_end_date=ingestion_end_date,
-        repointing=repointing,
-        version=version,
-        extension=extension,
-    )
+    _validate_query_parameters(**query_params)
 
     # Transform repointing from string to integer if provided
     if repointing is not None:
