@@ -1067,3 +1067,7 @@ class DependencyFilePath(ScienceFilePath):
 
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"json"}
     _dir_prefix = "imap/dependency"
+
+
+class CadenceFilePath(DependencyFilePath):
+    """DEPRECATED class for CadenceFile processing, use DependencyFilePath instead."""
