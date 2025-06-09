@@ -1,5 +1,5 @@
 """Tests for the various configs that a user can set."""
-# ruff: noqa: S603PLR0912
+# ruff: noqa: S603
 # subprocess call: check for execution of untrusted input
 
 import os
