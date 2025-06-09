@@ -12,6 +12,7 @@ from pathlib import Path
 
 from imap_data_access.file_validation import (
     AncillaryFilePath,
+    CadenceFilePath,
     DependencyFilePath,
     ImapFilePath,
     QuicklookFilePath,
@@ -33,6 +34,7 @@ __all__ = [
     "VALID_INSTRUMENTS",
     "AncillaryFilePath",
     "AncillaryInput",
+    "CadenceFilePath",
     "DependencyFilePath",
     "ImapFilePath",
     "ProcessingInputCollection",
