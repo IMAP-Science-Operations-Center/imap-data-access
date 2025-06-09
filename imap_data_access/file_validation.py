@@ -33,7 +33,7 @@ def generate_imap_file_path(filename: str) -> ImapFilePath:
         AncillaryFilePath,
         SPICEFilePath,
         QuicklookFilePath,
-        CadenceFilePath,
+        DependencyFilePath,
     ):
         try:
             return cls(filename)
@@ -1056,8 +1056,8 @@ class QuicklookFilePath(ScienceFilePath):
     _dir_prefix = "imap/quicklook"
 
 
-class CadenceFilePath(ScienceFilePath):
-    """Class for building and validating filepaths for Cadence files.
+class DependencyFilePath(ScienceFilePath):
+    """Class for building and validating filepaths for dependency files.
 
     These files store the processing input for the data product they
     are associated with. This approach avoids hitting the character
@@ -1066,4 +1066,4 @@ class CadenceFilePath(ScienceFilePath):
     """
 
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"json"}
-    _dir_prefix = "imap/cadence"
+    _dir_prefix = "imap/dependency"
