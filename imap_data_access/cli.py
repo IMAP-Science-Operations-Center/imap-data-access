@@ -55,16 +55,17 @@ def _print_query_results_table(query_results: list[dict]):
         A list of dictionaries containing the query results
     """
     num_files = len(query_results)
+    query_table = "science"  # default to science so empty list can be printed
+    print(f"Found [{num_files}] matching files in {query_table} table")
+    if num_files == 0:
+        return
+
     # Get the database table
     query_table = ""
     if "end_date" in query_results[0]:
         query_table = "ancillary"
     elif "repointing" in query_results[0]:
         query_table = "science"
-
-    print(f"Found [{num_files}] matching files in {query_table} table")
-    if num_files == 0:
-        return
 
     # Use the query_results for the header
     headers_science = [
