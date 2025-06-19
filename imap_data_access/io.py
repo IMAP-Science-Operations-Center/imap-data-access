@@ -109,10 +109,10 @@ def _validate_query_parameters(**kwargs) -> None:
     extension = kwargs.get("extension")
 
     # Check table name
-    if table is not None and table not in ("science", "ancillary", "spice"):
+    if table is not None and table not in imap_data_access.VALID_TABLES:
         raise ValueError(
             "Not a valid database table, please choose from "
-            "'science', 'ancillary', or 'spice'."
+            + ", ".join(imap_data_access.VALID_TABLES)
         )
     # Check instrument name
     if instrument is not None and instrument not in imap_data_access.VALID_INSTRUMENTS:
