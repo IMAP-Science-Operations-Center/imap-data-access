@@ -117,3 +117,9 @@ VALID_DATALEVELS = {
     "l3d",
     "l3e",
 }
+
+VALID_TABLES = {
+    "science",
+    "ancillary",
+    "spice",
+}

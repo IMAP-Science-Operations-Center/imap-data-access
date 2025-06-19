@@ -90,12 +90,107 @@ def download(file_path: Union[Path, str]) -> Path:
     return destination
 
 
-# Too many branches error
-# TODO: refactor to pull out validation into a separate function
-# ruff: noqa: PLR0912, PLR0915
+# Too many branches (16 >12)
+# ruff: noqa: PLR0912
+def _validate_query_parameters(**kwargs) -> None:
+    """Validate all parameters used in the query function.
+
+    This methods keyword arguments will match that of the query() parameters.
+    """
+    table = kwargs.get("table")
+    instrument = kwargs.get("instrument")
+    data_level = kwargs.get("data_level")
+    start_date = kwargs.get("start_date")
+    end_date = kwargs.get("end_date")
+    ingestion_start_date = kwargs.get("ingestion_start_date")
+    ingestion_end_date = kwargs.get("ingestion_end_date")
+    repointing = kwargs.get("repointing")
+    version = kwargs.get("version")
+    extension = kwargs.get("extension")
+
+    # Check table name
+    if table is not None and table not in imap_data_access.VALID_TABLES:
+        raise ValueError(
+            "Not a valid database table, please choose from "
+            + ", ".join(imap_data_access.VALID_TABLES)
+        )
+    # Check instrument name
+    if instrument is not None and instrument not in imap_data_access.VALID_INSTRUMENTS:
+        raise ValueError(
+            "Not a valid instrument, please choose from "
+            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
+        )
+
+    # Check data-level
+    # do an if statement that checks that data_level was passed in,
+    # then check it against all options, l0, l1a, l1b, l2, l3 etc.
+    if data_level is not None and data_level not in imap_data_access.VALID_DATALEVELS:
+        raise ValueError(
+            "Not a valid data level, choose from "
+            + ", ".join(imap_data_access.VALID_DATALEVELS)
+        )
+
+    # Check start-date
+    if start_date is not None and not file_validation.ImapFilePath.is_valid_date(
+        start_date
+    ):
+        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+
+    # Check end-date
+    if end_date is not None and not file_validation.ImapFilePath.is_valid_date(
+        end_date
+    ):
+        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+
+    # Check ingestion-start-date
+    if (
+        ingestion_start_date is not None
+        and not file_validation.ImapFilePath.is_valid_date(ingestion_start_date)
+    ):
+        raise ValueError("Not a valid ingestion start date, use format 'YYYYMMDD'.")
+
+    # Check ingestion-end-date
+    if (
+        ingestion_end_date is not None
+        and not file_validation.ImapFilePath.is_valid_date(ingestion_end_date)
+    ):
+        raise ValueError("Not a valid ingestion end date, use format 'YYYYMMDD'.")
+
+    if repointing is not None:
+        # check repointing follows 'repoint00000' format
+        if not file_validation.ScienceFilePath.is_valid_repointing(repointing):
+            try:
+                int(repointing)
+            except ValueError as err:
+                raise ValueError(
+                    "Not a valid repointing, use format repoint<num>,"
+                    " where <num> is a 5 digit integer."
+                ) from err
+
+    # Check version make sure to include 'latest'
+    if version is not None and not file_validation.ImapFilePath.is_valid_version(
+        version
+    ):
+        raise ValueError("Not a valid version, use format 'vXXX'.")
+
+    # check extension
+    if extension is not None:
+        if table == "science":
+            valid_extensions = ScienceFilePath.VALID_EXTENSIONS
+        elif table == "ancillary":
+            valid_extensions = AncillaryFilePath.VALID_EXTENSIONS
+        else:
+            raise ValueError("Not a valid table.")
+
+        if extension not in valid_extensions:
+            raise ValueError(
+                f"Not a valid extension for '{table}', choose from {valid_extensions}."
+            )
+
+
 def query(
     *,
-    table: Optional[str] = None,
+    table: Optional[str] = "science",
     instrument: Optional[str] = None,
     data_level: Optional[str] = None,
     descriptor: Optional[str] = None,
@@ -161,92 +256,24 @@ def query(
         if not query_params:
             raise ValueError("One other parameter must be run with 'version'")
 
-    if not query_params:
+    # Copy params and remove table to ensure one other param was passed
+    non_table_params = query_params.copy()
+    non_table_params.pop("table", None)
+    if not non_table_params:
         raise ValueError(
             "At least one query parameter must be provided. "
             "Run 'query -h' for more information."
         )
-    # Check table name
-    if table is not None and table not in ("science", "ancillary", "spice"):
-        raise ValueError(
-            "Not a valid database table, please choose from "
-            "'science', 'ancillary', or 'spice'."
-        )
-    # Check instrument name
-    if instrument is not None and instrument not in imap_data_access.VALID_INSTRUMENTS:
-        raise ValueError(
-            "Not a valid instrument, please choose from "
-            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
-        )
 
-    # Check data-level
-    # do an if statement that checks that data_level was passed in,
-    # then check it against all options, l0, l1a, l1b, l2, l3 etc.
-    if data_level is not None and data_level not in imap_data_access.VALID_DATALEVELS:
-        raise ValueError(
-            "Not a valid data level, choose from "
-            + ", ".join(imap_data_access.VALID_DATALEVELS)
-        )
+    # Use validation function to check parameters
+    _validate_query_parameters(**query_params)
 
-    # Check start-date
-    if start_date is not None and not file_validation.ImapFilePath.is_valid_date(
-        start_date
-    ):
-        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
-
-    # Check end-date
-    if end_date is not None and not file_validation.ImapFilePath.is_valid_date(
-        end_date
-    ):
-        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
-
-    # Check ingestion-start-date
-    if (
-        ingestion_start_date is not None
-        and not file_validation.ImapFilePath.is_valid_date(ingestion_start_date)
-    ):
-        raise ValueError("Not a valid ingestion start date, use format 'YYYYMMDD'.")
-
-    # Check ingestion-end-date
-    if (
-        ingestion_end_date is not None
-        and not file_validation.ImapFilePath.is_valid_date(ingestion_end_date)
-    ):
-        raise ValueError("Not a valid ingestion end date, use format 'YYYYMMDD'.")
-
-    # Check version make sure to include 'latest'
-    if version is not None and not file_validation.ImapFilePath.is_valid_version(
-        version
-    ):
-        raise ValueError("Not a valid version, use format 'vXXX'.")
-
+    # Transform repointing from string to integer if provided
     if repointing is not None:
-        # check repointing follows 'repoint00000' format
-        if not file_validation.ScienceFilePath.is_valid_repointing(repointing):
-            try:
-                query_params["repointing"] = int(repointing)
-            except ValueError as err:
-                raise ValueError(
-                    "Not a valid repointing, use format repoint<num>,"
-                    " where <num> is a 5 digit integer."
-                ) from err
-        else:
-            # Query API expects an integer
+        if file_validation.ScienceFilePath.is_valid_repointing(repointing):
             query_params["repointing"] = int(repointing[-5:])
-
-    # check extension
-    if extension is not None:
-        if table == "science":
-            valid_extensions = ScienceFilePath.VALID_EXTENSIONS
-        elif table == "ancillary":
-            valid_extensions = AncillaryFilePath.VALID_EXTENSIONS
         else:
-            raise ValueError("Not a valid table.")
-
-        if extension not in valid_extensions:
-            raise ValueError(
-                f"Not a valid extension for '{table}', choose from {valid_extensions}."
-            )
+            query_params["repointing"] = int(repointing)
 
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}/query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()
