@@ -232,6 +232,9 @@ def _query_parser(args: argparse.Namespace):
         file_path = generate_imap_file_path(args.filename)
         # ancillary file query
         if isinstance(file_path, AncillaryFilePath):
+            # set end_date param in case none is provided
+            if file_path.end_date is None:
+                file_path.end_date = file_path.start_date
             query_params = {
                 "table": "ancillary",
                 "instrument": file_path.instrument,
@@ -241,7 +244,6 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
-            # TODO: add an end_date value if not provided
         # science table query
         elif isinstance(file_path, ScienceFilePath):
             query_params = {
@@ -250,6 +252,7 @@ def _query_parser(args: argparse.Namespace):
                 "data_level": file_path.data_level,
                 "descriptor": file_path.descriptor,
                 "start_date": file_path.start_date,
+                "end_date": file_path.start_date,
                 "repointing": file_path.repointing,
                 "version": file_path.version,
                 "extension": file_path.extension,
