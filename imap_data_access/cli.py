@@ -45,6 +45,7 @@ def _download_parser(args: argparse.Namespace):
     print(f"Successfully downloaded the file to: {output_path}")
 
 
+# ruff: noqa: PLR0912
 def _print_query_results_table(query_results: list[dict]):
     """Print the query results in a table.
 
@@ -54,16 +55,17 @@ def _print_query_results_table(query_results: list[dict]):
         A list of dictionaries containing the query results
     """
     num_files = len(query_results)
+    query_table = "science"  # default to science so empty list can be printed
+    print(f"Found [{num_files}] matching files in {query_table} table")
+    if num_files == 0:
+        return
+
     # Get the database table
     query_table = ""
     if "end_date" in query_results[0]:
         query_table = "ancillary"
     elif "repointing" in query_results[0]:
         query_table = "science"
-
-    print(f"Found [{num_files}] matching files in {query_table} table")
-    if num_files == 0:
-        return
 
     # Use the query_results for the header
     headers_science = [
@@ -72,7 +74,6 @@ def _print_query_results_table(query_results: list[dict]):
         "Descriptor",
         "Start Date",
         "Ingestion Date",
-        "Repointing",
         "Version",
         "Filename",
     ]
@@ -85,13 +86,29 @@ def _print_query_results_table(query_results: list[dict]):
         "Version",
         "Filename",
     ]
+    # Boolean to check if CR is present in any science files
+    cr_flag = query_table == "science" and any(
+        item.get("cr") not in (None, "", []) for item in query_results
+    )
+    # Add CR to science header
+    if query_table == "science" and cr_flag:
+        headers_science.insert(-1, "CR")
+    # Boolean to check if repointing values are present
+    repointing_flag = query_table == "science" and any(
+        item.get("repointing") not in (None, "", []) for item in query_results
+    )
+    # Add Repointing to Science header
+    if query_table == "science" and repointing_flag:
+        headers_science.insert(-1, "Repointing")
+
     # Set appropriate headers for desired table
-    headers = headers_science
-    if query_table == "ancillary":
+    if query_table == "science":
+        headers = headers_science
+    else:
         headers = headers_ancillary
 
     # Calculate the maximum width for each column based on the header and the data
-    # have to adjust Ingestion Date and Filename to properly align
+    # have to adjust Ingestion Date, Filename, and CR to properly align
     column_widths = {}
     for header in headers[:-1]:
         column_widths[header] = max(
@@ -106,6 +123,10 @@ def _print_query_results_table(query_results: list[dict]):
                 for item in query_results
             ),
         )
+        if cr_flag:
+            column_widths["CR"] = max(
+                len("CR"), *(len(str(item.get("cr", ""))) for item in query_results)
+            )
 
         column_widths["Filename"] = max(
             len("Filename"),
@@ -150,10 +171,15 @@ def _print_query_results_table(query_results: list[dict]):
                 str(item.get("descriptor", "")),
                 str(item.get("start_date", "")),
                 str(item.get("ingestion_date", "")),
-                str(item.get("repointing", "")) or "",
                 str(item.get("version", "")),
                 os.path.basename(item.get("file_path", "")),
             ]
+            if cr_flag:
+                # add CR to values
+                values.insert(-1, str(item.get("cr", "")))
+            if repointing_flag:
+                # add repointing values
+                values.insert(-1, str(item.get("repointing", "")))
         print(format_string.format(*values))
 
     # Close the table
@@ -206,6 +232,9 @@ def _query_parser(args: argparse.Namespace):
         file_path = generate_imap_file_path(args.filename)
         # ancillary file query
         if isinstance(file_path, AncillaryFilePath):
+            # set end_date param in case none is provided
+            if file_path.end_date is None:
+                file_path.end_date = file_path.start_date
             query_params = {
                 "table": "ancillary",
                 "instrument": file_path.instrument,
@@ -215,7 +244,6 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
-            # TODO: add an end_date value if not provided
         # science table query
         elif isinstance(file_path, ScienceFilePath):
             query_params = {
@@ -224,11 +252,11 @@ def _query_parser(args: argparse.Namespace):
                 "data_level": file_path.data_level,
                 "descriptor": file_path.descriptor,
                 "start_date": file_path.start_date,
+                "end_date": file_path.start_date,
                 "repointing": file_path.repointing,
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
-            # TODO: add an end_date value if not provided
         else:
             raise ValueError("Unrecognized file path type.")
 
