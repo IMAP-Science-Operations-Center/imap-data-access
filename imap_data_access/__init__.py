@@ -5,7 +5,6 @@ heliosphere. This package contains the data access tools for the IMAP mission. I
 provides a convenient way to query the IMAP data archive and download data files.
 """
 
-# ruff: noqa: F401
 import importlib.metadata
 import os
 from pathlib import Path
