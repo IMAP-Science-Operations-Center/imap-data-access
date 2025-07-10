@@ -108,6 +108,15 @@ def test_download_daily_data(
         instrument, start_time, end_time, upload_to_server=upload_to_server
     )
 
+    # Make sure swapi was called with a buffer of 1 minute on either side of midnight
+    call = mock_get_packet_binary_data_sctime.call_args_list[0][0]
+    assert call == (
+        1184,
+        start_time - datetime.timedelta(minutes=1),
+        datetime.datetime.combine(start_time, datetime.time.max)
+        + datetime.timedelta(minutes=1),
+    )
+
     # We expect two daily files to be created because we have packets
     # across two separate days
     for day in mock_get_packet_times_ert.return_value:
