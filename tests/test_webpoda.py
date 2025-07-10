@@ -214,3 +214,42 @@ def test_download_repointing_data(
         assert expected_file_path.read_bytes() == b"\x00\x01\x02\x03" * n_apids
         assert mock_upload.called is upload_to_server
     assert (imap_data_access.config["DATA_DIR"] / "imap").exists()
+
+
+@patch("imap_data_access.webpoda.get_packet_binary_data_sctime")
+@patch("imap_data_access.webpoda.get_packet_times_ert")
+@patch("imap_data_access.webpoda.imap_data_access.query")
+def test_file_versioning(
+    mock_query,
+    mock_get_packet_times_ert,
+    mock_get_packet_binary_data_sctime,
+):
+    # Mock the query to return two existing files for the instrument
+    # and start time, which will trigger the versioning logic.
+    mock_query.return_value = [{"version": "v001"}, {"version": "v002"}]
+
+    mock_get_packet_times_ert.return_value = [
+        datetime.datetime(2024, 12, 1, 0, 0, 0),
+        datetime.datetime(2024, 12, 2, 0, 0, 0),
+    ]
+    mock_get_packet_binary_data_sctime.return_value = b"\x00\x01\x02\x03"
+
+    start_time = datetime.datetime(2024, 12, 1, 0, 0, 0)
+    end_time = datetime.datetime(2024, 12, 3, 23, 59, 59)
+    instrument = "swapi"
+
+    download_daily_data(instrument, start_time, end_time)
+
+    # We expect two daily files to be created because we have packets
+    # across two separate days
+    for day in mock_get_packet_times_ert.return_value:
+        expected_file_path = ScienceFilePath.generate_from_inputs(
+            instrument=instrument,
+            data_level="l0",
+            descriptor="raw",
+            start_time=day.strftime("%Y%m%d"),
+            version="v003",
+        ).construct_path()
+        # There are two swapi apids, so we download the same byte stream twice
+        n_apids = len(INSTRUMENT_APIDS[instrument])
+        assert expected_file_path.read_bytes() == b"\x00\x01\x02\x03" * n_apids
