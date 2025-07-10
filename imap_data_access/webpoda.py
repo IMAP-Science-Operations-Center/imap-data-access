@@ -127,6 +127,13 @@ INSTRUMENT_APIDS = {
     "ialirt": [478],
 }
 
+_INSTRUMENT_BUFFER_MINUTES = {
+    "hit": 20,
+    "mag": 30,
+    "swapi": 1,
+    "swe": 1,
+}
+
 
 def _get_webpoda_headers() -> dict:
     """Get the necessary headers for webpoda requests."""
@@ -299,7 +306,7 @@ def download_daily_data(
 
     # Iterate over the packet dates to make a query for each individual spacecraft day
     # packet_date 00:00:00 -> packet_date 23:59:59
-    for date in unique_dates:
+    for date in sorted(unique_dates):
         science_file = imap_data_access.ScienceFilePath.generate_from_inputs(
             instrument=instrument,
             data_level="l0",
@@ -314,6 +321,13 @@ def download_daily_data(
 
         daily_start_time = datetime.datetime.combine(date, datetime.time.min)
         daily_end_time = datetime.datetime.combine(date, datetime.time.max)
+
+        # Some instruments request a buffer of packets on either side of the midnight
+        # boundary to ensure their packet groupings work together.
+        buffer_minutes = _INSTRUMENT_BUFFER_MINUTES.get(instrument, 0)
+        buffer_timedelta = datetime.timedelta(minutes=buffer_minutes)
+        daily_start_time -= buffer_timedelta
+        daily_end_time += buffer_timedelta
 
         # Iterate over all apids, downloading the content for this time period
         # concatenating all the binary returns into a single binary file
