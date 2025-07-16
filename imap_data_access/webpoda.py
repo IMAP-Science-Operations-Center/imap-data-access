@@ -18,6 +18,7 @@ import csv
 import datetime
 import logging
 from pathlib import Path
+from typing import Optional
 
 import requests
 
@@ -263,7 +264,6 @@ def download_daily_data(
     instrument: str,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    version: str = "v001",
     upload_to_server=False,
 ):
     """Download data for the apid and start/end time range from webpoda.
@@ -282,8 +282,6 @@ def download_daily_data(
         The start time of the query in Earth Received Time (ERT).
     end_time : datetime.datetime
         The end time of the query in Earth Received Time (ERT).
-    version : str, optional
-        The version to use on the downloaded data file, by default "v001"
     upload_to_server : bool, optional
         If True, upload the data to the SDC data bucket, by default False
     """
@@ -297,7 +295,7 @@ def download_daily_data(
     ]
 
     # Get the unique dates from the packet times
-    unique_dates = set([dt.date() for dt in packet_times])
+    unique_dates = sorted(set([dt.date() for dt in packet_times]))
     logger.info(
         f"Found [{len(packet_times)}] packets for instrument [{instrument}] "
         f"between earth received time {start_time} and {end_time}"
@@ -306,15 +304,11 @@ def download_daily_data(
 
     # Iterate over the packet dates to make a query for each individual spacecraft day
     # packet_date 00:00:00 -> packet_date 23:59:59
-    for date in sorted(unique_dates):
-        science_file = imap_data_access.ScienceFilePath.generate_from_inputs(
+    for date in unique_dates:
+        path = _get_latest_version_file_path(
             instrument=instrument,
-            data_level="l0",
-            descriptor="raw",
-            start_time=date.strftime("%Y%m%d"),
-            version=version,
+            start_time=date,
         )
-        path = science_file.construct_path()
         if path.exists():
             logger.info(f"Skipping {path} because it already exists.")
             continue
@@ -357,12 +351,11 @@ def download_daily_data(
     logger.info(f"Finished downloading data for instrument [{instrument}]")
 
 
-def download_repointing_data(  # noqa: PLR0913
+def download_repointing_data(
     instrument: str,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     repointing_file: Path,
-    version: str = "v001",
     upload_to_server=False,
 ):
     """Download data for the instrument and start/end time range from webpoda.
@@ -469,15 +462,11 @@ def download_repointing_data(  # noqa: PLR0913
             f"between {pointing_start} and {pointing_end}"
         )
 
-        science_file = imap_data_access.ScienceFilePath.generate_from_inputs(
+        path = _get_latest_version_file_path(
             instrument=instrument,
-            data_level="l0",
-            descriptor="raw",
-            start_time=pointing_start.strftime("%Y%m%d"),
+            start_time=pointing_start,
             repointing=int(repointings[i]["repoint_id"]),
-            version=version,
         )
-        path = science_file.construct_path()
         if path.exists():
             logger.info(f"Skipping {path} because it already exists.")
             continue
@@ -508,3 +497,56 @@ def download_repointing_data(  # noqa: PLR0913
                 logger.error(f"Failed to upload {path} to the server: {e}")
 
     logger.info(f"Finished downloading data for instrument [{instrument}]")
+
+
+def _get_latest_version_file_path(
+    instrument: str, start_time: datetime.datetime, repointing: Optional[int] = None
+) -> int:
+    """Create the filename for the packets file accounting for the versioning.
+
+    We need to query the imap_data_access server to see if there have been other
+    files created with the same name, and if so, increment the version number.
+
+    Parameters
+    ----------
+    instrument : str
+        The instrument name
+    start_time : datetime.datetime
+        The start time of the data to check for the latest version.
+    repointing : int, optional
+        The repointing ID to check for the latest version, by default None.
+
+    Returns
+    -------
+    pathlib.Path
+        The science file path with the version number included.
+    """
+    # See what the latest version is for this file, if any.
+    # If there are no files, we will return the first version (v001).
+    current_files = imap_data_access.query(
+        instrument=instrument,
+        data_level="l0",
+        descriptor="raw",
+        start_date=start_time.strftime("%Y%m%d"),
+        repointing=repointing,
+    )
+    if len(current_files):
+        version_string = sorted(file["version"] for file in current_files)[-1]
+        latest_version = f"v{str(int(version_string[1:]) + 1).zfill(3)}"
+    else:
+        latest_version = "v001"
+    logger.info(
+        f"Found [{len(current_files)}] existing l0 files for "
+        f"instrument [{instrument}] with start time {start_time} "
+        f"and repointing {repointing}, setting version to [{latest_version}]"
+    )
+
+    science_file = imap_data_access.ScienceFilePath.generate_from_inputs(
+        instrument=instrument,
+        data_level="l0",
+        descriptor="raw",
+        start_time=start_time.strftime("%Y%m%d"),
+        repointing=repointing,
+        version=latest_version,
+    )
+    return science_file.construct_path()
