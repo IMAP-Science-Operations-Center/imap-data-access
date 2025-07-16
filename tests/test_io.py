@@ -328,7 +328,7 @@ def test_upload_no_file(mock_send_request):
 )
 @pytest.mark.parametrize(
     ("api_key", "expected_header"),
-    [(None, {}), ("test-api-key", {"X-api-key": "test-api-key"})],
+    [(None, {}), ("test-api-key", {"x-api-key": "test-api-key"})],
 )
 def test_upload(
     mock_send_request,

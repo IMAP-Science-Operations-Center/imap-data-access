@@ -408,7 +408,7 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
     # We send a GET request with the filename and the server
     # will respond with an s3 presigned URL that we can use
     # to upload the file to the data archive
-    headers = {"X-api-key": api_key} if api_key else {}
+    headers = {"x-api-key": api_key} if api_key else {}
     request = requests.Request("GET", url, headers=headers).prepare()
 
     with _make_request(request) as response:
