@@ -349,7 +349,7 @@ def test_upload(
     expected_header : dict
         The expected header to be sent with the request
     """
-    monkeypatch.setitem(imap_data_access.config, "API_KEY", None)
+    monkeypatch.setitem(imap_data_access.config, "API_KEY", api_key)
     mock_send_request.return_value.json.return_value = "https://s3-test-bucket.com"
     # Call the upload function
     file_to_upload = imap_data_access.config["DATA_DIR"] / upload_file_path
@@ -357,7 +357,7 @@ def test_upload(
     file_to_upload.write_bytes(b"test file content")
 
     os.chdir(imap_data_access.config["DATA_DIR"])
-    imap_data_access.upload(upload_file_path, api_key=api_key)
+    imap_data_access.upload(upload_file_path)
 
     # Should have been two calls to make a request
     # 1. To get the s3 upload url

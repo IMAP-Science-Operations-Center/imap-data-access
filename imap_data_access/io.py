@@ -32,6 +32,10 @@ def _make_request(request: requests.PreparedRequest):
     when making HTTP requests and yield the response body.
     """
     logger.debug("Making request: %s", request)
+    if imap_data_access.config["API_KEY"]:
+        # Add the API key to the request headers if it exists
+        request.headers["x-api-key"] = imap_data_access.config["API_KEY"]
+
     try:
         with requests.Session() as session:
             response = session.send(request)
@@ -408,8 +412,7 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
     # We send a GET request with the filename and the server
     # will respond with an s3 presigned URL that we can use
     # to upload the file to the data archive
-    headers = {"x-api-key": api_key} if api_key else {}
-    request = requests.Request("GET", url, headers=headers).prepare()
+    request = requests.Request("GET", url).prepare()
 
     with _make_request(request) as response:
         s3_url = response.json()
