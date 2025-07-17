@@ -32,6 +32,10 @@ def _make_request(request: requests.PreparedRequest):
     when making HTTP requests and yield the response body.
     """
     logger.debug("Making request: %s", request)
+    if imap_data_access.config["API_KEY"]:
+        # Add the API key to the request headers if it exists
+        request.headers["x-api-key"] = imap_data_access.config["API_KEY"]
+
     try:
         with requests.Session() as session:
             response = session.send(request)
@@ -383,16 +387,13 @@ def reprocess(
         logger.debug("Received JSON: %s", items)
 
 
-def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> None:
+def upload(file_path: Union[Path, str]) -> None:
     """Upload a file to the data archive.
 
     Parameters
     ----------
     file_path : pathlib.Path or str
         Path to the file to upload.
-    api_key : str, optional
-        API key to authenticate with the data access API. If not provided,
-        the value from the IMAP_API_KEY environment variable will be used.
     """
     file_path = Path(file_path).resolve()
     if not file_path.exists():
@@ -402,14 +403,10 @@ def upload(file_path: Union[Path, str], *, api_key: Optional[str] = None) -> Non
     url = f"{imap_data_access.config['DATA_ACCESS_URL']}/upload/{file_path.name}"
     logger.info("Uploading file %s to %s", file_path, url)
 
-    # Create a request header with the API key
-    api_key = api_key or imap_data_access.config["API_KEY"]
-
     # We send a GET request with the filename and the server
     # will respond with an s3 presigned URL that we can use
     # to upload the file to the data archive
-    headers = {"X-api-key": api_key} if api_key else {}
-    request = requests.Request("GET", url, headers=headers).prepare()
+    request = requests.Request("GET", url).prepare()
 
     with _make_request(request) as response:
         s3_url = response.json()
