@@ -476,6 +476,7 @@ _SPICE_TYPE_MAPPING = {
     "mk": "metakernel",
     "tm": "metakernel",
     "sff": "thruster",
+    "L1_de": "lagrange_point",
 }
 
 _SPICE_DIR_MAPPING = {
@@ -498,6 +499,7 @@ _SPICE_DIR_MAPPING = {
     "science_frames": "fk",
     "metakernel": "mk",
     "thruster": "activities",
+    "lagrange_point": "spk",
 }
 """These are the valid extensions for SPICE files according to NAIF
 https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
@@ -566,11 +568,12 @@ class SPICEFilePath(ImapFilePath):
     )
     # Covers:
     # Planetary Ephemeris (type: "de")
+    # Lagrange Point Ephemeris (type: "L1_de")
     # Planetary Constants (type: "pck")
     # Leapsecond kernel (type: "naif")
     # Spacecraft clock kernel (type: "imap_sclk_")
     spice_prod_ver_pattern = (
-        r"(?P<type>[a-zA-Z\-_]+)"
+        r"(?P<type>L1_de|[a-zA-Z\-_]+)"
         r"(?P<version>[\d]+)\."
         r"(?P<extension>tls|tpc|bsp|tsc)"
     )
@@ -691,8 +694,8 @@ class SPICEFilePath(ImapFilePath):
             raise SPICEFilePath.InvalidImapFileError(
                 f"Invalid SPICE file. Expected file to have one of the following "
                 f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
-                f"the documentation to ensure the file has the "
-                f"proper naming convention."
+                f"the documentation to ensure the type,{components['type']},has "
+                f"the proper naming convention."
             )
 
         components["type"] = _SPICE_TYPE_MAPPING[components["type"]]
@@ -765,7 +768,7 @@ class SPICEFilePath(ImapFilePath):
         raise SPICEFilePath.InvalidImapFileError(
             f"Invalid SPICE file. Expected file to have one of the following "
             f"file types {list(_SPICE_DIR_MAPPING.keys())}. Please reference "
-            f"the documentation to ensure the file has the "
+            f"the documentation to ensure the file, {filename}, has the "
             f"proper naming convention "
         )
 
