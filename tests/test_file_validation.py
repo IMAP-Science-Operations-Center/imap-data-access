@@ -255,6 +255,13 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("imap/spice/fk/imap_science_0001.tf")
 
+    # Test Lagrange Point Ephemeris
+    lagrange_point_file = SPICEFilePath("L1_de431.bsp")
+    assert lagrange_point_file.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("imap/spice/spk/L1_de431.bsp")
+    assert lagrange_point_file.spice_metadata["type"] == "lagrange_point"
+
 
 def test_spice_extract_dps_pointing_parts():
     """Test the new DPS pointing kernel filename parsing."""
@@ -269,6 +276,7 @@ def test_spice_extract_dps_pointing_parts():
     assert file_path.spice_metadata["end_date"] == datetime.strptime(
         "2025_202", "%Y_%j"
     )
+    print(file_path.spice_metadata)
 
 
 def test_spice_extract_spin_parts():
