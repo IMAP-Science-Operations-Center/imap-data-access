@@ -796,7 +796,14 @@ class AncillaryFilePath(ImapFilePath):
         "<mission>_<instrument>_<description>_"
         "<start_date>(_<end_date>)_<version>.<extension>"
     )
-    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "csv", "dat", "json", "zip"}
+    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {
+        "cdf",
+        "csv",
+        "dat",
+        "json",
+        "zip",
+        "tsv",
+    }
     _dir_prefix = "imap/ancillary"
 
     class InvalidAncillaryFileError(ImapFilePath.InvalidImapFileError):
