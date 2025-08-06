@@ -1066,7 +1066,7 @@ class QuicklookFilePath(ScienceFilePath):
     _dir_prefix = "imap/quicklook"
 
 
-class DependencyFilePath(ScienceFilePath):
+class DependencyFilePath(ImapFilePath):
     """Class for building and validating filepaths for dependency files.
 
     These files store the processing input for the data product they
@@ -1339,6 +1339,76 @@ class DependencyFilePath(ScienceFilePath):
         del components["interval_type"]
 
         return components
+
+    def construct_path(self) -> Path:
+        """Construct valid path from class variables and data_dir.
+
+        If data_dir is not None, it is prepended on the returned path.
+
+        expected return:
+        <data_dir>/mission/instrument/data_level/startdate_month/startdate_day/filename
+
+        Returns
+        -------
+        Path
+            Upload path
+        """
+        upload_path = Path(
+            f"{self._dir_prefix}/{self.instrument}/{self.data_level}/"
+            f"{self.start_date[:4]}/{self.start_date[4:6]}/{self.filename}"
+        )
+
+        return imap_data_access.config["DATA_DIR"] / upload_path
+
+    @staticmethod
+    def is_valid_repointing(input_repointing: str) -> bool:
+        """Check input repointing string is in valid format 'repointingXXXXX'.
+
+        Parameters
+        ----------
+        input_repointing : str
+            Repointing to be checked.
+
+        Returns
+        -------
+        bool
+            Whether input repointing is valid or not.
+        """
+        return re.fullmatch(r"repoint\d{5}", str(input_repointing))
+
+    def is_valid_for_start_date(self, start_date: datetime) -> bool:
+        """Check if the file is valid for the given science file start_date.
+
+        Parameters
+        ----------
+        start_date : datetime
+            The science time to check in YYYYMMDD format.
+
+        Returns
+        -------
+        bool
+            True if the file start_date is equal to the given time, False otherwise.
+        """
+        if datetime.strptime(self.start_date, "%Y%m%d") == start_date:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def is_valid_cr(input_cr: str) -> bool:
+        """Check input carrington rotation string is in valid format 'crXXXXX'.
+
+        Parameters
+        ----------
+        input_cr : str
+            Carrington rotation to be checked.
+
+        Returns
+        -------
+        bool
+            Whether input carrington rotation is valid or not.
+        """
+        return re.fullmatch(r"cr\d{5}", str(input_cr))
 
 
 class CadenceFilePath(DependencyFilePath):
