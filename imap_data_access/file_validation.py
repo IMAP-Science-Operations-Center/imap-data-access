@@ -1075,8 +1075,270 @@ class DependencyFilePath(ScienceFilePath):
     remains compatible with what ProcessingInputCollection expects.
     """
 
+    FILENAME_CONVENTION = (
+        "<mission>_<instrument>_<datalevel>_<descriptor>_"
+        "<startdate>(-<repointing>)_<content_hash>_<version>.<extension>"
+    )
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"json"}
     _dir_prefix = "imap/dependency"
+
+    class InvalidScienceFileError(ImapFilePath.InvalidImapFileError):
+        """DEPRECATED: Use ImapFilePath.InvalidImapFileError instead."""
+
+        pass
+
+    def __init__(self, filename: str | Path):
+        """Class to store filepath and file management methods for science files.
+
+        If you have an instance of this class, you can be confident you have a valid
+        science file and generate paths in the correct format. The parent of the file
+        path is set by the "IMAP_DATA_DIR" environment variable, or defaults to "data/"
+
+        Current filename convention:
+        <mission>_<instrument>_<datalevel>_<descriptor>_<start_date>(-<repointing>)
+        _<version>.<extension>
+
+        NOTE: There are no optional parameters. All parameters are required.
+        <mission>: imap
+        <instrument>: codice, glows, hi, hit, idex, lo, mag, swapi, swe, ultra
+        <data_level> : l1a, l1b, l1, l3a and etc.
+        <descriptor>: descriptor stores information specific to instrument. This is
+            decided by each instrument. For L0, "raw" is used.
+        <start_date>: startdate is the earliest date in the data, format: YYYYMMDD
+        <repointing>: This is an optional field. It is used to indicate which
+            repointing the data is from, format: repointXXXXX
+        <cr>: This is an optional field describing the Carrington rotation.
+            format: crXXXXX.
+        <version>: This stores the content_hashed content of the dependency file.
+
+        Parameters
+        ----------
+        filename : str | Path
+            Science data filename or file path.
+        """
+        self.filename = Path(filename)
+
+        try:
+            split_filename = self.extract_filename_components(self.filename)
+        except ValueError as err:
+            raise self.InvalidImapFileError(
+                f"Invalid filename. Expected file to match format: "
+                f"{DependencyFilePath.FILENAME_CONVENTION}"
+            ) from err
+
+        self.mission = split_filename["mission"]
+        self.instrument = split_filename["instrument"]
+        self.data_level = split_filename["data_level"]
+        self.descriptor = split_filename["descriptor"]
+        self.start_date = split_filename["start_date"]
+        self.repointing = split_filename["repointing"]
+        self.cr = split_filename["cr"]
+        self.content_hash = split_filename["content_hash"]
+        self.version = split_filename["version"]
+        self.extension = split_filename["extension"]
+
+        self.error_message = self.validate_filename()
+        if self.error_message:
+            raise self.InvalidImapFileError(f"{self.error_message}")
+
+    @classmethod
+    def generate_from_inputs(
+        cls,
+        instrument: str,
+        data_level: str,
+        descriptor: str,
+        start_time: str,
+        content_hash: str,
+        version: str,
+        extension: str = "cdf",
+        repointing: int | str | None = None,
+        cr: int | None = None,
+    ) -> DependencyFilePath:
+        """Generate a filename from inputs and return a DependencyFilePath instance.
+
+        This can be used instead of the __init__ method to make a new instance:
+        ```
+        dependency_file_path = DependencyFilePath.generate_from_inputs("mag", "l0",
+        "test", "20240213", "v001")
+        full_path = dependency_file_path.construct_path()
+        ```
+
+        Parameters
+        ----------
+        descriptor : str
+            The descriptor for the filename
+        instrument : str
+            The instrument for the filename
+        data_level : str
+            The data level for the filename
+        start_time: str
+            The start time for the filename
+        content_hash : str
+            The content_hash of the file content, used to ensure the file is unique.
+        version : str
+            The version of the data
+        extension : str, optional
+            The extension type of the file. Default is "cdf"
+            For l0 files, the extension is always "pkts"
+        repointing : int, optional
+            The repointing number for this file, optional field that
+            is not always present. Should be either a string like "repointXXXXX" or an
+            integer like 12345.
+        cr : int, optional
+            The Carrington rotation number for the file. This is an optional field.
+            Only one (or zero) of repoint or CR can be included.
+
+        Returns
+        -------
+        str
+            The generated filename
+        """
+        time_field = start_time
+        if repointing is not None:
+            if DependencyFilePath.is_valid_repointing(repointing):
+                time_field += f"-{repointing}"
+            elif isinstance(repointing, int):
+                time_field += f"-repoint{repointing:05d}"
+            if cr:
+                raise ImapFilePath.InvalidImapFileError(
+                    "Only one of CR or repointing can be included."
+                )
+        if cr:
+            time_field += f"-cr{cr:05d}"
+        filename = (
+            f"imap_{instrument}_{data_level}_{descriptor}_{time_field}_"
+            f"{content_hash}_{version}.{extension}"
+        )
+        return cls(filename)
+
+    def validate_filename(self) -> str:
+        """Validate the filename and populate the error message for wrong attributes.
+
+        The error message will be an empty string if the filename is valid. Otherwise,
+        all errors with the filename will be put into the error message.
+
+        Returns
+        -------
+        error_message: str
+            Error message for specific missing attribute, or "" if the file name is
+            valid.
+        """
+        error_message = ""
+
+        if any(
+            attr is None or attr == ""
+            for attr in [
+                self.mission,
+                self.instrument,
+                self.data_level,
+                self.descriptor,
+                self.start_date,
+                self.content_hash,
+                self.version,
+                self.extension,
+            ]
+        ):
+            error_message = (
+                f"Invalid filename, missing attribute. Filename "
+                f"convention is {DependencyFilePath.FILENAME_CONVENTION} \n"
+            )
+        if self.mission != "imap":
+            error_message += f"Invalid mission {self.mission}. Please use imap \n"
+
+        if self.instrument not in imap_data_access.VALID_INSTRUMENTS:
+            error_message += (
+                f"Invalid instrument {self.instrument}. Please choose "
+                f"from "
+                f"{imap_data_access.VALID_INSTRUMENTS} \n"
+            )
+        if self.data_level not in imap_data_access.VALID_DATALEVELS:
+            error_message += (
+                f"Invalid data level {self.data_level}. Please choose "
+                f"from "
+                f"{imap_data_access.VALID_DATALEVELS} \n"
+            )
+        if not self.is_valid_date(self.start_date):
+            error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
+        if not bool(re.match(r"^[a-f0-9]+$", self.content_hash)):
+            error_message += (
+                "Invalid content_hash format. Please use ^[a-f0-9]+$ format. \n"
+            )
+        if not bool(re.match(r"^v\d{3}$", self.version)):
+            error_message += "Invalid version format. Please use vXXX format. \n"
+        if self.repointing and not isinstance(self.repointing, int):
+            error_message += "The repointing number should be an integer.\n"
+
+        if self.extension not in self.VALID_EXTENSIONS:
+            error_message += (
+                f"Invalid extension. Extension should be one of "
+                f"{self.VALID_EXTENSIONS}\n"
+            )
+
+        return error_message
+
+    @staticmethod
+    def extract_filename_components(filename: str | Path) -> dict:
+        """Extract all components from filename. Does not validate instrument or level.
+
+        Will return a dictionary with the following keys:
+        { instrument, datalevel, descriptor, startdate, enddate, version, content_hash,
+        extension, cr,repointing }
+
+        If a match is not found, a ValueError will be raised.
+
+        Generally, this method should not be used directly. Instead the class should
+        be used to make a `DependencyFilePath` object.
+
+        Parameters
+        ----------
+        filename : Path or str
+            Path of dependency data.
+
+        Returns
+        -------
+        components : dict
+            Dictionary containing components.
+        """
+        pattern = (
+            r"^(?P<mission>imap)_"
+            r"(?P<instrument>[^_]+)_"
+            r"(?P<data_level>[^_]+)_"
+            r"(?P<descriptor>[^_]+)_"
+            r"(?P<start_date>\d{8})"
+            # Optional repointing/CR field
+            r"(-(?P<interval_type>(?:repoint|cr))(?P<interval>\d{5}))?"
+            r"_(?P<content_hash>[a-f0-9]+)"
+            r"_(?P<version>v\d{3})"
+            r"\.(?P<extension>[^.]+)$"
+        )
+        if isinstance(filename, Path):
+            filename = filename.name
+
+        match = re.match(pattern, filename)
+        if match is None:
+            raise DependencyFilePath.InvalidImapFileError(
+                f"Filename {filename} does not match expected pattern: "
+                f"{DependencyFilePath.FILENAME_CONVENTION}"
+            )
+
+        components = match.groupdict()
+        components["repointing"] = None
+        components["cr"] = None
+
+        # If the repointing field exists, we want to check if it's a repointing or
+        # carrington rotation (cr) and set the field accordingly
+        interval_number = components.pop("interval")
+        if interval_number:
+            interval_number = int(interval_number)
+            # We want the repointing number as an integer
+            if components["interval_type"] == "cr":
+                components["cr"] = interval_number
+            elif components["interval_type"] == "repoint":
+                components["repointing"] = interval_number
+
+        del components["interval_type"]
+
+        return components
 
 
 class CadenceFilePath(DependencyFilePath):
