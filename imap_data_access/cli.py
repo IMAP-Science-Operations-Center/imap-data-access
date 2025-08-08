@@ -281,7 +281,7 @@ def _upload_parser(args: argparse.Namespace):
     args : argparse.Namespace
         An object containing the parsed arguments and their values
     """
-    imap_data_access.upload(args.file_path)
+    imap_data_access.upload(args.file_path, args.manually_reprocessed)
     print("Successfully uploaded the file to the IMAP SDC")
 
 
@@ -466,6 +466,10 @@ def main():  # noqa: PLR0915
         "This must be the full path to the file."
         "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts"
     )
+    manually_repocessed_flag_help = (
+        "This flag indicates that the file was reprocessed due to a manual "
+        "reprocessing API event. On upload, the file will be tagged with 'reprocessed'."
+    )
     query_help = (
         "Query the IMAP SDC for files matching the query parameters. "
         "The query parameters are optional, but at least one must be provided. "
@@ -491,11 +495,13 @@ def main():  # noqa: PLR0915
     upload_help = (
         "Upload a file to the IMAP SDC. This must be the full path to the file."
         "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts. "
-        "Run 'upload -h' for more information."
+        "Run 'upload -h' for more information. "
     )
     help_menu_for_upload = (
         "Upload a file to the IMAP SDC. This must be the full path to the file."
         "\nE.g. imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts. "
+        "You can add the --manually_reprocessed flag to indicate that this file was"
+        " reprocessed due to a manual reprocessing API event."
     )
     url_help = (
         "URL of the IMAP SDC API. "
@@ -553,6 +559,11 @@ def main():  # noqa: PLR0915
         "upload", help=upload_help, description=help_menu_for_upload
     )
     parser_upload.add_argument("file_path", type=Path, help=file_path_help)
+    parser_upload.add_argument(
+        "--manually_reprocessed",
+        action="store_true",
+        help=manually_repocessed_flag_help,
+    )
     parser_upload.set_defaults(func=_upload_parser)
 
     # Webpoda command

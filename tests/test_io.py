@@ -392,6 +392,43 @@ def test_upload(
     assert request_sent.body == b"test file content"
 
 
+def test_upload_with_tag(
+    mock_send_request,
+    monkeypatch,
+):
+    """Test a basic call to the upload API with s3 tags.
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for ``requests.session``
+    """
+    test_file = "a/b/test-file.txt"
+    mock_send_request.return_value.json.return_value = "https://s3-test-bucket.com"
+    # Call the upload function
+    file_to_upload = imap_data_access.config["DATA_DIR"] / test_file
+    file_to_upload.parent.mkdir(parents=True, exist_ok=True)
+    file_to_upload.write_bytes(b"test file content")
+
+    os.chdir(imap_data_access.config["DATA_DIR"])
+    imap_data_access.upload(test_file, manually_reprocessed=True)
+
+    # We get all returned calls, but we only need the calls
+    # where we sent requests
+    mock_calls = [
+        call
+        for call in mock_send_request.mock_calls
+        if len(call.args) and isinstance(call.args[0], requests.PreparedRequest)
+    ]
+
+    # Asser that the url contains the manually_reprocessed query parameter.
+    request_sent = mock_calls[0].args[0]
+    called_url = request_sent.url
+    expected_url_encoded = (
+        "https://api.test.com/upload/test-file.txt?manually_reprocessed=true"
+    )
+    assert called_url == expected_url_encoded
+
+
 @pytest.mark.parametrize(
     "reprocess_params",
     [
