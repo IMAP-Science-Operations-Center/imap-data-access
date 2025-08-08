@@ -468,7 +468,8 @@ def main():  # noqa: PLR0915
     )
     manually_repocessed_flag_help = (
         "This flag indicates that the file was reprocessed due to a manual "
-        "reprocessing API event. On upload, the file will be tagged with 'reprocessed'."
+        "reprocessing API event. On upload, the file will be tagged with "
+        "'manually_reprocessed=true'."
     )
     query_help = (
         "Query the IMAP SDC for files matching the query parameters. "
