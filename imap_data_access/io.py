@@ -387,20 +387,30 @@ def reprocess(
         logger.debug("Received JSON: %s", items)
 
 
-def upload(file_path: Union[Path, str]) -> None:
+def upload(file_path: Union[Path, str], manually_reprocessed=False) -> None:
     """Upload a file to the data archive.
 
     Parameters
     ----------
     file_path : pathlib.Path or str
         Path to the file to upload.
+    manually_reprocessed : bool, optional
+        If True, the file is uploaded to s3 with the 'manually_reprocessed' tag.
+        Default is False.
     """
     file_path = Path(file_path).resolve()
     if not file_path.exists():
         raise FileNotFoundError(file_path)
 
+    # If the flag manually_reprocessed is set, we will add a tag to the upload
+    tags = (
+        f"?manually_reprocessed={str(manually_reprocessed).lower()}"
+        if manually_reprocessed
+        else ""
+    )
+
     # The upload name needs to be given as a path parameter
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/upload/{file_path.name}"
+    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/upload/{file_path.name}{tags}"
     logger.info("Uploading file %s to %s", file_path, url)
 
     # We send a GET request with the filename and the server
@@ -412,9 +422,14 @@ def upload(file_path: Union[Path, str]) -> None:
         s3_url = response.json()
         logger.debug("Received s3 presigned URL: %s", s3_url)
 
+    # Set the headers for the PUT request to upload the file
+    headers = {"Content-Type": ""}
+    if manually_reprocessed:
+        headers["x-amz-tagging"] = tags.strip("?")  # Remove '?' from the tags
+
     # Follow the presigned URL to upload the file with a PUT request
     upload_request = requests.Request(
-        "PUT", s3_url, data=file_path.read_bytes(), headers={"Content-Type": ""}
+        "PUT", s3_url, data=file_path.read_bytes(), headers=headers
     ).prepare()
     with _make_request(upload_request) as response:
         logger.debug(
