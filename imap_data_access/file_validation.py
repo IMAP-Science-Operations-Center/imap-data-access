@@ -477,6 +477,7 @@ _SPICE_TYPE_MAPPING = {
     "tm": "metakernel",
     "sff": "thruster",
     "L1_de": "lagrange_point",
+    "bcp": "high_precision_planetary_constants",
 }
 
 _SPICE_DIR_MAPPING = {
@@ -500,6 +501,7 @@ _SPICE_DIR_MAPPING = {
     "metakernel": "mk",
     "thruster": "activities",
     "lagrange_point": "spk",
+    "high_precision_planetary_constants": "bcp",
 }
 """These are the valid extensions for SPICE files according to NAIF
 https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
