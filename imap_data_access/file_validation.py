@@ -803,6 +803,7 @@ class AncillaryFilePath(ImapFilePath):
         "json",
         "zip",
         "tsv",
+        "pgm",
     }
     _dir_prefix = "imap/ancillary"
 
