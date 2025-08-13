@@ -528,6 +528,8 @@ def _get_latest_version_file_path(
         data_level="l0",
         descriptor="raw",
         start_date=start_time.strftime("%Y%m%d"),
+        # start_date is >= so we need to add an end_date to restrict the query
+        end_date=start_time.strftime("%Y%m%d"),
         repointing=repointing,
     )
     if len(current_files):
