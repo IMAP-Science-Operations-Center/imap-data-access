@@ -380,7 +380,7 @@ def add_query_args(subparser: ArgumentParser) -> None:
         required=False,
         help="Version of the product in the format 'v001'."
         " Must have one other parameter to run."
-        " Passing 'latest' will return latest version of a file per day",
+        " Passing 'latest' will return latest version of a file per start_date",
     )
     subparser.add_argument(
         "--extension", type=str, required=False, help="File extension (cdf, pkts)"
