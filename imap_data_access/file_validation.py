@@ -477,7 +477,7 @@ _SPICE_TYPE_MAPPING = {
     "tm": "metakernel",
     "sff": "thruster",
     "L1_de": "lagrange_point",
-    "bcp": "high_precision_planetary_constants",
+    "bpc": "earth_attitude",
 }
 
 _SPICE_DIR_MAPPING = {
