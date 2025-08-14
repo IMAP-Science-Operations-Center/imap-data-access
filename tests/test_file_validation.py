@@ -391,6 +391,17 @@ def test_spice_extract_science_frame_parts():
     assert len(file_path.spice_metadata) == 5
 
 
+def test_spice_extract_earth_attitude_parts():
+    file_path = SPICEFilePath("earth_000101_20251120_20260220.bpc")
+    assert file_path.spice_metadata["type"] == "earth_attitude"
+    assert file_path.spice_metadata["extension"] == "bpc"
+    assert file_path.spice_metadata["start_date"] == datetime.strptime("20000101", "%Y%m%d")
+    assert file_path.spice_metadata["end_date"] == datetime.strptime("20251120", "%Y%m%d")
+    assert file_path.spice_metadata["prediction_start_date"] == datetime.strptime("20260220", "%Y%m%d")
+
+    assert len(file_path.spice_metadata) == 5
+
+
 def test_spice_invalid_dates():
     # Ensure the DOY is valid (DOY 410??)
     with pytest.raises(SPICEFilePath.InvalidImapFileError):
