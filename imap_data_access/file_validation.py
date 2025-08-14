@@ -577,7 +577,7 @@ class SPICEFilePath(ImapFilePath):
     spice_prod_ver_pattern = (
         r"(?P<type>L1_de|[a-zA-Z\-_]+)"
         r"(?P<version>[\d]+)\."
-        r"(?P<extension>tls|tpc|bsp|tsc)"
+        r"(?P<extension>tls|tpc|bsp|tsc|bpc)"
     )
 
     # Covers:
