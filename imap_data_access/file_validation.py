@@ -687,7 +687,7 @@ class SPICEFilePath(ImapFilePath):
         return spice_dir / subdir / self.filename
 
     @staticmethod
-    def _spice_parts_handler(components):
+    def _spice_parts_handler(components): # noqa: PLR0912
         """Validate and transform SPICE file compents.
 
         Parameters
