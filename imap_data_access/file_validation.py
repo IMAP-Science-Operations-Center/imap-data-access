@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import logging
 import re
 import typing
 import warnings
@@ -687,7 +686,7 @@ class SPICEFilePath(ImapFilePath):
         return spice_dir / subdir / self.filename
 
     @staticmethod
-    def _spice_parts_handler(components): # noqa: PLR0912
+    def _spice_parts_handler(components):  # noqa: PLR0912
         """Validate and transform SPICE file compents.
 
         Parameters
