@@ -392,12 +392,12 @@ def test_spice_extract_science_frame_parts():
 
 
 def test_spice_extract_earth_attitude_parts():
-    file_path = SPICEFilePath("earth_000101_20251120_20260220.bpc")
+    file_path = SPICEFilePath("earth_000101_251112_250817.bpc")
     assert file_path.spice_metadata["type"] == "earth_attitude"
     assert file_path.spice_metadata["extension"] == "bpc"
-    assert file_path.spice_metadata["start_date"] == datetime.strptime("20000101", "%Y%m%d")
-    assert file_path.spice_metadata["end_date"] == datetime.strptime("20251120", "%Y%m%d")
-    assert file_path.spice_metadata["prediction_start_date"] == datetime.strptime("20260220", "%Y%m%d")
+    assert file_path.spice_metadata["start_date"] == datetime(2000, 1, 1)
+    assert file_path.spice_metadata["end_date"] == datetime(2025, 11, 12)
+    assert file_path.spice_metadata["prediction_start_date"] == datetime(2025, 8, 17)
 
     assert len(file_path.spice_metadata) == 5
 

@@ -627,8 +627,8 @@ class SPICEFilePath(ImapFilePath):
     earth_attitude_pattern = (
         r"earth_"
         r"(?P<start_date>\d{6})_"
-        r"(?P<end_date>\d{8})_"
-        r"(?P<prediction_start_date>\d{8})"
+        r"(?P<end_date>\d{6})_"
+        r"(?P<prediction_start_date>\d{6})"
         r"\.(?P<type>bpc)"
     )
 
@@ -722,9 +722,14 @@ class SPICEFilePath(ImapFilePath):
                         components["start_date"], "%y%m%d"
                     )
             if "end_date" in components:
-                components["end_date"] = datetime.strptime(
-                    components["end_date"], "%Y%m%d"
-                )
+                if len(components["end_date"]) == 8:
+                    components["end_date"] = datetime.strptime(
+                        components["end_date"], "%Y%m%d"
+                    )
+                else:
+                    components["end_date"] = datetime.strptime(
+                        components["end_date"], "%y%m%d"
+                    )
             if "start_year_doy" in components:
                 components["start_date"] = datetime.strptime(
                     components.pop("start_year_doy"), "%Y_%j"
@@ -739,7 +744,7 @@ class SPICEFilePath(ImapFilePath):
                 )
             if "prediction_start_date" in components:
                 components["prediction_start_date"] = datetime.strptime(
-                    components["prediction_start_date"], "%Y%m%d"
+                    components["prediction_start_date"], "%y%m%d"
                 )
         except ValueError:
             raise SPICEFilePath.InvalidImapFileError(
