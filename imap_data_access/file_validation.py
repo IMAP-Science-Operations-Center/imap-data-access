@@ -477,6 +477,7 @@ _SPICE_TYPE_MAPPING = {
     "tm": "metakernel",
     "sff": "thruster",
     "L1_de": "lagrange_point",
+    "bpc": "earth_attitude",
 }
 
 _SPICE_DIR_MAPPING = {
@@ -500,6 +501,7 @@ _SPICE_DIR_MAPPING = {
     "metakernel": "mk",
     "thruster": "activities",
     "lagrange_point": "spk",
+    "earth_attitude": "pck",
 }
 """These are the valid extensions for SPICE files according to NAIF
 https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/kernel.html
@@ -621,6 +623,13 @@ class SPICEFilePath(ImapFilePath):
         r"e(?P<version>\d{2})\."
         r"(?P<type>mk)"
     )
+    earth_attitude_pattern = (
+        r"earth_"
+        r"(?P<start_date>\d{6})_"
+        r"(?P<end_date>\d{6})_"
+        r"(?P<prediction_start_date>\d{6})"
+        r"\.(?P<type>bpc)"
+    )
 
     valid_spice_regexes = (
         re.compile(attitude_file_pattern, re.IGNORECASE),
@@ -634,6 +643,7 @@ class SPICEFilePath(ImapFilePath):
         re.compile(attitude_mk_filename_pattern, re.IGNORECASE),
         re.compile(ephemeris_mk_filename_pattern, re.IGNORECASE),
         re.compile(science_frame_pattern, re.IGNORECASE),
+        re.compile(earth_attitude_pattern, re.IGNORECASE),
     )
 
     class InvalidSPICEFileError(ImapFilePath.InvalidImapFileError):
@@ -676,7 +686,7 @@ class SPICEFilePath(ImapFilePath):
         return spice_dir / subdir / self.filename
 
     @staticmethod
-    def _spice_parts_handler(components):
+    def _spice_parts_handler(components):  # noqa: PLR0912
         """Validate and transform SPICE file compents.
 
         Parameters
@@ -702,13 +712,23 @@ class SPICEFilePath(ImapFilePath):
 
         try:
             if "start_date" in components:  # Convert to datetime
-                components["start_date"] = datetime.strptime(
-                    components["start_date"], "%Y%m%d"
-                )
+                if len(components["start_date"]) == 8:
+                    components["start_date"] = datetime.strptime(
+                        components["start_date"], "%Y%m%d"
+                    )
+                else:
+                    components["start_date"] = datetime.strptime(
+                        components["start_date"], "%y%m%d"
+                    )
             if "end_date" in components:
-                components["end_date"] = datetime.strptime(
-                    components["end_date"], "%Y%m%d"
-                )
+                if len(components["end_date"]) == 8:
+                    components["end_date"] = datetime.strptime(
+                        components["end_date"], "%Y%m%d"
+                    )
+                else:
+                    components["end_date"] = datetime.strptime(
+                        components["end_date"], "%y%m%d"
+                    )
             if "start_year_doy" in components:
                 components["start_date"] = datetime.strptime(
                     components.pop("start_year_doy"), "%Y_%j"
@@ -720,6 +740,10 @@ class SPICEFilePath(ImapFilePath):
             if "start_year" in components:
                 components["start_date"] = datetime(
                     int(components.pop("start_year")), 1, 1
+                )
+            if "prediction_start_date" in components:
+                components["prediction_start_date"] = datetime.strptime(
+                    components["prediction_start_date"], "%y%m%d"
                 )
         except ValueError:
             raise SPICEFilePath.InvalidImapFileError(
