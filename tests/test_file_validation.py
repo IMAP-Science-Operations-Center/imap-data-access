@@ -224,9 +224,9 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("imap/spice/mk/imap_sdc_metakernel_1000_v000.tm")
 
-    thruster_file = SPICEFilePath("imap_2026_267_2026_267_sff_hist_02.csv")
+    thruster_file = SPICEFilePath("imap_2026_267_2026_267_sff_hist_02.sff")
     assert thruster_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
-        "imap/spice/activities/imap_2026_267_2026_267_sff_hist_02.csv"
+        "imap/spice/activities/imap_2026_267_2026_267_sff_hist_02.sff"
     )
     assert thruster_file.spice_metadata["type"] == "thruster"
 

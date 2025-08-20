@@ -597,7 +597,7 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<type>sff)_"
         r"([a-zA-Z0-9\-_]+)_"
         r"(?P<version>[\d]{2})\."
-        r"(?P<extension>csv)"
+        r"(?P<extension>sff)"
     )
 
     # Covers:
