@@ -285,7 +285,7 @@ def test_query_bad_params(mock_send_request):
             "extension",
             "badInput",
             r"Not a valid extension for 'science', "
-            r"choose from \{'(cdf|pkts)', '(pkts|cdf)'\}.",
+            r"choose from \{'(cdf|pkts|dat)', '(cdf|pkts|dat)', '(pkts|cdf|dat)'\}.",
         ),
     ],
 )

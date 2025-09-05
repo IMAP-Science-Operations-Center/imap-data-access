@@ -114,6 +114,19 @@ def test_construct_sciencefilepathmanager():
     assert sfm.is_valid_for_start_date(datetime(2021, 1, 1))
     assert not sfm.is_valid_for_start_date(datetime(2021, 1, 3))
 
+    # good path with dat extension
+    valid_filepath = Path("/test/imap_glows_l3d_e-dens_19470303-cr02094_v001.dat")
+    dat = ScienceFilePath(valid_filepath)
+
+    assert dat.mission == "imap"
+    assert dat.instrument == "glows"
+    assert dat.data_level == "l3d"
+    assert dat.descriptor == "e-dens"
+    assert dat.start_date == "19470303"
+    assert dat.cr == 2094
+    assert dat.version == "v001"
+    assert dat.extension == "dat"
+
 
 def test_is_valid_date():
     """Tests the ``is_valid_date`` method."""

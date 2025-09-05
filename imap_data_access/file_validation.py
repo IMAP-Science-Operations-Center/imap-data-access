@@ -127,7 +127,7 @@ class ScienceFilePath(ImapFilePath):
         "<mission>_<instrument>_<datalevel>_<descriptor>_"
         "<startdate>(-<repointing>)_<version>.<extension>"
     )
-    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
+    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts", "dat"}
     _dir_prefix = "imap"
 
     class InvalidScienceFileError(ImapFilePath.InvalidImapFileError):
