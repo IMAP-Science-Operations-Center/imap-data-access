@@ -39,7 +39,7 @@ def test_get_packet_times_ert(mock_send_request, mock_request):
     # Verify the request was prepared correctly
     mock_request.assert_called_once_with(
         "GET",
-        f"https://lasp.colorado.edu/ops/imap/poda/dap2/apids/SID2/apid_{apid}.txt",
+        f"https://lasp.colorado.edu/ops/imap/poda/dap2/apids/SID1/apid_{apid}.txt",
         headers={"Authorization": "Basic test_token"},
         params=(
             f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
@@ -68,7 +68,7 @@ def test_get_packet_binary_data_sctime(mock_send_request, mock_request):
     # Verify the request was prepared correctly
     mock_request.assert_called_once_with(
         "GET",
-        f"https://lasp.colorado.edu/ops/imap/poda/dap2/apids/SID2/apid_{apid}.bin",
+        f"https://lasp.colorado.edu/ops/imap/poda/dap2/apids/SID1/apid_{apid}.bin",
         headers={"Authorization": "Basic test_token"},
         params=(
             f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
