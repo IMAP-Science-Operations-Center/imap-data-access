@@ -459,7 +459,9 @@ _SPICE_TYPE_MAPPING = {
     "ah.bc": "attitude_history",
     "ap.bc": "attitude_predict",
     "spin.csv": "spin",
+    "spin": "spin",
     "repoint.csv": "repoint",
+    "repoint": "repoint",
     "recon": "ephemeris_reconstructed",
     "nom": "ephemeris_nominal",
     "pred": "ephemeris_predicted",
@@ -534,7 +536,7 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<start_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<version>[\d]+)\."
-        r"(?P<type>ah.bc|ap.bc|spin.csv)"
+        r"(?P<type>ah.bc|ap.bc|spin.csv|spin)"
     )
     # Covers:
     # DPS kernel (type: ah.bc)
@@ -546,12 +548,12 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<extension>ah\.bc)"
     )
     # Covers:
-    # Repoint Files (type: repoint.csv)
+    # Repoint Files (type: repoint.csv, or repoint)
     repoint_file_pattern = (
         r"(imap)_"
         r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<version>[\d]+)\."
-        r"(?P<type>repoint.csv)"
+        r"(?P<type>repoint.csv|repoint)"
     )
     # Covers:
     # Reconstructed (type: recon)
