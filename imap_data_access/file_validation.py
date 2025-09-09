@@ -414,7 +414,7 @@ class ScienceFilePath(ImapFilePath):
         bool
             Whether input repointing is valid or not.
         """
-        return re.fullmatch(r"repoint\d{5}", str(input_repointing))
+        return bool(re.fullmatch(r"repoint\d{5}", str(input_repointing)))
 
     def is_valid_for_start_date(self, start_date: datetime) -> bool:
         """Check if the file is valid for the given science file start_date.

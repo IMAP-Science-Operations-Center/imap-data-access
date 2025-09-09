@@ -678,3 +678,8 @@ def test_dependency_file_path():
     file = DependencyFilePath("imap_mag_l1a_test_20210101_v001.json")
     assert file.instrument == "mag"
     assert file.start_date == "20210101"
+
+
+def test_repoint():
+    state = imap_data_access.ScienceFilePath.is_valid_repointing("repoint00001")
+    assert state is True
