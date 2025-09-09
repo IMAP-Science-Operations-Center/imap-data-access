@@ -219,6 +219,11 @@ def test_spice_file_path():
         "DATA_DIR"
     ] / Path("imap/spice/repoint/imap_2025_122_01.repoint.csv")
 
+    repoint_file_path = SPICEFilePath("imap_2025_122_01.repoint")
+    assert repoint_file_path.construct_path() == imap_data_access.config[
+        "DATA_DIR"
+    ] / Path("imap/spice/repoint/imap_2025_122_01.repoint")
+
     metakernel_file = SPICEFilePath("imap_sdc_metakernel_1000_v000.tm")
     assert metakernel_file.construct_path() == imap_data_access.config[
         "DATA_DIR"
@@ -279,9 +284,10 @@ def test_spice_extract_dps_pointing_parts():
     print(file_path.spice_metadata)
 
 
-def test_spice_extract_spin_parts():
+@pytest.mark.parametrize("suffix", ["spin", "spin.csv"])
+def test_spice_extract_spin_parts(suffix):
     # Test spin
-    file_path = SPICEFilePath("imap_2025_122_2025_122_01.spin.csv")
+    file_path = SPICEFilePath(f"imap_2025_122_2025_122_01.{suffix}")
     assert file_path.spice_metadata["version"] == "01"
     assert file_path.spice_metadata["type"] == "spin"
     assert file_path.spice_metadata["start_date"] == datetime.strptime(
