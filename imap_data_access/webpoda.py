@@ -32,7 +32,7 @@ WEBPODA_APID_URL = "https://lasp.colorado.edu/ops/imap/poda/dap2/apids"
 # SID1 == FLIGHT instrument telemetry and spacecraft telemetry after launch
 # SID2 == FLIGHT instrument telemetry and spacecraft telemetry before launch
 # SID3 == Instrument simulator telemetry and spacecraft simulator telemetry
-SYSTEM_ID = "SID2"
+SYSTEM_ID = "SID1"
 
 # https://lasp.colorado.edu/galaxy/spaces/IMAP/pages/155648242/Packet+Decommutation+Resource+Page+-+IMAP
 INSTRUMENT_APIDS = {
