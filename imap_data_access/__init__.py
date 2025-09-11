@@ -55,7 +55,7 @@ __version__ = importlib.metadata.version("imap-data-access")
 
 config = {
     "DATA_ACCESS_URL": os.getenv("IMAP_DATA_ACCESS_URL")
-    or "https://api.dev.imap-mission.com",
+    or "https://api.imap-mission.com",
     "DATA_DIR": Path(os.getenv("IMAP_DATA_DIR") or Path.cwd() / "data"),
     "API_KEY": os.getenv("IMAP_API_KEY"),
     # Create a base64 encoded string for the username and password
