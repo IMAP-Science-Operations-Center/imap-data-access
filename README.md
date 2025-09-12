@@ -132,6 +132,29 @@ the environment variable ``IMAP_DATA_ACCESS_URL`` or within the
 package ``imap_data_access.config["DATA_ACCESS_URL"]``. The default
 is the development server ``https://api.dev.imap-mission.com``.
 
+### Automated use with API Keys
+
+The default for the CLI is to use the public endpoints.
+To access some unreleased data products and quicklooks, you may
+need elevated permissions. To programmatically get that, you need
+an API Key, which can be requested from the SDC team.
+
+To use the API Key you can set environment variables and then use
+the tool as usual. Note that the api endpoints are prefixed with `/api-key`
+to request unreleased data. This will also require an update to the
+data access url. So the following should be used when programatically
+accessing the data.
+
+```bash
+IMAP_API_KEY=<your-api-key> IMAP_DATA_ACCESS_URL=https://api.dev.imap-mission.com/api-key imap-data-access ...
+```
+
+or with CLI flags
+
+```bash
+imap-data-access --api-key <your-api-key> --url https://api.dev.imap-mission.com/api-key ...
+```
+
 ## Troubleshooting
 
 ### Network issues
