@@ -130,7 +130,7 @@ for example, with ``IMAP_DATA_DIR=/data``:
 To change the default URL that the package accesses, you can set
 the environment variable ``IMAP_DATA_ACCESS_URL`` or within the
 package ``imap_data_access.config["DATA_ACCESS_URL"]``. The default
-is the development server ``https://api.dev.imap-mission.com``.
+is the production server ``https://api.imap-mission.com``.
 
 ### Automated use with API Keys
 
