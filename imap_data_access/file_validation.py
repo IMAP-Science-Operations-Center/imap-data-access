@@ -596,10 +596,9 @@ class SPICEFilePath(ImapFilePath):
         r"(imap)_"
         r"(?P<start_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
-        r"(?P<type>sff)_"
         r"([a-zA-Z0-9\-_]+)_"
         r"(?P<version>[\d]{2})\."
-        r"(?P<extension>sff)"
+        r"(?P<type>sff)"
     )
 
     # Covers:
