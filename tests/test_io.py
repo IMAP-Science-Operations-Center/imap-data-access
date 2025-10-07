@@ -444,7 +444,7 @@ def test_reprocess_only_data_level(mock_send_request):
     """
     with pytest.raises(
         ValueError,
-        match="If data_level is provided, instrument and descriptor are required.",
+        match="If data_level is provided, instrument and descriptor are required",
     ):
         imap_data_access.reprocess(
             start_date="20251017", end_date="20251017", data_level="l1a"
