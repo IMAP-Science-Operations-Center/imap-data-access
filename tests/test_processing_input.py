@@ -179,7 +179,7 @@ def test_spice_input():
     # Test with invalid SPICE files (different sources)
     with pytest.raises(
         ProcessingInput.ProcessingInputError,
-        match="SpinInput can only contain spin files.",
+        match="SpinInput can only contain spin files",
     ):
         processing_input.SpinInput(
             "imap_1000_100_1000_100_01.spin.csv",
@@ -189,7 +189,7 @@ def test_spice_input():
     # Test with multiple "repoint" files (should raise an error)
     with pytest.raises(
         ProcessingInput.ProcessingInputError,
-        match="RepointInput can only contain one repoint file.",
+        match="RepointInput can only contain one repoint file",
     ):
         processing_input.RepointInput(
             "imap_1000_001_02.repoint.csv",
