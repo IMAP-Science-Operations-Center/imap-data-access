@@ -164,6 +164,7 @@ def test_download_repointing_data(
             # An unfinished repointing maneuver may have NaNs in the end times
             # Make sure we can handle this and ignore it
             "10,0,NaN,NaN,2024-12-03T00:00:00.000000,NaN,4\n"
+            "10,0,12,0,2024-12-04T00:00:00.000000,2024-12-04 00:15:00.000,5\n"
         )
 
     start_time = datetime.datetime(2024, 12, 1, 0, 0, 0)
