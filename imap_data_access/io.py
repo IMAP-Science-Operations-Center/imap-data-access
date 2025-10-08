@@ -32,10 +32,13 @@ def _make_request(request: requests.PreparedRequest):
     when making HTTP requests and yield the response body.
     """
     logger.debug("Making request: %s", request)
+
     if imap_data_access.config["API_KEY"]:
         # Add the API key to the request headers if it exists
         request.headers["x-api-key"] = imap_data_access.config["API_KEY"]
-
+    elif imap_data_access.config["ACCESS_TOKEN"]:
+        # Add the access token to the request headers if it exists if API key does not exist
+        request.headers["Authorization"] = f"Bearer {imap_data_access.config['ACCESS_TOKEN']}"
     try:
         with requests.Session() as session:
             response = session.send(request)

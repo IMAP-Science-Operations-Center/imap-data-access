@@ -327,13 +327,17 @@ def test_upload_no_file(mock_send_request):
     "upload_file_path", ["a/b/test-file.txt", Path("a/b/test-file.txt")]
 )
 @pytest.mark.parametrize(
-    ("api_key", "expected_header"),
-    [(None, {}), ("test-api-key", {"x-api-key": "test-api-key"})],
+    ("api_key", "access_token", "expected_header"),
+    [(None, None, {}),
+     ("test-api-key", None, {"x-api-key": "test-api-key"}),
+     (None, "test-access-token", {"Authorization": "Bearer test-access-token"}),
+     ("test-api-key-default", "test-access-token", {"x-api-key": "test-api-key-default"})],
 )
 def test_upload(
     mock_send_request,
     upload_file_path: str | Path,
     api_key: str | None,
+    access_token: str | None,
     expected_header: dict,
     monkeypatch,
 ):
@@ -346,10 +350,13 @@ def test_upload(
         The upload file path to test with
     api_key : str or None
         The API key to use for the upload
+    access_token : str or None
+        The access token to use for the upload
     expected_header : dict
         The expected header to be sent with the request
     """
     monkeypatch.setitem(imap_data_access.config, "API_KEY", api_key)
+    monkeypatch.setitem(imap_data_access.config, "ACCESS_TOKEN", access_token)
     mock_send_request.return_value.json.return_value = "https://s3-test-bucket.com"
     # Call the upload function
     file_to_upload = imap_data_access.config["DATA_DIR"] / upload_file_path
