@@ -142,7 +142,7 @@ an API Key, which can be requested from the SDC team.
 To use the API Key you can set environment variables and then use
 the tool as usual. Note that the api endpoints are prefixed with `/api-key`
 to request unreleased data. This will also require an update to the
-data access url. So the following should be used when programatically
+data access url. So the following should be used when programmatically
 accessing the data.
 
 ```bash
@@ -154,6 +154,35 @@ or with CLI flags
 ```bash
 imap-data-access --api-key <your-api-key> --url https://api.dev.imap-mission.com/api-key ...
 ```
+
+### Automated use with Access token
+
+An alternative to using an API key to access protected data is using an access token provided by LASP's authentication server. LASP's authentication uses [keycloak authentication](https://www.keycloak.org/documentation). Below are the minimal steps to get an access token:
+
+ 1. Make a POST request to: `https://lasp-auth.colorado.edu/auth/realms/lasp/protocol` with the request Content-Type as `x-www-form-urlencoded` and body:
+```
+client_id: imap-sdc
+grant_type: password
+username: {{Your LASP galaxy username}}
+password: {{Your LASP galaxy password}}
+```
+
+ 2. This should return a JSON response that contains an access token that is valid for 5 minutes. It will also contain a longer-lived refresh token that can be used to get more access tokens with a request to the same url as above, but the following body:
+
+```
+client_id: imap-sdc
+grant_type: refresh_token
+refresh_token: {{Refresh Token}}
+```
+
+To use an access token with imap-data-access you can set the following environment variables:
+
+```dotenv
+IMAP_ACCESS_TOKEN={{Access token from above}}
+IMAP_DATA_ACCESS_URL=https://api.imap-mission.com/authorized
+```
+
+Any queries or downloads made with imap-data-access will now use these credentials.
 
 ## Troubleshooting
 
