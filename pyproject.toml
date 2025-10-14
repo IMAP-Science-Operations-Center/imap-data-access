@@ -61,7 +61,7 @@ lint.ignore = ["D104", "D203", "D213", "D413", "PLR2004"]
 
 [tool.ruff.lint.per-file-ignores]
 # S101: Use of assert detected
-"tests/*" = ["S101", "D"]
+"tests/*" = ["D", "PLR0913", "S101"]
 "*.ipynb" = ["E501"]
 "imap_data_access/io.py" = ["PLR0913", "S310"]
 "imap_data_access/webpoda.py" = ["S310"]

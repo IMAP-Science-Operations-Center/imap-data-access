@@ -157,28 +157,12 @@ imap-data-access --api-key <your-api-key> --url https://api.dev.imap-mission.com
 
 ### Automated use with Access token
 
-An alternative to using an API key to access protected data is using an access token provided by LASP's authentication server. LASP's authentication uses [keycloak authentication](https://www.keycloak.org/documentation). Below are the minimal steps to get an access token:
+An alternative to using an API key to access protected data is using an access token provided by LASP's authentication server. LASP's authentication uses [keycloak authentication](https://www.keycloak.org/documentation).
 
- 1. Make a POST request to: `https://lasp-auth.colorado.edu/auth/realms/lasp/protocol` with the request Content-Type as `x-www-form-urlencoded` and body:
-```
-client_id: imap-sdc
-grant_type: password
-username: {{Your LASP galaxy username}}
-password: {{Your LASP galaxy password}}
-```
-
- 2. This should return a JSON response that contains an access token that is valid for 5 minutes. It will also contain a longer-lived refresh token that can be used to get more access tokens with a request to the same url as above, but the following body:
-
-```
-client_id: imap-sdc
-grant_type: refresh_token
-refresh_token: {{Refresh Token}}
-```
-
-To use an access token with imap-data-access you can set the following environment variables:
+To use an access token with imap-data-access you can set the following environment variables (note the `/authorized` in the url):
 
 ```dotenv
-IMAP_ACCESS_TOKEN={{Access token from above}}
+IMAP_ACCESS_TOKEN={{Access token from LASP auth server}}
 IMAP_DATA_ACCESS_URL=https://api.imap-mission.com/authorized
 ```
 

@@ -328,10 +328,16 @@ def test_upload_no_file(mock_send_request):
 )
 @pytest.mark.parametrize(
     ("api_key", "access_token", "expected_header"),
-    [(None, None, {}),
-     ("test-api-key", None, {"x-api-key": "test-api-key"}),
-     (None, "test-access-token", {"Authorization": "Bearer test-access-token"}),
-     ("test-api-key-default", "test-access-token", {"x-api-key": "test-api-key-default"})],
+    [
+        (None, None, {}),
+        ("test-api-key", None, {"x-api-key": "test-api-key"}),
+        (None, "test-access-token", {"Authorization": "Bearer test-access-token"}),
+        (
+            "test-api-key-default",
+            "test-access-token",
+            {"x-api-key": "test-api-key-default"},
+        ),
+    ],
 )
 def test_upload(
     mock_send_request,
