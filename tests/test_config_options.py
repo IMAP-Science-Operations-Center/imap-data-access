@@ -16,6 +16,7 @@ import pytest
         ("DATA_DIR", Path.cwd() / "data", str(Path("/test/path"))),
         ("DATA_ACCESS_URL", "https://api.imap-mission.com", "https://test.url"),
         ("API_KEY", None, "test-api-key"),
+        ("ACCESS_TOKEN", None, "test-access-token"),
     ],
 )
 def test_configuration_updates(config_var, default, expected):

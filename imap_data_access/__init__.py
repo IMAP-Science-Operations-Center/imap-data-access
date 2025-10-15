@@ -58,6 +58,7 @@ config = {
     or "https://api.imap-mission.com",
     "DATA_DIR": Path(os.getenv("IMAP_DATA_DIR") or Path.cwd() / "data"),
     "API_KEY": os.getenv("IMAP_API_KEY"),
+    "ACCESS_TOKEN": os.getenv("IMAP_ACCESS_TOKEN"),
     # Create a base64 encoded string for the username and password
     # echo -n 'username:password' | base64
     "WEBPODA_TOKEN": os.getenv("IMAP_WEBPODA_TOKEN"),

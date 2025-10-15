@@ -32,10 +32,16 @@ def _make_request(request: requests.PreparedRequest):
     when making HTTP requests and yield the response body.
     """
     logger.debug("Making request: %s", request)
+
     if imap_data_access.config["API_KEY"]:
         # Add the API key to the request headers if it exists
         request.headers["x-api-key"] = imap_data_access.config["API_KEY"]
-
+    elif imap_data_access.config["ACCESS_TOKEN"]:
+        # Add the access token to the request headers if it exists
+        # and API key does not exist
+        request.headers["Authorization"] = (
+            f"Bearer {imap_data_access.config['ACCESS_TOKEN']}"
+        )
     try:
         with requests.Session() as session:
             response = session.send(request)
@@ -48,6 +54,23 @@ def _make_request(request: requests.PreparedRequest):
     except requests.exceptions.RequestException as e:
         error_msg = f"{e.response.status_code} {e.response.reason}: {e.response.text}"
         raise IMAPDataAccessError(error_msg) from e
+
+
+def _get_base_url() -> str:
+    """Get the base URL of the data access API.
+
+    Adds in the /api-key and /authorized to direct the url
+    to the proper authorized endpoints as needed.
+    """
+    url = imap_data_access.config["DATA_ACCESS_URL"]
+
+    # Only add these if someone hasn't already added the /api-key themselves.
+    if imap_data_access.config["API_KEY"] and not url.endswith("/api-key"):
+        url = f"{url}/api-key"
+    elif imap_data_access.config["ACCESS_TOKEN"] and not url.endswith("/authorized"):
+        url = f"{url}/authorized"
+
+    return url
 
 
 def download(file_path: Union[Path, str]) -> Path:
@@ -78,7 +101,7 @@ def download(file_path: Union[Path, str]) -> Path:
         logger.info("The file %s already exists, skipping download", destination)
         return destination
 
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/download/{file_path}"
+    url = f"{_get_base_url()}/download/{file_path}"
     logger.info("Downloading file %s from %s to %s", file_path, url, destination)
 
     # Create a request with the provided URL
@@ -279,7 +302,7 @@ def query(
         else:
             query_params["repointing"] = int(repointing)
 
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/query"
+    url = f"{_get_base_url()}/query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()
 
     logger.info("Querying data archive for %s with url %s", query_params, request.url)
@@ -383,7 +406,7 @@ def reprocess(
     ):
         raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
     reprocess_params["reprocessing"] = "True"
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/reprocess"
+    url = f"{_get_base_url()}/reprocess"
     request = requests.Request(
         method="POST", url=url, params=reprocess_params
     ).prepare()
@@ -410,7 +433,7 @@ def upload(file_path: Union[Path, str]) -> None:
         raise FileNotFoundError(file_path)
 
     # The upload name needs to be given as a path parameter
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/upload/{file_path.name}"
+    url = f"{_get_base_url()}/upload/{file_path.name}"
     logger.info("Uploading file %s to %s", file_path, url)
 
     # We send a GET request with the filename and the server

@@ -15,7 +15,7 @@ def _set_global_config(monkeypatch: pytest.fixture, tmp_path: pytest.fixture):
         imap_data_access.config, "DATA_ACCESS_URL", "https://api.test.com"
     )
     # Make sure we don't leak any of this content if a user has set them locally
-    monkeypatch.setitem(imap_data_access.config, "API_KEY", "test_key")
+    monkeypatch.setitem(imap_data_access.config, "API_KEY", None)
     monkeypatch.setitem(imap_data_access.config, "WEBPODA_TOKEN", "test_token")
 
 
