@@ -56,6 +56,23 @@ def _make_request(request: requests.PreparedRequest):
         raise IMAPDataAccessError(error_msg) from e
 
 
+def _get_base_url() -> str:
+    """Get the base URL of the data access API.
+
+    Adds in the /api-key and /authorized to direct the url
+    to the proper authorized endpoints as needed.
+    """
+    url = imap_data_access.config["DATA_ACCESS_URL"]
+
+    # Only add these if someone hasn't already added the /api-key themselves.
+    if imap_data_access.config["API_KEY"] and not url.endswith("/api-key"):
+        url = f"{url}/api-key"
+    elif imap_data_access.config["ACCESS_TOKEN"] and not url.endswith("/authorized"):
+        url = f"{url}/authorized"
+
+    return url
+
+
 def download(file_path: Union[Path, str]) -> Path:
     """Download a file from the data archive.
 
@@ -84,7 +101,7 @@ def download(file_path: Union[Path, str]) -> Path:
         logger.info("The file %s already exists, skipping download", destination)
         return destination
 
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/download/{file_path}"
+    url = f"{_get_base_url()}/download/{file_path}"
     logger.info("Downloading file %s from %s to %s", file_path, url, destination)
 
     # Create a request with the provided URL
@@ -285,7 +302,7 @@ def query(
         else:
             query_params["repointing"] = int(repointing)
 
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/query"
+    url = f"{_get_base_url()}/query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()
 
     logger.info("Querying data archive for %s with url %s", query_params, request.url)
@@ -389,7 +406,7 @@ def reprocess(
     ):
         raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
     reprocess_params["reprocessing"] = "True"
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/reprocess"
+    url = f"{_get_base_url()}/reprocess"
     request = requests.Request(
         method="POST", url=url, params=reprocess_params
     ).prepare()
@@ -416,7 +433,7 @@ def upload(file_path: Union[Path, str]) -> None:
         raise FileNotFoundError(file_path)
 
     # The upload name needs to be given as a path parameter
-    url = f"{imap_data_access.config['DATA_ACCESS_URL']}/upload/{file_path.name}"
+    url = f"{_get_base_url()}/upload/{file_path.name}"
     logger.info("Uploading file %s to %s", file_path, url)
 
     # We send a GET request with the filename and the server

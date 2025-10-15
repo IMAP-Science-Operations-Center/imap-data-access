@@ -10,10 +10,50 @@ import pytest
 import requests
 
 import imap_data_access
-from imap_data_access.io import _make_request
+from imap_data_access.io import _get_base_url, _make_request
 
 test_science_filename = "imap_swe_l1_test-description_20100101_v000.cdf"
 test_science_path = "imap/swe/l1/2010/01/" + test_science_filename
+
+
+@pytest.mark.parametrize(
+    ("url", "api_key", "access_token", "expected"),
+    [
+        # Default return base url
+        ("https://api.test.com", None, None, "https://api.test.com"),
+        # API Key appends /api-key
+        ("https://api.test.com", "test_key", None, "https://api.test.com/api-key"),
+        # API Key with already specified /api-key doesn't double add it
+        (
+            "https://api.test.com/api-key",
+            "test_key",
+            None,
+            "https://api.test.com/api-key",
+        ),
+        # Access token appends /authorized
+        ("https://api.test.com", None, "test_token", "https://api.test.com/authorized"),
+        # Access token with already specified /authorized doesn't double add it
+        (
+            "https://api.test.com/authorized",
+            None,
+            "test_token",
+            "https://api.test.com/authorized",
+        ),
+        # API Key takes precedence over access token
+        (
+            "https://api.test.com",
+            "test_key",
+            "test_token",
+            "https://api.test.com/api-key",
+        ),
+    ],
+)
+def test_base_url(url, api_key, access_token, expected, monkeypatch):
+    """Test that the base URL is set correctly based on the config."""
+    monkeypatch.setitem(imap_data_access.config, "DATA_ACCESS_URL", url)
+    monkeypatch.setitem(imap_data_access.config, "API_KEY", api_key)
+    monkeypatch.setitem(imap_data_access.config, "ACCESS_TOKEN", access_token)
+    assert _get_base_url() == expected
 
 
 def test_redirect(mock_send_request):
@@ -386,9 +426,14 @@ def test_upload(
     ]
 
     # First urlopen call should be to get the s3 upload url
+    auth_path = ""
+    if api_key:
+        auth_path = "/api-key"
+    elif access_token:
+        auth_path = "/authorized"
     request_sent = mock_calls[0].args[0]
     called_url = request_sent.url
-    expected_url_encoded = "https://api.test.com/upload/test-file.txt"
+    expected_url_encoded = f"https://api.test.com{auth_path}/upload/test-file.txt"
     assert called_url == expected_url_encoded
     assert request_sent.method == "GET"
     # An API key needs to be added to the header for uploads
