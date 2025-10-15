@@ -267,6 +267,20 @@ def test_spice_file_path():
     ] / Path("imap/spice/spk/L1_de431.bsp")
     assert lagrange_point_file.spice_metadata["type"] == "lagrange_point"
 
+    # Ephemeris with "od" in the filename
+    ephem_file = SPICEFilePath("imap_pred_od004_20251002_20251113_v01.bsp")
+    assert ephem_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/spk/imap_pred_od004_20251002_20251113_v01.bsp"
+    )
+    assert ephem_file.spice_metadata["type"] == "ephemeris_predicted"
+
+    # Ephemeris without "od" in the filename
+    ephem_file = SPICEFilePath("imap_pred_20251002_20251113_v01.bsp")
+    assert ephem_file.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/spk/imap_pred_20251002_20251113_v01.bsp"
+    )
+    assert ephem_file.spice_metadata["type"] == "ephemeris_predicted"
+
 
 def test_spice_extract_dps_pointing_parts():
     """Test the new DPS pointing kernel filename parsing."""

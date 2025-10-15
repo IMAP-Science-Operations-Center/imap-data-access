@@ -565,6 +565,7 @@ class SPICEFilePath(ImapFilePath):
     spacecraft_ephemeris_file_pattern = (
         r"(imap)_"
         r"(?P<type>[a-zA-Z0-9\-]+)_"
+        r"(?:od\d{3}_)?"  # Optionally match and ignore odNNN
         r"(?P<start_date>[\d]{8})_"
         r"(?P<end_date>[\d]{8})"
         r"(?:|_v(?P<version>[\d]*))\."
