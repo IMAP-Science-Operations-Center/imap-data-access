@@ -143,13 +143,14 @@ To use the API Key you can set the `IMAP_API_KEY` environment variable and then 
 the tool as usual.
 
 ```bash
-IMAP_API_KEY=<your-api-key> imap-data-access ...
+$ export IMAP_API_KEY=<your-api-key> 
+$ imap-data-access ...
 ```
 
 or with CLI flags
 
 ```bash
-imap-data-access --api-key <your-api-key> ...
+$ imap-data-access --api-key <your-api-key> ...
 ```
 
 ### Automated use with Access token
