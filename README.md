@@ -144,14 +144,13 @@ There are two ways to provide your API Key:
 1. **Environment variable**: Set the `IMAP_API_KEY` environment variable
 
 ```bash
-$ export IMAP_API_KEY=<your-api-key>
-$ imap-data-access ...
+IMAP_API_KEY=<your-api-key> imap-data-access ...
 ```
 
 2. **Command line flag**: Use the `--api-key` flag
 
 ```bash
-$ imap-data-access --api-key <your-api-key> ...
+imap-data-access --api-key <your-api-key> ...
 ```
 
 The command line flag will override the environment variable if both are set.
