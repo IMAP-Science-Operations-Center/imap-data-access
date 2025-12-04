@@ -132,28 +132,33 @@ the environment variable ``IMAP_DATA_ACCESS_URL`` or within the
 package ``imap_data_access.config["DATA_ACCESS_URL"]``. The default
 is the production server ``https://api.imap-mission.com``.
 
-### Automated use with API Keys
+### Use with API Keys
 
 The default for the CLI is to use the public endpoints.
 To access some unreleased data products and quicklooks, you may
-need elevated permissions. To programmatically get that, you need
+need elevated permissions. To get that, you need
 an API Key, which can be requested from the SDC team.
 
-To use the API Key you can set the `IMAP_API_KEY` environment variable and then use
-the tool as usual.
+There are two ways to provide your API Key:
+
+1. **Environment variable**: Set the `IMAP_API_KEY` environment variable
 
 ```bash
-$ IMAP_API_KEY=<your-api-key>
-$ imap-data-access ...
+IMAP_API_KEY=<your-api-key> imap-data-access ...
 ```
 
-or with CLI flags
+2. **Command line flag**: Use the `--api-key` flag
 
 ```bash
-$ imap-data-access --api-key <your-api-key> ...
+imap-data-access --api-key <your-api-key> ...
 ```
 
-### Automated use with Access token
+The command line flag will override the environment variable if both are set.
+
+> [!NOTE]
+> When using an API key, requests are automatically routed to `api.imap-mission.com/api-key` endpoints for authentication.
+
+### Automated use with Access token (for software)
 
 An alternative to using an API key to access protected data is using an access token provided by LASP's authentication server. LASP's authentication uses [keycloak authentication](https://www.keycloak.org/documentation).
 
