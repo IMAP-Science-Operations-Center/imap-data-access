@@ -186,8 +186,8 @@ def get_packet_times_ert(
     # are handled correctly, so pass them as params
     params = (
         # Query the ERT field between start and end date
-        f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
-        f"&ert<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
+        f"&ert<{end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
         # only get the time (packet time)
         # Represent all times in yyyy-MM-dd'T'HH:mm:ss format
         "&project(time)&formatTime(\"yyyy-MM-dd'T'HH:mm:ss\")"
@@ -245,8 +245,8 @@ def get_packet_binary_data_sctime(
     query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.bin"
     params = (
         # Query the SCT field between start and end date
-        f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
-        f"&time<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
+        f"&time<{end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
         # only the raw packet data
         "&project(packet)"
     )
@@ -303,7 +303,7 @@ def download_daily_data(
     logger.info(f"Unique spacecraft dates with packets: {unique_dates}")
 
     # Iterate over the packet dates to make a query for each individual spacecraft day
-    # packet_date 00:00:00 -> packet_date 23:59:59
+    # packet_date 00:00:00 -> packet_date+1 00:00:00
     for date in unique_dates:
         path = _get_latest_version_file_path(
             instrument=instrument,
@@ -314,7 +314,7 @@ def download_daily_data(
             continue
 
         daily_start_time = datetime.datetime.combine(date, datetime.time.min)
-        daily_end_time = datetime.datetime.combine(date, datetime.time.max)
+        daily_end_time = daily_start_time + datetime.timedelta(days=1)
 
         # Some instruments request a buffer of packets on either side of the midnight
         # boundary to ensure their packet groupings work together.
@@ -439,13 +439,12 @@ def download_repointing_data(
                 f"{packet_times[-1]}, skipping"
             )
             continue
-        # NOTE: All queries are <= / >= following this, so we need to make sure we
-        #       are not double grabbing packets into the pointings.
-        #       The times included are [repointing_start, repointing_end), exclusive
-        #       on the right edge
+        # NOTE: We need to make sure we are not double grabbing packets into the
+        #       pointings. The times included are [repointing_start, repointing_end),
+        #       exclusive on the right edge
         pointing_end = datetime.datetime.strptime(
             repointings[i + 1]["repoint_end_utc"], "%Y-%m-%d %H:%M:%S.%f"
-        ) - datetime.timedelta(seconds=1)
+        )
         if pointing_end < packet_times[0]:
             # This pointing is before the first packet time, so skip it
             logger.debug(
