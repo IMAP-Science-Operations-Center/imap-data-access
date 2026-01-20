@@ -186,8 +186,8 @@ def get_packet_times_ert(
     # are handled correctly, so pass them as params
     params = (
         # Query the ERT field between start and end date
-        f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
-        f"&ert<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
+        f"&ert<={end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
         # only get the time (packet time)
         # Represent all times in yyyy-MM-dd'T'HH:mm:ss format
         "&project(time)&formatTime(\"yyyy-MM-dd'T'HH:mm:ss\")"
@@ -245,8 +245,8 @@ def get_packet_binary_data_sctime(
     query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.bin"
     params = (
         # Query the SCT field between start and end date
-        f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S')}"
-        f"&time<={end_time.strftime('%Y-%m-%dT%H:%M:%S')}"
+        f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
+        f"&time<={end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
         # only the raw packet data
         "&project(packet)"
     )
