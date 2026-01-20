@@ -43,7 +43,7 @@ def test_get_packet_times_ert(mock_send_request, mock_request):
         headers={"Authorization": "Basic test_token"},
         params=(
             f"ert>={start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
-            f"&ert<={end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
+            f"&ert<{end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
             "&project(time)&formatTime(\"yyyy-MM-dd'T'HH:mm:ss\")"
         ),
     )
@@ -72,7 +72,7 @@ def test_get_packet_binary_data_sctime(mock_send_request, mock_request):
         headers={"Authorization": "Basic test_token"},
         params=(
             f"time>={start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
-            f"&time<={end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
+            f"&time<{end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')}"
             "&project(packet)"
         ),
     )
@@ -113,8 +113,8 @@ def test_download_daily_data(
     assert call == (
         1184,
         start_time - datetime.timedelta(minutes=1),
-        datetime.datetime.combine(start_time, datetime.time.max)
-        + datetime.timedelta(minutes=1),
+        # end time + 1 day, then buffer of 1 minute
+        start_time + datetime.timedelta(days=1) + datetime.timedelta(minutes=1),
     )
 
     # We expect two daily files to be created because we have packets
