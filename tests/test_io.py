@@ -97,15 +97,12 @@ def test_request_errors(mock_send_request):
     with pytest.raises(imap_data_access.io.IMAPDataAccessError, match="404 Not Found"):
         imap_data_access.download(test_science_path)
 
-    # Set up the mock to raise a RequestException
-    mock_response.status_code = 400
-    mock_response.reason = "Request failed"
-    mock_response.text = ""
+    # Set up the mock to raise a RequestException with a response
     mock_send_request.side_effect = requests.exceptions.RequestException(
-        response=mock_response
+        "connection error"
     )
     with pytest.raises(
-        imap_data_access.io.IMAPDataAccessError, match="400 Request failed"
+        imap_data_access.io.IMAPDataAccessError, match="connection error"
     ):
         imap_data_access.download(test_science_path)
 
