@@ -24,6 +24,9 @@ class IMAPDataAccessError(Exception):
     pass
 
 
+_RETRY_ADAPTER = requests.adapters.HTTPAdapter(max_retries=3)
+
+
 @contextlib.contextmanager
 def _make_request(request: requests.PreparedRequest):
     """Get the response from a URL request using the requests library.
@@ -44,6 +47,7 @@ def _make_request(request: requests.PreparedRequest):
         )
     try:
         with requests.Session() as session:
+            session.mount("https://", _RETRY_ADAPTER)
             response = session.send(request)
             response.raise_for_status()
             yield response
@@ -52,8 +56,8 @@ def _make_request(request: requests.PreparedRequest):
         error_msg = f"{e.response.status_code} {e.response.reason}: {e.response.text}"
         raise IMAPDataAccessError(error_msg) from e
     except requests.exceptions.RequestException as e:
-        error_msg = f"{e.response.status_code} {e.response.reason}: {e.response.text}"
-        raise IMAPDataAccessError(error_msg) from e
+        # Handle cases where response may not exist (connection errors, timeouts, etc.)
+        raise IMAPDataAccessError(str(e)) from e
 
 
 def _get_base_url() -> str:
