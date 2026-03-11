@@ -830,7 +830,7 @@ class AncillaryFilePath(ImapFilePath):
         "zip",
         "tsv",
         "pgm",
-        "xlsx"
+        "xlsx",
     }
     _dir_prefix = "imap/ancillary"
 
