@@ -45,7 +45,7 @@ def _download_parser(args: argparse.Namespace):
     print(f"Successfully downloaded the file to: {output_path}")
 
 
-# ruff: noqa: PLR0912
+# ruff: noqa: PLR0912, PLR0915
 def _print_query_results_table(query_results: list[dict]):
     """Print the query results in a table.
 
@@ -305,7 +305,8 @@ def _query_parser(args: argparse.Namespace):
             "type",
             "version",
         ]
-        query_params = {key: value for key, value in query_params.items() if key in spice_valid_args}
+        query_params = {key: value for key,
+        value in query_params.items() if key in spice_valid_args}
         query_results = spice_query(**query_params)
 
     else:
