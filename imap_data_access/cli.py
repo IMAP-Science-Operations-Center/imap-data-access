@@ -155,10 +155,7 @@ def _print_query_results_table(query_results: list[dict]):
         file_key = "file_name" if query_table == "spice" else "file_path"
         column_widths["Filename"] = max(
             len("Filename"),
-            *(
-                len(os.path.basename(item.get(file_key, "")))
-                for item in query_results
-            ),
+            *(len(os.path.basename(item.get(file_key, ""))) for item in query_results),
         )
 
     # Create the format string dynamically based on the number of columns
@@ -305,8 +302,9 @@ def _query_parser(args: argparse.Namespace):
             "type",
             "version",
         ]
-        query_params = {key: value for key,
-        value in query_params.items() if key in spice_valid_args}
+        query_params = {
+            key: value for key, value in query_params.items() if key in spice_valid_args
+        }
         query_results = spice_query(**query_params)
 
     else:
@@ -488,7 +486,7 @@ def _reprocess_parser(args: argparse.Namespace):
 
 
 # PLR0915: too many statements
-def main():  # noqa: PLR0915
+def main():
     """Parse the command line arguments.
 
     Run the command line interface to the IMAP Data Access API.
