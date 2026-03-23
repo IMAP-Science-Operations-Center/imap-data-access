@@ -219,6 +219,74 @@ def _validate_query_parameters(**kwargs) -> None:
             )
 
 
+def spice_query(
+    *,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    ingestion_start_date: Optional[str] = None,
+    ingestion_end_date: Optional[str] = None,
+    type: Optional[str] = None,
+    version: Optional[str] = None,
+) -> list[dict[str, str]]:
+    """Query the SPICE data archive via the /spice-query endpoint.
+
+    Parameters
+    ----------
+    start_date : str, optional
+        Start date in YYYYMMDD format.
+    end_date : str, optional
+        End date in YYYYMMDD format.
+    ingestion_start_date : str, optional
+        Ingestion start date in YYYYMMDD format.
+    ingestion_end_date : str, optional
+        Ingestion end date in YYYYMMDD format.
+    type : str, optional
+        SPICE kernel type (e.g. ``ephemeris_predicted``).
+    version : str, optional
+        Version in the format ``vXXX`` or ``latest``.
+
+    Returns
+    -------
+    list
+        List of SPICE files matching the query
+    """
+    # locals() gives us the keyword arguments passed to the function
+    # and allows us to filter out the None values
+    query_params = {key: value for key, value in locals().items() if value is not None}
+    logger.debug("Input query parameters: %s", query_params)
+
+    # removing version from query if it is 'latest',
+    # ensuring other parameters are passed
+    if version == "latest":
+        del query_params["version"]
+        if not query_params:
+            raise ValueError("One other parameter must be run with 'version'")
+        query_params["latest"] = "true"
+
+    if not query_params:
+        raise ValueError(
+            "At least one query parameter must be provided. "
+            "Run 'query -h' for more information."
+        )
+
+    # Remap ingestion date params to /spice-query naming convention
+    if "ingestion_start_date" in query_params:
+        query_params["start_ingest_date"] = query_params.pop("ingestion_start_date")
+    if "ingestion_end_date" in query_params:
+        query_params["end_ingest_date"] = query_params.pop("ingestion_end_date")
+
+    url = f"{_get_base_url()}/spice-query"
+    request = requests.Request(method="GET", url=url, params=query_params).prepare()
+
+    logger.info("Querying data archive for %s with url %s", query_params, request.url)
+    with _make_request(request) as response:
+        # Decode the JSON response as a list of items
+        items = response.json()
+        logger.debug("Received JSON: %s", items)
+
+    return items
+
+
 def query(
     *,
     table: Optional[str] = "science",

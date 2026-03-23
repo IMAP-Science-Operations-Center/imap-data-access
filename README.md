@@ -47,6 +47,17 @@ $ imap-data-access query --start-date 20240101 --end-date 20241231 --output-form
 [{'file_path': 'imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_v001.pkts', 'instrument': 'swe', 'data_level': 'l0', 'descriptor': 'sci', 'start_date': '20240105', 'version': 'v001', 'extension': 'pkts'}, {'file_path': 'imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_v001.pkts', 'instrument': 'swe', 'data_level': 'l0', 'descriptor': 'sci', 'start_date': '20240105', 'version': 'v001', 'extension': 'pkts'}]
 ```
 
+Find all latest predicted ephemeris kernels
+
+```bash
+$ imap-data-access query --table spice --ingestion-start-date 20260301 --type ephemeris_predicted --version latest
+```
+
+An equivalent curl command is shown.
+```bash
+$ curl "https://api.imap-mission.com/spice-query?start_ingest_date=20260301&type=ephemeris_predicted&latest=true"
+```
+
 ### Download a file
 
 Download a level 0 SWE file on 2024/01/05
