@@ -58,6 +58,16 @@ An equivalent curl command is shown.
 $ curl "https://api.imap-mission.com/spice-query?start_ingest_date=20260301&type=ephemeris_predicted&latest=true"
 ```
 
+Download a predicted ephemeris kernel
+```bash
+$ imap-data-access download spk/imap_pred_od025_20260303_20260414_v01.bsp
+```
+
+An equivalent curl command is shown.
+```bash
+$ curl "https://api.imap-mission.com/download/imap/spice/spk/imap_pred_od025_20260303_20260414_v01.bsp" --output imap_pred_od025_20260303_20260414_v01.bsp
+```
+
 ### Download a file
 
 Download a level 0 SWE file on 2024/01/05

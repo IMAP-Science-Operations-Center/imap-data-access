@@ -18,7 +18,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     SPICEFilePath,
 )
-from imap_data_access.io import download, query, reprocess, upload
+from imap_data_access.io import download, query, reprocess, spice_query, upload
 from imap_data_access.processing_input import (
     AncillaryInput,
     ProcessingInputCollection,
@@ -47,6 +47,7 @@ __all__ = [
     "download",
     "query",
     "reprocess",
+    "spice_query",
     "upload",
 ]
 
