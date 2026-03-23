@@ -16,6 +16,29 @@ def test_cli_works():
             cli.main()
 
 
+def test_cli_spice_query(capsys):
+    """Test the CLI SPICE query command."""
+    with mock.patch.object(
+        sys,
+        "argv",
+        [
+            "imap-data-access",
+            "query",
+            "--table",
+            "spice",
+            "--type",
+            "ephemeris_predicted",
+        ],
+    ):
+        with mock.patch(
+            "imap_data_access.cli.spice_query", return_value=[]
+        ) as mock_spice_query:
+            cli.main()
+    captured = capsys.readouterr()
+    assert "Found [0] matching files" in captured.out
+    mock_spice_query.assert_called_once_with(type="ephemeris_predicted")
+
+
 def test_cli_error_message(capsys):
     """Test the CLI error message when no arguments are passed."""
     with mock.patch.object(

@@ -450,7 +450,13 @@ def add_query_args(subparser: ArgumentParser) -> None:
         "--type",
         type=str,
         required=False,
-        help="SPICE kernel type (e.g. ephemeris_predicted). Only used with --table spice.",
+        help="SPICE kernel type. Only used with --table spice. "
+        "Valid types: attitude_history, attitude_predict, spin, repoint, "
+        "ephemeris_reconstructed, ephemeris_nominal, ephemeris_predicted, "
+        "ephemeris_90days, ephemeris_long, ephemeris_launch, planetary_ephemeris, "
+        "planetary_constants, leapseconds, pointing_attitude, spacecraft_clock, "
+        "imap_frames, science_frames, metakernel, thruster, lagrange_point, "
+        "earth_attitude.",
     )
     subparser.set_defaults(func=_query_parser)
 
