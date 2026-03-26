@@ -29,7 +29,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     generate_imap_file_path,
 )
-from imap_data_access.io import query
+from imap_data_access.io import query, spice_query
 from imap_data_access.webpoda import download_daily_data
 
 
@@ -45,7 +45,7 @@ def _download_parser(args: argparse.Namespace):
     print(f"Successfully downloaded the file to: {output_path}")
 
 
-# ruff: noqa: PLR0912
+# ruff: noqa: PLR0912, PLR0915
 def _print_query_results_table(query_results: list[dict]):
     """Print the query results in a table.
 
@@ -62,7 +62,9 @@ def _print_query_results_table(query_results: list[dict]):
 
     # Get the database table
     query_table = ""
-    if "end_date" in query_results[0]:
+    if "kernel_type" in query_results[0]:
+        query_table = "spice"
+    elif "end_date" in query_results[0]:
         query_table = "ancillary"
     elif "repointing" in query_results[0]:
         query_table = "science"
@@ -86,6 +88,14 @@ def _print_query_results_table(query_results: list[dict]):
         "Version",
         "Filename",
     ]
+    spice_header_keys = {
+        "Kernel Type": "kernel_type",
+        "Min Date": "min_date_datetime",
+        "Max Date": "max_date_datetime",
+        "Ingestion Date": "ingestion_date",
+        "Version": "version",
+    }
+    headers_spice = [*spice_header_keys.keys(), "Filename"]
     # Boolean to check if CR is present in any science files
     cr_flag = query_table == "science" and any(
         item.get("cr") not in (None, "", []) for item in query_results
@@ -104,6 +114,8 @@ def _print_query_results_table(query_results: list[dict]):
     # Set appropriate headers for desired table
     if query_table == "science":
         headers = headers_science
+    elif query_table == "spice":
+        headers = headers_spice
     else:
         headers = headers_ancillary
 
@@ -111,9 +123,13 @@ def _print_query_results_table(query_results: list[dict]):
     # have to adjust Ingestion Date, Filename, and CR to properly align
     column_widths = {}
     for header in headers[:-1]:
+        if query_table == "spice":
+            data_key = spice_header_keys[header]
+        else:
+            data_key = header.lower()
         column_widths[header] = max(
             len(header),
-            *(len(str(item.get(header.lower(), ""))) for item in query_results),
+            *(len(str(item.get(data_key, ""))) for item in query_results),
         )
 
         column_widths["Ingestion Date"] = max(
@@ -128,12 +144,10 @@ def _print_query_results_table(query_results: list[dict]):
                 len("CR"), *(len(str(item.get("cr", ""))) for item in query_results)
             )
 
+        file_key = "file_name" if query_table == "spice" else "file_path"
         column_widths["Filename"] = max(
             len("Filename"),
-            *(
-                len(os.path.basename(item.get("file_path", "")))
-                for item in query_results
-            ),
+            *(len(os.path.basename(item.get(file_key, ""))) for item in query_results),
         )
 
     # Create the format string dynamically based on the number of columns
@@ -153,7 +167,11 @@ def _print_query_results_table(query_results: list[dict]):
 
     # Print data
     for item in query_results:
-        if query_table == "ancillary":
+        if query_table == "spice":
+            values = [
+                str(item.get(spice_header_keys[header], "")) for header in headers[:-1]
+            ] + [str(item.get("file_name", ""))]
+        elif query_table == "ancillary":
             values = [
                 str(item.get("instrument", "")),
                 str(item.get("descriptor", "")),
@@ -210,6 +228,7 @@ def _query_parser(args: argparse.Namespace):
         "version",
         "extension",
         "filename",
+        "type",
     ]
 
     # Filter to get the arguments of interest from the namespace
@@ -262,9 +281,21 @@ def _query_parser(args: argparse.Namespace):
 
     # SPICE query table
     elif args.table == "spice":
-        raise NotImplementedError("SPICE query not implemented yet.")
+        spice_valid_args = [
+            "start_date",
+            "end_date",
+            "ingestion_start_date",
+            "ingestion_end_date",
+            "type",
+            "version",
+        ]
+        query_params = {
+            key: value for key, value in query_params.items() if key in spice_valid_args
+        }
+        query_results = spice_query(**query_params)
 
-    query_results = query(**query_params)
+    else:
+        query_results = query(**query_params)
 
     if args.output_format == "table":
         _print_query_results_table(query_results)
@@ -401,6 +432,18 @@ def add_query_args(subparser: ArgumentParser) -> None:
         "processing.readthedocs.io/en/latest/development-guide/style-guide/naming-conventions"
         ".html#data-product-file-naming-conventions",
     )
+    subparser.add_argument(
+        "--type",
+        type=str,
+        required=False,
+        help="SPICE kernel type. Only used with --table spice. "
+        "Valid types: attitude_history, attitude_predict, spin, repoint, "
+        "ephemeris_reconstructed, ephemeris_nominal, ephemeris_predicted, "
+        "ephemeris_90days, ephemeris_long, ephemeris_launch, planetary_ephemeris, "
+        "planetary_constants, leapseconds, pointing_attitude, spacecraft_clock, "
+        "imap_frames, science_frames, metakernel, thruster, lagrange_point, "
+        "earth_attitude.",
+    )
     subparser.set_defaults(func=_query_parser)
 
 
@@ -430,7 +473,7 @@ def _reprocess_parser(args: argparse.Namespace):
 
 
 # PLR0915: too many statements
-def main():  # noqa: PLR0915
+def main():
     """Parse the command line arguments.
 
     Run the command line interface to the IMAP Data Access API.

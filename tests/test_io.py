@@ -284,6 +284,95 @@ def test_query_bad_params(mock_send_request):
 
 
 @pytest.mark.parametrize(
+    "query_params",
+    [
+        # All parameters should send full query
+        {
+            "start_date": "20100101",
+            "end_date": "20100102",
+            "ingestion_start_date": "20100101",
+            "ingestion_end_date": "20100102",
+            "type": "ephemeris_predicted",
+            "version": "v000",
+        },
+        # Make sure not all query params are sent if they are missing
+        {"type": "ephemeris_predicted"},
+        # Ingestion dates are remapped to /spice-query naming convention
+        {
+            "type": "ephemeris_predicted",
+            "ingestion_start_date": "20100101",
+            "ingestion_end_date": "20100102",
+        },
+        # version=latest maps to latest=true
+        {"type": "ephemeris_predicted", "version": "latest"},
+    ],
+)
+def test_spice_query(mock_send_request, query_params: dict):
+    """Test a basic call to the SPICE Query API.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for requests.Session
+    query_params : dict
+        Dictionary of key/value pairs that set the query parameters
+    """
+    mock_response = MagicMock()
+    mock_response.json.return_value = []
+    mock_send_request.return_value = mock_response
+
+    response = imap_data_access.spice_query(**query_params)
+    # No data found, and JSON decoding works as expected
+    assert response == list()
+
+    # Should have only been one call to send
+    mock_send_request.assert_called_once()
+    # Assert that the correct URL was used for the query
+    sent_request = mock_send_request.call_args[0][0]
+    called_url = sent_request.url
+    # Mirror the remapping logic in spice_query
+    fixed_query = query_params.copy()
+    if fixed_query.get("version") == "latest":
+        del fixed_query["version"]
+        fixed_query["latest"] = "true"
+    if "ingestion_start_date" in fixed_query:
+        fixed_query["start_ingest_date"] = fixed_query.pop("ingestion_start_date")
+    if "ingestion_end_date" in fixed_query:
+        fixed_query["end_ingest_date"] = fixed_query.pop("ingestion_end_date")
+    str_params = "&".join(f"{k}={v}" for k, v in fixed_query.items())
+    expected_url_encoded = f"https://api.test.com/spice-query?{str_params}"
+    assert called_url == expected_url_encoded
+
+
+def test_spice_query_no_params(mock_send_request):
+    """Test a call to the SPICE Query API that has no parameters.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for ``requests.session``
+    """
+    with pytest.raises(ValueError, match="'type' parameter is required"):
+        imap_data_access.spice_query()
+    # Should not have made any calls to urlopen
+    assert mock_send_request.call_count == 0
+
+
+def test_spice_query_bad_params(mock_send_request):
+    """Test a call to the SPICE Query API that has invalid parameters.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for ``requests.session``
+    """
+    with pytest.raises(TypeError, match="got an unexpected"):
+        imap_data_access.spice_query(bad_param="test")
+    # Should not have made any calls to urlopen
+    assert mock_send_request.call_count == 0
+
+
+@pytest.mark.parametrize(
     ("query_flag", "query_input", "expected_output"),
     [
         # All parameters should  not send query
