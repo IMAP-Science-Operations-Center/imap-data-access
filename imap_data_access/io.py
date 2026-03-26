@@ -263,9 +263,9 @@ def spice_query(
             raise ValueError("One other parameter must be run with 'version'")
         query_params["latest"] = "true"
 
-    if not query_params:
+    if "type" not in query_params:
         raise ValueError(
-            "At least one query parameter must be provided. "
+            "The 'type' parameter is required for SPICE queries. "
             "Run 'query -h' for more information."
         )
 

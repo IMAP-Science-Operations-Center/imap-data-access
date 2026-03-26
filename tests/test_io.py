@@ -298,7 +298,7 @@ def test_query_bad_params(mock_send_request):
         # Make sure not all query params are sent if they are missing
         {"type": "ephemeris_predicted"},
         # Ingestion dates are remapped to /spice-query naming convention
-        {"ingestion_start_date": "20100101", "ingestion_end_date": "20100102"},
+        {"type": "ephemeris_predicted", "ingestion_start_date": "20100101", "ingestion_end_date": "20100102"},
         # version=latest maps to latest=true
         {"type": "ephemeris_predicted", "version": "latest"},
     ],
@@ -348,7 +348,7 @@ def test_spice_query_no_params(mock_send_request):
     mock_send_request : unittest.mock.MagicMock
         Mock object for ``requests.session``
     """
-    with pytest.raises(ValueError, match="At least one query"):
+    with pytest.raises(ValueError, match="'type' parameter is required"):
         imap_data_access.spice_query()
     # Should not have made any calls to urlopen
     assert mock_send_request.call_count == 0

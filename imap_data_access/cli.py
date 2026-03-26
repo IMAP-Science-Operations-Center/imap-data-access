@@ -88,14 +88,14 @@ def _print_query_results_table(query_results: list[dict]):
         "Version",
         "Filename",
     ]
-    headers_spice = [
-        "Kernel Type",
-        "Min Date",
-        "Max Date",
-        "Ingestion Date",
-        "Version",
-        "Filename",
-    ]
+    spice_header_keys = {
+        "Kernel Type": "kernel_type",
+        "Min Date": "min_date_datetime",
+        "Max Date": "max_date_datetime",
+        "Ingestion Date": "ingestion_date",
+        "Version": "version",
+    }
+    headers_spice = list(spice_header_keys.keys()) + ["Filename"]
     # Boolean to check if CR is present in any science files
     cr_flag = query_table == "science" and any(
         item.get("cr") not in (None, "", []) for item in query_results
@@ -118,14 +118,6 @@ def _print_query_results_table(query_results: list[dict]):
         headers = headers_spice
     else:
         headers = headers_ancillary
-
-    spice_header_keys = {
-        "Kernel Type": "kernel_type",
-        "Min Date": "min_date_datetime",
-        "Max Date": "max_date_datetime",
-        "Ingestion Date": "ingestion_date",
-        "Version": "version",
-    }
 
     # Calculate the maximum width for each column based on the header and the data
     # have to adjust Ingestion Date, Filename, and CR to properly align
@@ -177,13 +169,8 @@ def _print_query_results_table(query_results: list[dict]):
     for item in query_results:
         if query_table == "spice":
             values = [
-                str(item.get("kernel_type", "")),
-                str(item.get("min_date_datetime", "")),
-                str(item.get("max_date_datetime", "")),
-                str(item.get("ingestion_date", "")),
-                str(item.get("version", "")),
-                str(item.get("file_name", "")),
-            ]
+                str(item.get(spice_header_keys[header], "")) for header in headers[:-1]
+            ] + [str(item.get("file_name", ""))]
         elif query_table == "ancillary":
             values = [
                 str(item.get("instrument", "")),
