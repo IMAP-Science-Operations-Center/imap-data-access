@@ -95,7 +95,7 @@ def _print_query_results_table(query_results: list[dict]):
         "Ingestion Date": "ingestion_date",
         "Version": "version",
     }
-    headers_spice = list(spice_header_keys.keys()) + ["Filename"]
+    headers_spice = [*spice_header_keys.keys(), "Filename"]
     # Boolean to check if CR is present in any science files
     cr_flag = query_table == "science" and any(
         item.get("cr") not in (None, "", []) for item in query_results

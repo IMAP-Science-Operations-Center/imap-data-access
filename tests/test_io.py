@@ -298,7 +298,8 @@ def test_query_bad_params(mock_send_request):
         # Make sure not all query params are sent if they are missing
         {"type": "ephemeris_predicted"},
         # Ingestion dates are remapped to /spice-query naming convention
-        {"type": "ephemeris_predicted", "ingestion_start_date": "20100101", "ingestion_end_date": "20100102"},
+        {"type": "ephemeris_predicted", "ingestion_start_date": "20100101",
+         "ingestion_end_date": "20100102"},
         # version=latest maps to latest=true
         {"type": "ephemeris_predicted", "version": "latest"},
     ],
