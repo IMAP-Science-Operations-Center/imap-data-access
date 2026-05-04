@@ -40,6 +40,28 @@ Found [3] matching files
 |-----------------------------------------------------------------------------------------------------------------------------------|
 ```
 
+Find all SWE files ingested since a specific date (useful as a "since" filter to get newly available data)
+
+```bash
+$ imap-data-access query --instrument swe --ingestion-start-date 20240501
+Found [2] matching files
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Instrument | Data Level | Descriptor | Start Date | Repointing | Version | Ingestion Date | Filename                                          |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| swe        | l1a        | sci        | 20240510   |            | v022    | 20240512       | imap_swe_l1a_sci_20240510_v022.cdf                |
+| swe        | l1b        | sci        | 20240510   |            | v022    | 20240513       | imap_swe_l1b_sci_20240510_v022.cdf                |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+```
+
+You can also bound the ingestion date range with `--ingestion-end-date`
+
+```bash
+$ imap-data-access query --instrument swe --ingestion-start-date 20240501 --ingestion-end-date 20240601
+```
+
+> [!NOTE]
+> Ingestion date refers to when a file was added to the SDC, not the science start date of the data. Use `--ingestion-start-date` / `--ingestion-end-date` when you want to discover files that have been newly ingested since a given date (a "since" query), and use `--start-date` / `--end-date` when you want to filter by the science observation time. Combine ingestion date filters with at least one other parameter (e.g. `--instrument`) to avoid server errors.
+
 Find all files during the year 2024 and return the response as raw json
 
 ```bash
@@ -98,6 +120,11 @@ import imap_data_access
 results = imap_data_access.query(instrument="mag", data_level="l0")
 # results is a list of dictionaries
 # [{'file_path': 'imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_v001.pkts', 'instrument': 'swe', 'data_level': 'l0', 'descriptor': 'sci', 'start_date': '20240105','version': 'v001', 'extension': 'pkts'}, {'file_path': 'imap/swe/l0/2024/01/imap_swe_l0_sci_20240105_v001.pkts', 'instrument': 'swe', 'data_level': 'l0', 'descriptor': 'sci', 'start_date': '20240105', 'version': 'v001', 'extension': 'pkts'}]
+
+# Search for files ingested since a specific date ("since" query)
+results = imap_data_access.query(instrument="swe", ingestion_start_date="20240501")
+# Optionally bound the range
+results = imap_data_access.query(instrument="swe", ingestion_start_date="20240501", ingestion_end_date="20240601")
 
 # Download a file that was returned from the search
 imap_data_access.download("imap/mag/l0/2024/01/imap_mag_l0_raw_202040101_v001.pkts")
