@@ -11,6 +11,7 @@ from imap_data_access.file_validation import (
     DependencyFilePath,
     ImapFilePath,
     QuicklookFilePath,
+    ReleaseFilePath,
     ScienceFilePath,
     SPICEFilePath,
 )
@@ -697,3 +698,20 @@ def test_dependency_file_path():
 def test_repoint():
     state = imap_data_access.ScienceFilePath.is_valid_repointing("repoint00001")
     assert state is True
+
+
+def test_with_release_file_path():
+    """Tests the ``ReleaseFilePath`` class for different scenarios."""
+
+    # Test by parsing the file
+    release_file_codice = ReleaseFilePath("imap_codice_release-notes_20210101_v001.txt")
+    assert release_file_codice.instrument == "codice"
+    assert release_file_codice.descriptor == "release-notes"
+    assert release_file_codice.start_date == "20210101"
+    assert release_file_codice.version == "v001"
+    assert release_file_codice.extension == "txt"
+
+    # Test with end date
+    release_file_glows = ReleaseFilePath("imap_glows_readme_20210101_20210102_v001.txt")
+    assert release_file_glows.instrument == "glows"
+    assert release_file_glows.end_date == "20210102"
