@@ -34,6 +34,7 @@ def generate_imap_file_path(filename: str) -> ImapFilePath:
         SPICEFilePath,
         QuicklookFilePath,
         DependencyFilePath,
+        ReleaseFilePath,
     ):
         try:
             return cls(filename)
@@ -1013,8 +1014,8 @@ class AncillaryFilePath(ImapFilePath):
         upload_path = Path(f"{self._dir_prefix}/{self.instrument}/{self.filename}")
         return imap_data_access.config["DATA_DIR"] / upload_path
 
-    @staticmethod
-    def extract_filename_components(filename: str | Path) -> dict:
+    @classmethod
+    def extract_filename_components(cls, filename: str | Path) -> dict:
         """Extract all components from filename. Does not validate instrument or level.
 
         Will return a dictionary with the following keys:
@@ -1037,7 +1038,7 @@ class AncillaryFilePath(ImapFilePath):
         """
         # Pipe these together for optional matching in the regex below
         extension_regex = "|".join(
-            AncillaryFilePath.VALID_EXTENSIONS.union(QuicklookFilePath.VALID_EXTENSIONS)
+            cls.VALID_EXTENSIONS.union(QuicklookFilePath.VALID_EXTENSIONS)
         )
         pattern = (
             r"^(?P<mission>imap)_"
@@ -1109,3 +1110,10 @@ class DependencyFilePath(ScienceFilePath):
 
 class CadenceFilePath(DependencyFilePath):
     """DEPRECATED class for CadenceFile processing, use DependencyFilePath instead."""
+
+
+class ReleaseFilePath(AncillaryFilePath):
+    """Release filename convention."""
+
+    VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"txt"}
+    _dir_prefix = "imap/release"
