@@ -712,20 +712,18 @@ def test_with_release_file_path():
     assert release_file_mag.start_date == "20260201"
     assert release_file_mag.end_date == "20260430"
 
-    # Test selected-release descriptor with date range
+    # Test early-release descriptor with date range
     release_file_swe = ReleaseFilePath(
-        "imap_swe_selected-release_20260201_20260430_v001.txt"
+        "imap_swe_early-release_20260201_20260430_v001.txt"
     )
     assert release_file_swe.instrument == "swe"
-    assert release_file_swe.descriptor == "selected-release"
+    assert release_file_swe.descriptor == "early-release"
     assert release_file_swe.start_date == "20260201"
     assert release_file_swe.end_date == "20260430"
 
-    # Test selected-unrelease descriptor with date range
-    release_file_lo = ReleaseFilePath(
-        "imap_lo_selected-unrelease_20260201_20260430_v001.txt"
-    )
+    # Test unrelease descriptor with date range
+    release_file_lo = ReleaseFilePath("imap_lo_unrelease_20260201_20260430_v001.txt")
     assert release_file_lo.instrument == "lo"
-    assert release_file_lo.descriptor == "selected-unrelease"
+    assert release_file_lo.descriptor == "unrelease"
     assert release_file_lo.start_date == "20260201"
     assert release_file_lo.end_date == "20260430"
