@@ -133,6 +133,7 @@ _INSTRUMENT_BUFFER_MINUTES = {
     "mag": 30,
     "swapi": 1,
     "swe": 1,
+    "codice": 7,
 }
 
 
