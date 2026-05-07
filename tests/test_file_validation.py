@@ -11,6 +11,7 @@ from imap_data_access.file_validation import (
     DependencyFilePath,
     ImapFilePath,
     QuicklookFilePath,
+    ReleaseFilePath,
     ScienceFilePath,
     SPICEFilePath,
 )
@@ -697,3 +698,34 @@ def test_dependency_file_path():
 def test_repoint():
     state = imap_data_access.ScienceFilePath.is_valid_repointing("repoint00001")
     assert state is True
+
+
+def test_with_release_file_path():
+    """Tests the ``ReleaseFilePath`` class for different scenarios."""
+
+    # Test withhold-data-release descriptor with release number and date range
+    release_file_mag = ReleaseFilePath(
+        "imap_mag_withhold-data-release-001_20260201_20260430_v001.txt"
+    )
+    assert release_file_mag.instrument == "mag"
+    assert release_file_mag.descriptor == "withhold-data-release-001"
+    assert release_file_mag.start_date == "20260201"
+    assert release_file_mag.end_date == "20260430"
+
+    # Test selected-release descriptor with date range
+    release_file_swe = ReleaseFilePath(
+        "imap_swe_selected-release_20260201_20260430_v001.txt"
+    )
+    assert release_file_swe.instrument == "swe"
+    assert release_file_swe.descriptor == "selected-release"
+    assert release_file_swe.start_date == "20260201"
+    assert release_file_swe.end_date == "20260430"
+
+    # Test selected-unrelease descriptor with date range
+    release_file_lo = ReleaseFilePath(
+        "imap_lo_selected-unrelease_20260201_20260430_v001.txt"
+    )
+    assert release_file_lo.instrument == "lo"
+    assert release_file_lo.descriptor == "selected-unrelease"
+    assert release_file_lo.start_date == "20260201"
+    assert release_file_lo.end_date == "20260430"
