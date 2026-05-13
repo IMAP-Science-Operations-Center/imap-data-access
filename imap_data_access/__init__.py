@@ -15,6 +15,7 @@ from imap_data_access.file_validation import (
     DependencyFilePath,
     ImapFilePath,
     QuicklookFilePath,
+    ReleaseFilePath,
     ScienceFilePath,
     SPICEFilePath,
 )
@@ -38,6 +39,7 @@ __all__ = [
     "ImapFilePath",
     "ProcessingInputCollection",
     "QuicklookFilePath",
+    "ReleaseFilePath",
     "RepointInput",
     "SPICEFilePath",
     "SPICEInput",

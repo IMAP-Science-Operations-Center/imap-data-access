@@ -727,3 +727,9 @@ def test_with_release_file_path():
     assert release_file_lo.descriptor == "unrelease"
     assert release_file_lo.start_date == "20260201"
     assert release_file_lo.end_date == "20260430"
+
+    # construct path test
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/release/mag/imap_mag_withhold-data-release-001_20260201_20260430_v001.txt"
+    )
+    assert release_file_mag.construct_path() == expected_output
