@@ -14,6 +14,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     generate_imap_file_path,
 )
+from imap_data_access.utils import ReleaseType
 
 logger = logging.getLogger(__name__)
 
@@ -529,3 +530,62 @@ def upload(file_path: Union[Path, str]) -> None:
         )
 
     logger.info("File %s uploaded successfully", file_path)
+
+
+def release(
+    *,
+    instrument: str,
+    release_type: str,
+    start_date: str,
+    end_date: str,
+    release_number: Optional[int] = None,
+) -> None:
+    """Submit a release file to the data archive API.
+
+    Parameters
+    ----------
+    instrument : str
+        Instrument name (e.g., ``mag``, ``swe``)
+    release_type : str
+        Type of release (e.g., ``release``, ``early-release``, ``unrelease``,
+        ``withhold-data-release-001``)
+    start_date : str
+        Start date in YYYYMMDD format
+    end_date : str
+        End date in YYYYMMDD format
+    release_number : int, optional
+        Release number. Defaults to ``None``. Required if release_type is
+        'release' and should be an integer value
+
+    Raises
+    ------
+    ValueError
+        If any of the required parameters are invalid
+    IMAPDataAccessError
+        If the API request fails
+    """
+    # Build release parameters
+    release_params = {
+        "instrument": instrument,
+        "release_type": release_type,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+    # Add release number to parameters if release type is 'release'
+    if release_type == ReleaseType.RELEASE.value:
+        release_params["release_number"] = release_number
+
+    logger.debug("Input release parameters: %s", release_params)
+
+    url = f"{_get_base_url()}/release"
+    request = requests.Request(method="POST", url=url, json=release_params).prepare()
+
+    logger.info("Submitting release request to %s with params %s", url, release_params)
+    with _make_request(request) as response:
+        result = response.json()
+        logger.debug("Received JSON: %s", result)
+
+    logger.info(
+        f"Release request submitted successfully for {instrument} "
+        f"from {start_date} to {end_date}."
+    )

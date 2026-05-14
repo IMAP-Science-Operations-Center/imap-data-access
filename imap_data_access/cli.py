@@ -24,12 +24,14 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import imap_data_access
+from imap_data_access import file_validation
 from imap_data_access.file_validation import (
     AncillaryFilePath,
     ScienceFilePath,
     generate_imap_file_path,
 )
-from imap_data_access.io import query, spice_query
+from imap_data_access.io import query, release, spice_query
+from imap_data_access.utils import ReleaseType
 from imap_data_access.webpoda import download_daily_data
 
 
@@ -337,6 +339,57 @@ def _webpoda_parser(args: argparse.Namespace):
         end_time=end_time,
     )
     print("Successfully downloaded the data from webpoda.")
+
+
+def _release_parser(args: argparse.Namespace):
+    """Submit a release request to the IMAP SDC.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        An object containing the parsed arguments and their values
+    """
+    # If release type not in valid options, raise error
+    if args.release_type not in [e.value for e in ReleaseType]:
+        raise ValueError(
+            f"Invalid release type: {args.release_type}. "
+            f"Valid options are: {[e.value for e in ReleaseType]}"
+        )
+    # Validate instrument
+    if args.instrument not in imap_data_access.VALID_INSTRUMENTS:
+        raise ValueError(
+            "Not a valid instrument, please choose from "
+            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
+        )
+    if not file_validation.ImapFilePath.is_valid_date(args.start_date):
+        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+    if not file_validation.ImapFilePath.is_valid_date(args.end_date):
+        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+
+    # Send request based on release type and optional release number
+    if args.release_type == ReleaseType.RELEASE.value:
+        if args.release_number is None:
+            raise ValueError(
+                "The '--release-number' argument is required for 'release' "
+                "release type.\n"
+                "Usage: --release-type release --release-number <###>\n"
+                "where ### is an integer value associated with the release number."
+            )
+        release(
+            instrument=args.instrument,
+            release_type=args.release_type,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            release_number=args.release_number,
+        )
+    else:
+        release(
+            instrument=args.instrument,
+            release_type=args.release_type,
+            start_date=args.start_date,
+            end_date=args.end_date,
+        )
+    print("Successfully submitted release request to the IMAP SDC.")
 
 
 def add_query_args(subparser: ArgumentParser) -> None:
@@ -662,6 +715,56 @@ def main():
         help="Descriptor of the product to reprocess (raw, burst, etc.)",
     )
     reprocess_parser.set_defaults(func=_reprocess_parser)
+
+    # Release command
+    release_help = (
+        "Make a release or unrelease file for IMAP data with specified release type. "
+        "Run 'release -h' for more information."
+    )
+
+    parser_release = subparsers.add_parser(
+        "release",
+        help=release_help,
+    )
+    parser_release.add_argument(
+        "--instrument",
+        type=str,
+        required=True,
+        metavar="INSTRUMENT",
+        help="Name of the instrument (e.g., mag, swe, lo, codice)",
+        choices=imap_data_access.VALID_INSTRUMENTS,
+    )
+    parser_release.add_argument(
+        "--start-date",
+        type=str,
+        required=True,
+        metavar="YYYYMMDD",
+        help="Start date for the release",
+    )
+    parser_release.add_argument(
+        "--end-date",
+        type=str,
+        required=True,
+        metavar="YYYYMMDD",
+        help="End date for the release",
+    )
+    parser_release.add_argument(
+        "--release-type",
+        type=str,
+        required=True,
+        metavar="ReleaseType",
+        help="Type of release: 'release', 'unrelease', 'early-release'",
+        choices=[e.value for e in ReleaseType],
+    )
+    parser_release.add_argument(
+        "--release-number",
+        type=int,
+        required=False,
+        metavar="NUMBER",
+        help="Release number (required only when --release-type is 'release'). ",
+    )
+    parser_release.set_defaults(func=_release_parser)
+
     # Parse the arguments and set the values
     try:
         args = parser.parse_args()
