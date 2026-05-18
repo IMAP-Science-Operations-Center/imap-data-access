@@ -560,10 +560,17 @@ def release(
     Raises
     ------
     ValueError
-        If any of the required parameters are invalid
+        If API key is not configured or if any of the required parameters are invalid
     IMAPDataAccessError
         If the API request fails
     """
+    # Check for API key - required for release operations
+    if not imap_data_access.config["API_KEY"]:
+        raise ValueError(
+            "API key is required for release operations. "
+            "Set the IMAP_API_KEY environment variable or use --api-key argument."
+        )
+
     # Build release parameters
     release_params = {
         "instrument": instrument,
@@ -578,7 +585,7 @@ def release(
     logger.debug("Input release parameters: %s", release_params)
 
     url = f"{_get_base_url()}/release"
-    request = requests.Request(method="POST", url=url, json=release_params).prepare()
+    request = requests.Request(method="GET", url=url, params=release_params).prepare()
 
     logger.info("Submitting release request to %s with params %s", url, release_params)
     with _make_request(request) as response:
