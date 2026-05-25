@@ -381,6 +381,8 @@ def _release_parser(args: argparse.Namespace):
             start_date=args.start_date,
             end_date=args.end_date,
             release_number=args.release_number,
+            table=getattr(args, "table", None),
+            descriptor=getattr(args, "descriptor", None),
         )
     else:
         release(
@@ -388,7 +390,10 @@ def _release_parser(args: argparse.Namespace):
             release_type=args.release_type,
             start_date=args.start_date,
             end_date=args.end_date,
+            table=getattr(args, "table", None),
+            descriptor=getattr(args, "descriptor", None),
         )
+
     print("Successfully submitted release request to the IMAP SDC.")
 
 
@@ -762,6 +767,23 @@ def main():
         required=False,
         metavar="NUMBER",
         help="Release number (required only when --release-type is 'release'). ",
+    )
+    parser_release.add_argument(
+        "--table",
+        type=str,
+        required=False,
+        help=(
+            "Table for the release (ancillary or science). Optional. "
+            "Default to science."
+        ),
+        choices=["ancillary", "science"],
+    )
+    parser_release.add_argument(
+        "--descriptor",
+        type=str,
+        required=False,
+        metavar="str",
+        help="Instrument data descriptor (optional). E.g. 'burt-magi', 'hk', etc.)",
     )
     parser_release.set_defaults(func=_release_parser)
 

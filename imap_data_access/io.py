@@ -539,6 +539,8 @@ def release(
     start_date: str,
     end_date: str,
     release_number: Optional[int] = None,
+    table: Optional[str] = None,
+    descriptor: Optional[str] = None,
 ) -> None:
     """Submit a release file to the data archive API.
 
@@ -556,6 +558,10 @@ def release(
     release_number : int, optional
         Release number. Defaults to ``None``. Required if release_type is
         'release' and should be an integer value
+    table : str, optional
+        Table for the release (``ancillary`` or ``science``). Optional.
+    descriptor : str
+        Instrument data descriptor (Eg. ``burt-magi``, ``hk``)
 
     Raises
     ------
@@ -581,6 +587,12 @@ def release(
     # Add release number to parameters if release type is 'release'
     if release_type == ReleaseType.RELEASE.value:
         release_params["release_number"] = release_number
+
+    # Add table if provided
+    if table is not None:
+        release_params["table"] = table
+    if descriptor is not None:
+        release_params["descriptor"] = descriptor
 
     logger.debug("Input release parameters: %s", release_params)
 
