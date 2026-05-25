@@ -24,7 +24,6 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import imap_data_access
-from imap_data_access import file_validation
 from imap_data_access.file_validation import (
     AncillaryFilePath,
     ScienceFilePath,
@@ -349,51 +348,16 @@ def _release_parser(args: argparse.Namespace):
     args : argparse.Namespace
         An object containing the parsed arguments and their values
     """
-    # If release type not in valid options, raise error
-    if args.release_type not in [e.value for e in ReleaseType]:
-        raise ValueError(
-            f"Invalid release type: {args.release_type}. "
-            f"Valid options are: {[e.value for e in ReleaseType]}"
-        )
-    # Validate instrument
-    if args.instrument not in imap_data_access.VALID_INSTRUMENTS:
-        raise ValueError(
-            "Not a valid instrument, please choose from "
-            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
-        )
-    if not file_validation.ImapFilePath.is_valid_date(args.start_date):
-        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
-    if not file_validation.ImapFilePath.is_valid_date(args.end_date):
-        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
-
-    # Send request based on release type and optional release number
-    if args.release_type == ReleaseType.RELEASE.value:
-        if args.release_number is None:
-            raise ValueError(
-                "The '--release-number' argument is required for 'release' "
-                "release type.\n"
-                "Usage: --release-type release --release-number <###>\n"
-                "where ### is an integer value associated with the release number."
-            )
-        release(
-            instrument=args.instrument,
-            release_type=args.release_type,
-            start_date=args.start_date,
-            end_date=args.end_date,
-            release_number=args.release_number,
-            table=getattr(args, "table", None),
-            descriptor=getattr(args, "descriptor", None),
-        )
-    else:
-        release(
-            instrument=args.instrument,
-            release_type=args.release_type,
-            start_date=args.start_date,
-            end_date=args.end_date,
-            table=getattr(args, "table", None),
-            descriptor=getattr(args, "descriptor", None),
-        )
-
+    # Call release with all arguments; validation happens in release()
+    release(
+        instrument=args.instrument,
+        release_type=args.release_type,
+        start_date=args.start_date,
+        end_date=args.end_date,
+        release_number=getattr(args, "release_number", None),
+        table=getattr(args, "table", None),
+        descriptor=getattr(args, "descriptor", None),
+    )
     print("Successfully submitted release request to the IMAP SDC.")
 
 

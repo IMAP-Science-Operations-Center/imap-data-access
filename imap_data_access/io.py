@@ -549,8 +549,7 @@ def release(
     instrument : str
         Instrument name (e.g., ``mag``, ``swe``)
     release_type : str
-        Type of release (e.g., ``release``, ``early-release``, ``unrelease``,
-        ``withhold-data-release-001``)
+        Type of release (e.g., ``release``, ``early-release``, ``unrelease``)
     start_date : str
         Start date in YYYYMMDD format
     end_date : str
@@ -560,7 +559,7 @@ def release(
         'release' and should be an integer value
     table : str, optional
         Table for the release (``ancillary`` or ``science``). Optional.
-    descriptor : str
+    descriptor : str, optional
         Instrument data descriptor (Eg. ``burt-magi``, ``hk``)
 
     Raises
@@ -577,6 +576,41 @@ def release(
             "Set the IMAP_API_KEY environment variable or use --api-key argument."
         )
 
+    # Validate instrument
+    if instrument not in imap_data_access.VALID_INSTRUMENTS:
+        raise ValueError(
+            "Not a valid instrument, please choose from "
+            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
+        )
+
+    # Validate release_type
+    valid_release_types = [e.value for e in ReleaseType]
+    if release_type not in valid_release_types:
+        raise ValueError(
+            f"Not a valid release type, please choose from {valid_release_types}"
+        )
+
+    # Validate release_type == "release" requires release_number
+    if release_type == ReleaseType.RELEASE.value and release_number is None:
+        raise ValueError(
+            "The 'release_number' parameter is required for 'release' release type."
+        )
+
+    # Validate start_date
+    if not file_validation.ImapFilePath.is_valid_date(start_date):
+        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+
+    # Validate end_date
+    if not file_validation.ImapFilePath.is_valid_date(end_date):
+        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+
+    # Validate table if provided
+    if table is not None and table not in imap_data_access.VALID_TABLES:
+        raise ValueError(
+            "Not a valid table, please choose from "
+            + ", ".join(imap_data_access.VALID_TABLES)
+        )
+
     # Build release parameters
     release_params = {
         "instrument": instrument,
@@ -584,11 +618,11 @@ def release(
         "start_date": start_date,
         "end_date": end_date,
     }
-    # Add release number to parameters if release type is 'release'
+    # Add release_number only if release_type is 'release'
     if release_type == ReleaseType.RELEASE.value:
         release_params["release_number"] = release_number
 
-    # Add table if provided
+    # Add optional parameters if provided
     if table is not None:
         release_params["table"] = table
     if descriptor is not None:
