@@ -357,7 +357,7 @@ def _release_parser(args: argparse.Namespace):
         release_number=getattr(args, "release_number", None),
         table=getattr(args, "table", None),
         descriptor=getattr(args, "descriptor", None),
-        manifest_file_path=getattr(args, "manifest_file", None),
+        manifest_file=getattr(args, "manifest_file", None),
     )
     print("Successfully submitted release request to the IMAP SDC.")
 
@@ -740,10 +740,9 @@ def main():
         required=False,
         metavar="PATH",
         help=(
-            "Path to manifest file containing list of files. 'release' type"
-            " is mission wide release and doesn't require a manifest file. "
-            "Required for 'early-release' and 'unrelease' release types. "
-            "Be sure manifest file follows release filename convention."
+            "Path to manifest file containing list of files to "
+            "withhold release during mission wide release or "
+            "early-release or unrelease."
         ),
     )
     parser_release.set_defaults(func=_release_parser)

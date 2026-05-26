@@ -559,8 +559,9 @@ def release(
         Release number. Defaults to ``None``. Required if release_type is
         'release' and should be an integer value
     manifest_file : str, optional
-        Path to manifest file containing list of files for early-release or unrelease.
-        Required for 'early-release' and 'unrelease' release types
+        Path to manifest file containing list of files to
+        withhold release during mission wide release or
+        early-release or unrelease.
 
     Raises
     ------
@@ -604,13 +605,6 @@ def release(
     if not file_validation.ImapFilePath.is_valid_date(end_date):
         raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
 
-    # Validate manifest file requirement based on release type
-    if release_type in ["early-release", "unrelease"]:
-        if manifest_file is None:
-            raise ValueError(
-                f"--manifest-file is required for '{release_type}' release type"
-            )
-
     # Handle manifest file upload if provided
     if manifest_file is not None:
         # Upload the manifest file using the standard upload function
@@ -632,7 +626,7 @@ def release(
     # Add optional parameters if provided
     if manifest_file is not None:
         # API only needs the filename, not the full path
-        release_params["manifest_file_name"] = os.path.basename(manifest_file)
+        release_params["manifest_file"] = os.path.basename(manifest_file)
 
     logger.debug("Input release parameters: %s", release_params)
 
