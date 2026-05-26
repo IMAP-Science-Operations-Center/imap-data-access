@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+import os
 from pathlib import Path
 from typing import Optional, Union
 
@@ -14,6 +15,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     generate_imap_file_path,
 )
+from imap_data_access.utils import ReleaseType
 
 logger = logging.getLogger(__name__)
 
@@ -529,3 +531,131 @@ def upload(file_path: Union[Path, str]) -> None:
         )
 
     logger.info("File %s uploaded successfully", file_path)
+
+
+def release(
+    *,
+    instrument: str,
+    release_type: str,
+    start_date: str,
+    end_date: str,
+    release_number: Optional[int] = None,
+    exclude_file: Optional[Union[Path, str]] = None,
+    manifest_file: Optional[Union[Path, str]] = None,
+) -> None:
+    """Submit a release file to the data archive API.
+
+    Parameters
+    ----------
+    instrument : str
+        Instrument name (e.g., ``mag``, ``swe``)
+    release_type : str
+        Type of release:
+        - 'release': IMAP mission-wide public release. By default, all files
+          are released unless specified in the exception list to be withheld.
+        - 'early-release': Early release of selected files approved by both
+          instrument and project.
+        - 'unrelease': Unrelease previously released files due to various
+          causes and reasons.
+    start_date : str
+        Start date in YYYYMMDD format
+    end_date : str
+        End date in YYYYMMDD format
+    release_number : int, optional
+        Release number. Defaults to ``None``. Required if release_type is
+        'release' and should be an integer value.
+    exclude_file : str, optional
+        Path to exclude file containing list of files to exclude from public release.
+    manifest_file : str, optional
+        Path to manifest file containing list of files to apply action to in
+        'early-release' or 'unrelease' types.
+
+    Raises
+    ------
+    ValueError
+        If API key is not configured or if any of the required parameters are invalid
+    IMAPDataAccessError
+        If the API request fails
+    """
+    # Check for API key - required for release operations
+    if not imap_data_access.config["API_KEY"]:
+        raise ValueError(
+            "API key is required for release operations. "
+            "Set the IMAP_API_KEY environment variable or use --api-key argument."
+        )
+
+    # Validate instrument
+    if instrument not in imap_data_access.VALID_INSTRUMENTS:
+        raise ValueError(
+            "Not a valid instrument, please choose from "
+            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
+        )
+
+    # Validate release_type
+    valid_release_types = [e.value for e in ReleaseType]
+    if release_type not in valid_release_types:
+        raise ValueError(
+            f"Not a valid release type, please choose from {valid_release_types}"
+        )
+
+    # Validate release_type == "release" requires release_number
+    if release_type == ReleaseType.RELEASE.value and release_number is None:
+        raise ValueError(
+            "The 'release_number' parameter is required for 'release' release type."
+        )
+
+    # Validate start_date
+    if not file_validation.ImapFilePath.is_valid_date(start_date):
+        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+
+    # Validate end_date
+    if not file_validation.ImapFilePath.is_valid_date(end_date):
+        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+
+    # Handle exclude file upload if provided
+    if exclude_file is not None:
+        # Upload the exclude file using the standard upload function
+        upload(exclude_file)
+        logger.info("Exclude file uploaded successfully")
+
+    # Handle manifest file upload if provided
+    if manifest_file is not None:
+        # Upload the manifest file using the standard upload function
+        upload(manifest_file)
+        logger.info("Manifest file uploaded successfully")
+
+    # Build release parameters
+    release_params = {
+        "instrument": instrument,
+        "release_type": release_type,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+
+    # Add release_number only if release_type is 'release'
+    if release_type == ReleaseType.RELEASE.value:
+        release_params["release_number"] = release_number
+
+    # Add optional parameters if provided
+    if exclude_file is not None:
+        # API only needs the filename, not the full path
+        release_params["exclude_file"] = os.path.basename(exclude_file)
+
+    if manifest_file is not None:
+        # API only needs the filename, not the full path
+        release_params["manifest_file"] = os.path.basename(manifest_file)
+
+    logger.debug("Input release parameters: %s", release_params)
+
+    url = f"{_get_base_url()}/release"
+    request = requests.Request(method="GET", url=url, params=release_params).prepare()
+
+    logger.info("Submitting release request to %s with params %s", url, release_params)
+    with _make_request(request) as response:
+        result = response.json()
+        logger.debug("Received JSON: %s", result)
+
+    logger.info(
+        f"Release request submitted successfully for {instrument} "
+        f"from {start_date} to {end_date}."
+    )
