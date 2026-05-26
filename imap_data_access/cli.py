@@ -357,7 +357,7 @@ def _release_parser(args: argparse.Namespace):
         release_number=getattr(args, "release_number", None),
         table=getattr(args, "table", None),
         descriptor=getattr(args, "descriptor", None),
-        manifest_file=getattr(args, "manifest_file", None),
+        exception_list_file=getattr(args, "exception_list", None),
     )
     print("Successfully submitted release request to the IMAP SDC.")
 
@@ -695,6 +695,7 @@ def main():
     parser_release = subparsers.add_parser(
         "release",
         help=release_help,
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser_release.add_argument(
         "--instrument",
@@ -723,7 +724,18 @@ def main():
         type=str,
         required=True,
         metavar="ReleaseType",
-        help="Type of release: 'release', 'unrelease', 'early-release'",
+        help=(
+            "Type of release:\n"
+            "- 'release': IMAP mission-wide public release. By default, all\n"
+            "  files are released unless specified in the --exception-list to\n"
+            "  be withheld.\n"
+            "- 'early-release': Early release of selected files approved by\n"
+            "  both instrument and project. Use --exception-list to specify\n"
+            "  files to release early.\n"
+            "- 'unrelease': Unrelease previously released files due to\n"
+            "  various causes and reasons. Use --exception-list to specify\n"
+            "  files to unrelease."
+        ),
         choices=[e.value for e in ReleaseType],
     )
     parser_release.add_argument(
@@ -735,14 +747,17 @@ def main():
     )
 
     parser_release.add_argument(
-        "--manifest-file",
+        "--exception-list",
         type=str,
         required=False,
         metavar="PATH",
         help=(
-            "Path to manifest file containing list of files to "
-            "withhold release during mission wide release or "
-            "early-release or unrelease."
+            "Path to exception list file containing list of files to exclude\n"
+            "or include based on release type:\n"
+            "- For 'release': files to withhold from public release\n"
+            "- For 'early-release': files to release early\n"
+            "- For 'unrelease': files to unrelease from previously released\n"
+            "  data"
         ),
     )
     parser_release.set_defaults(func=_release_parser)

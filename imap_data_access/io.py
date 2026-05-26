@@ -540,7 +540,7 @@ def release(
     start_date: str,
     end_date: str,
     release_number: Optional[int] = None,
-    manifest_file: Optional[str] = None,
+    exception_list_file: Optional[str] = None,
 ) -> None:
     """Submit a release file to the data archive API.
 
@@ -549,19 +549,26 @@ def release(
     instrument : str
         Instrument name (e.g., ``mag``, ``swe``)
     release_type : str
-        Type of release: 'release' (mission-wide public release), 'early-release'
-        (selected files for early release), 'unrelease' (selected withhold files)
+        Type of release:
+        - 'release': IMAP mission-wide public release. By default, all files
+          are released unless specified in the exception list to be withheld.
+        - 'early-release': Early release of selected files approved by both
+          instrument and project.
+        - 'unrelease': Unrelease previously released files due to various
+          causes and reasons.
     start_date : str
         Start date in YYYYMMDD format
     end_date : str
         End date in YYYYMMDD format
     release_number : int, optional
         Release number. Defaults to ``None``. Required if release_type is
-        'release' and should be an integer value
-    manifest_file : str, optional
-        Path to manifest file containing list of files to
-        withhold release during mission wide release or
-        early-release or unrelease.
+        'release' and should be an integer value.
+    exception_list_file : str, optional
+        Path to exception list file containing list of files to exclude or include
+        based on release type:
+        - For 'release': files to withhold from public release
+        - For 'early-release': files to release early
+        - For 'unrelease': files to unrelease from previously released data
 
     Raises
     ------
@@ -605,11 +612,11 @@ def release(
     if not file_validation.ImapFilePath.is_valid_date(end_date):
         raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
 
-    # Handle manifest file upload if provided
-    if manifest_file is not None:
-        # Upload the manifest file using the standard upload function
-        upload(manifest_file)
-        logger.info("Manifest file uploaded successfully")
+    # Handle exception list file upload if provided
+    if exception_list_file is not None:
+        # Upload the exception list file using the standard upload function
+        upload(exception_list_file)
+        logger.info("Exception list file uploaded successfully")
 
     # Build release parameters
     release_params = {
@@ -624,9 +631,9 @@ def release(
         release_params["release_number"] = release_number
 
     # Add optional parameters if provided
-    if manifest_file is not None:
+    if exception_list_file is not None:
         # API only needs the filename, not the full path
-        release_params["manifest_file"] = os.path.basename(manifest_file)
+        release_params["exception_list_file"] = os.path.basename(exception_list_file)
 
     logger.debug("Input release parameters: %s", release_params)
 
