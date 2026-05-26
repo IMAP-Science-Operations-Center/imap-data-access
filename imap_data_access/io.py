@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+import os
 from pathlib import Path
 from typing import Optional, Union
 
@@ -539,8 +540,7 @@ def release(
     start_date: str,
     end_date: str,
     release_number: Optional[int] = None,
-    table: Optional[str] = None,
-    descriptor: Optional[str] = None,
+    manifest_file: Optional[str] = None,
 ) -> None:
     """Submit a release file to the data archive API.
 
@@ -549,7 +549,8 @@ def release(
     instrument : str
         Instrument name (e.g., ``mag``, ``swe``)
     release_type : str
-        Type of release (e.g., ``release``, ``early-release``, ``unrelease``)
+        Type of release: 'release' (mission-wide public release), 'early-release'
+        (selected files for early release), 'unrelease' (selected withhold files)
     start_date : str
         Start date in YYYYMMDD format
     end_date : str
@@ -557,10 +558,9 @@ def release(
     release_number : int, optional
         Release number. Defaults to ``None``. Required if release_type is
         'release' and should be an integer value
-    table : str, optional
-        Table for the release (``ancillary`` or ``science``). Optional.
-    descriptor : str, optional
-        Instrument data descriptor (Eg. ``burt-magi``, ``hk``)
+    manifest_file : str, optional
+        Path to manifest file containing list of files for early-release or unrelease.
+        Required for 'early-release' and 'unrelease' release types
 
     Raises
     ------
@@ -604,12 +604,18 @@ def release(
     if not file_validation.ImapFilePath.is_valid_date(end_date):
         raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
 
-    # Validate table if provided
-    if table is not None and table not in imap_data_access.VALID_TABLES:
-        raise ValueError(
-            "Not a valid table, please choose from "
-            + ", ".join(imap_data_access.VALID_TABLES)
-        )
+    # Validate manifest file requirement based on release type
+    if release_type in ["early-release", "unrelease"]:
+        if manifest_file is None:
+            raise ValueError(
+                f"--manifest-file is required for '{release_type}' release type"
+            )
+
+    # Handle manifest file upload if provided
+    if manifest_file is not None:
+        # Upload the manifest file using the standard upload function
+        upload(manifest_file)
+        logger.info("Manifest file uploaded successfully")
 
     # Build release parameters
     release_params = {
@@ -618,15 +624,15 @@ def release(
         "start_date": start_date,
         "end_date": end_date,
     }
+
     # Add release_number only if release_type is 'release'
     if release_type == ReleaseType.RELEASE.value:
         release_params["release_number"] = release_number
 
     # Add optional parameters if provided
-    if table is not None:
-        release_params["table"] = table
-    if descriptor is not None:
-        release_params["descriptor"] = descriptor
+    if manifest_file is not None:
+        # API only needs the filename, not the full path
+        release_params["manifest_file_name"] = os.path.basename(manifest_file)
 
     logger.debug("Input release parameters: %s", release_params)
 

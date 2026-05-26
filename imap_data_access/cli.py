@@ -357,6 +357,7 @@ def _release_parser(args: argparse.Namespace):
         release_number=getattr(args, "release_number", None),
         table=getattr(args, "table", None),
         descriptor=getattr(args, "descriptor", None),
+        manifest_file_path=getattr(args, "manifest_file", None),
     )
     print("Successfully submitted release request to the IMAP SDC.")
 
@@ -732,22 +733,18 @@ def main():
         metavar="NUMBER",
         help="Release number (required only when --release-type is 'release'). ",
     )
+
     parser_release.add_argument(
-        "--table",
+        "--manifest-file",
         type=str,
         required=False,
+        metavar="PATH",
         help=(
-            "Table for the release (ancillary or science). Optional. "
-            "Default to science."
+            "Path to manifest file containing list of files. 'release' type"
+            " is mission wide release and doesn't require a manifest file. "
+            "Required for 'early-release' and 'unrelease' release types. "
+            "Be sure manifest file follows release filename convention."
         ),
-        choices=["ancillary", "science"],
-    )
-    parser_release.add_argument(
-        "--descriptor",
-        type=str,
-        required=False,
-        metavar="str",
-        help="Instrument data descriptor (optional). E.g. 'burt-magi', 'hk', etc.)",
     )
     parser_release.set_defaults(func=_release_parser)
 
