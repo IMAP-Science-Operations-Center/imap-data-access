@@ -348,16 +348,15 @@ def _release_parser(args: argparse.Namespace):
     args : argparse.Namespace
         An object containing the parsed arguments and their values
     """
-    # Call release with all arguments; validation happens in release()
+    # All validation is now handled in io.py
     release(
         instrument=args.instrument,
         release_type=args.release_type,
         start_date=args.start_date,
         end_date=args.end_date,
-        release_number=getattr(args, "release_number", None),
-        table=getattr(args, "table", None),
-        descriptor=getattr(args, "descriptor", None),
-        exception_list_file=getattr(args, "exception_list", None),
+        release_number=args.release_number,
+        exclude_file=args.exclude_file,
+        manifest_file=args.manifest_file,
     )
     print("Successfully submitted release request to the IMAP SDC.")
 
@@ -727,13 +726,13 @@ def main():
         help=(
             "Type of release:\n"
             "- 'release': IMAP mission-wide public release. By default, all\n"
-            "  files are released unless specified in the --exception-list to\n"
+            "  files are released unless specified in the --exclude-file to\n"
             "  be withheld.\n"
             "- 'early-release': Early release of selected files approved by\n"
-            "  both instrument and project. Use --exception-list to specify\n"
+            "  both instrument and project. Use --manifest-file to specify\n"
             "  files to release early.\n"
             "- 'unrelease': Unrelease previously released files due to\n"
-            "  various causes and reasons. Use --exception-list to specify\n"
+            "  various causes and reasons. Use --manifest-file to specify\n"
             "  files to unrelease."
         ),
         choices=[e.value for e in ReleaseType],
@@ -745,19 +744,34 @@ def main():
         metavar="NUMBER",
         help="Release number (required only when --release-type is 'release'). ",
     )
-
     parser_release.add_argument(
-        "--exception-list",
+        "--exclude-file",
         type=str,
         required=False,
         metavar="PATH",
+        default=None,
         help=(
-            "Path to exception list file containing list of files to exclude\n"
-            "or include based on release type:\n"
-            "- For 'release': files to withhold from public release\n"
-            "- For 'early-release': files to release early\n"
-            "- For 'unrelease': files to unrelease from previously released\n"
-            "  data"
+            "Path to a file listing files to exclude from public release.\n"
+            "Used for 'release' type to specify files to withhold.\n"
+            "File name should follow: \n  imap_<instrument>_withhold-data-"
+            "release-<###>_<start_date>_<end_date>_<version>.txt\n"
+        ),
+    )
+    parser_release.add_argument(
+        "--manifest-file",
+        type=str,
+        required=False,
+        metavar="PATH",
+        default=None,
+        help=(
+            "Path to a file listing files to apply action to in 'early-release'"
+            " or\n 'unrelease' types. This file serves as the manifest for files\n"
+            "to be released early or unreleased.\n"
+            "File name should follow:\n"
+            "  - early-release: "
+            "imap_<instrument>_early-release_<start_date>_<end_date>_<version>.txt\n"
+            "  - unrelease: "
+            "imap_<instrument>_unrelease_<start_date>_<end_date>_<version>.txt\n"
         ),
     )
     parser_release.set_defaults(func=_release_parser)
