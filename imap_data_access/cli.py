@@ -699,7 +699,7 @@ def main():
     parser_release.add_argument(
         "--instrument",
         type=str,
-        required=True,
+        required=False,
         metavar="INSTRUMENT",
         help="Name of the instrument (e.g., mag, swe, lo, codice)",
         choices=imap_data_access.VALID_INSTRUMENTS,
@@ -707,14 +707,14 @@ def main():
     parser_release.add_argument(
         "--start-date",
         type=str,
-        required=True,
+        required=False,
         metavar="YYYYMMDD",
         help="Start date for the release",
     )
     parser_release.add_argument(
         "--end-date",
         type=str,
-        required=True,
+        required=False,
         metavar="YYYYMMDD",
         help="End date for the release",
     )
@@ -752,7 +752,7 @@ def main():
         default=None,
         help=(
             "Path to a file listing files to exclude from public release.\n"
-            "Used for 'release' type to specify files to withhold.\n"
+            "\nUsed for 'release' type to specify files to withhold.\n"
             "File name should follow: \n  imap_<instrument>_withhold-data-"
             "release-<###>_<start_date>_<end_date>_<version>.txt\n"
         ),
@@ -765,7 +765,9 @@ def main():
         default=None,
         help=(
             "Path to a file listing files to apply action to in 'early-release'"
-            " or\n 'unrelease' types. This file serves as the manifest for files\n"
+            " or\n 'unrelease' types. (required for 'early-release' and "
+            "'unrelease').\n\n"
+            "This file serves as the manifest for files\n"
             "to be released early or unreleased.\n"
             "File name should follow:\n"
             "  - early-release: "

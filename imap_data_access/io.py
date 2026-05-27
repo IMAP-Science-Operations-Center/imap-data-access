@@ -535,10 +535,10 @@ def upload(file_path: Union[Path, str]) -> None:
 
 def release(
     *,
-    instrument: str,
-    release_type: str,
-    start_date: str,
-    end_date: str,
+    instrument: Optional[str] = None,
+    release_type: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     release_number: Optional[int] = None,
     exclude_file: Optional[Union[Path, str]] = None,
     manifest_file: Optional[Union[Path, str]] = None,
@@ -547,9 +547,9 @@ def release(
 
     Parameters
     ----------
-    instrument : str
+    instrument : str, optional
         Instrument name (e.g., ``mag``, ``swe``)
-    release_type : str
+    release_type : str, optional
         Type of release:
         - 'release': IMAP mission-wide public release. By default, all files
           are released unless specified in the exception list to be withheld.
@@ -557,9 +557,9 @@ def release(
           instrument and project.
         - 'unrelease': Unrelease previously released files due to various
           causes and reasons.
-    start_date : str
+    start_date : str, optional
         Start date in YYYYMMDD format
-    end_date : str
+    end_date : str, optional
         End date in YYYYMMDD format
     release_number : int, optional
         Release number. Defaults to ``None``. Required if release_type is
@@ -584,13 +584,6 @@ def release(
             "Set the IMAP_API_KEY environment variable or use --api-key argument."
         )
 
-    # Validate instrument
-    if instrument not in imap_data_access.VALID_INSTRUMENTS:
-        raise ValueError(
-            "Not a valid instrument, please choose from "
-            + ", ".join(imap_data_access.VALID_INSTRUMENTS)
-        )
-
     # Validate release_type
     valid_release_types = [e.value for e in ReleaseType]
     if release_type not in valid_release_types:
@@ -598,19 +591,36 @@ def release(
             f"Not a valid release type, please choose from {valid_release_types}"
         )
 
-    # Validate release_type == "release" requires release_number
-    if release_type == ReleaseType.RELEASE.value and release_number is None:
+    if release_type == ReleaseType.RELEASE.value:
+        # Validate required inputs for 'release' type
+        if instrument not in imap_data_access.VALID_INSTRUMENTS:
+            raise ValueError(
+                "Not a valid instrument, please choose from "
+                + ", ".join(imap_data_access.VALID_INSTRUMENTS)
+            )
+
+        # Validate release_type == "release" requires release_number
+        if release_type == ReleaseType.RELEASE.value and release_number is None:
+            raise ValueError(
+                "The 'release_number' parameter is required for 'release' release type."
+            )
+
+        # Validate start_date
+        if not file_validation.ImapFilePath.is_valid_date(start_date):
+            raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
+
+        # Validate end_date
+        if not file_validation.ImapFilePath.is_valid_date(end_date):
+            raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
+
+    if (
+        release_type in [ReleaseType.EARLY_RELEASE.value, ReleaseType.UNRELEASE.value]
+        and manifest_file is None
+    ):
         raise ValueError(
-            "The 'release_number' parameter is required for 'release' release type."
+            "The 'manifest_file' parameter is required for "
+            f"'{release_type}' release type."
         )
-
-    # Validate start_date
-    if not file_validation.ImapFilePath.is_valid_date(start_date):
-        raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
-
-    # Validate end_date
-    if not file_validation.ImapFilePath.is_valid_date(end_date):
-        raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
 
     # Handle exclude file upload if provided
     if exclude_file is not None:
