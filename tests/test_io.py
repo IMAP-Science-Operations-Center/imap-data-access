@@ -257,6 +257,190 @@ def test_query(mock_send_request, query_params: dict):
     assert called_url == expected_url_encoded
 
 
+glows_l3e_hi_repoint1 = {
+    "instrument": "glows",
+    "data_level": "l3e",
+    "descriptor": "survival-probability-hi-45",
+    "version": "v001",
+    "start_date": "20250101",
+    "repointing": 1,
+}
+
+glows_l3e_hi_repoint2_v1 = {
+    "instrument": "glows",
+    "data_level": "l3e",
+    "descriptor": "survival-probability-hi-45",
+    "version": "v001",
+    "start_date": "20250101",
+    "repointing": 2,
+}
+
+glows_l3e_hi_repoint2_v2 = {
+    "instrument": "glows",
+    "data_level": "l3e",
+    "descriptor": "survival-probability-hi-45",
+    "version": "v002",
+    "start_date": "20250101",
+    "repointing": 2,
+}
+
+swapi_l3b_day1_v2 = {
+    "instrument": "swapi",
+    "data_level": "l3b",
+    "descriptor": "combined",
+    "version": "v002",
+    "start_date": "20250101",
+    "repointing": None,
+}
+swapi_l3b_day2_v2 = {
+    "instrument": "swapi",
+    "data_level": "l3b",
+    "descriptor": "combined",
+    "version": "v002",
+    "start_date": "20250102",
+    "repointing": None,
+}
+swapi_l3b_day2_v3 = {
+    "instrument": "swapi",
+    "data_level": "l3b",
+    "descriptor": "combined",
+    "version": "v003",
+    "start_date": "20250102",
+    "repointing": None,
+}
+
+hi_l1b_45_day1_v1 = {
+    "instrument": "hi",
+    "data_level": "l1b",
+    "descriptor": "45pset",
+    "version": "v001",
+    "start_date": "20250101",
+    "repointing": None,
+}
+
+lo_l1c_45_day1_v1 = {
+    "instrument": "lo",
+    "data_level": "l1c",
+    "descriptor": "45pset",
+    "version": "v001",
+    "start_date": "20250101",
+    "repointing": None,
+}
+
+hi_l1c_45_day1_v1 = {
+    "instrument": "hi",
+    "data_level": "l1c",
+    "descriptor": "45pset",
+    "version": "v001",
+    "start_date": "20250101",
+    "repointing": None,
+}
+
+hi_l1c_90_day1_v1 = {
+    "instrument": "hi",
+    "data_level": "l1c",
+    "descriptor": "90pset",
+    "version": "v001",
+    "start_date": "20250101",
+    "repointing": None,
+}
+
+codice_ancillary_day1_v1 = {
+    "instrument": "codice",
+    "descriptor": "geometric-factor",
+    "version": "v001",
+    "start_date": "20250101",
+}
+
+codice_ancillary_day1_v2 = {
+    "instrument": "codice",
+    "descriptor": "geometric-factor",
+    "version": "v002",
+    "start_date": "20250101",
+}
+
+codice_ancillary_day2_v1 = {
+    "instrument": "codice",
+    "descriptor": "geometric-factor",
+    "version": "v001",
+    "start_date": "20250102",
+}
+
+
+@pytest.mark.parametrize(
+    ("query_params", "query_results", "expected_filtered_results"),
+    [
+        (
+            {"instrument": "glows", "data_level": "l3e", "version": "latest"},
+            [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v1, glows_l3e_hi_repoint2_v2],
+            [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v2],
+        ),
+        (
+            {"instrument": "glows", "data_level": "l3e"},
+            [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v1, glows_l3e_hi_repoint2_v2],
+            [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v1, glows_l3e_hi_repoint2_v2],
+        ),
+        (
+            {"instrument": "swapi", "data_level": "l3b", "version": "latest"},
+            [swapi_l3b_day1_v2, swapi_l3b_day2_v2, swapi_l3b_day2_v3],
+            [swapi_l3b_day1_v2, swapi_l3b_day2_v3],
+        ),
+        (
+            {"start_date": "20250101", "end_date": "20250103", "version": "latest"},
+            [
+                hi_l1b_45_day1_v1,
+                lo_l1c_45_day1_v1,
+                hi_l1c_45_day1_v1,
+                hi_l1c_90_day1_v1,
+            ],
+            [
+                hi_l1b_45_day1_v1,
+                lo_l1c_45_day1_v1,
+                hi_l1c_45_day1_v1,
+                hi_l1c_90_day1_v1,
+            ],
+        ),
+        (
+            {"table": "ancillary", "instrument": "codice", "version": "latest"},
+            [
+                codice_ancillary_day1_v1,
+                codice_ancillary_day1_v2,
+                codice_ancillary_day2_v1,
+            ],
+            [
+                codice_ancillary_day1_v2,
+                codice_ancillary_day2_v1,
+            ],
+        ),
+    ],
+)
+def test_query_with_version_latest(
+    mock_send_request,
+    query_params: dict,
+    query_results: list[dict],
+    expected_filtered_results: list[dict],
+):
+    """Test Query version latest filtering.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for requests.Session
+    query_params : dict
+        Dictionary of key/value pairs that set the query parameters
+    query_results : list[dict]
+        Result returned by query API call
+    expected_filtered_results : list[dict]
+        The expected results after latest version filtering
+    """
+    mock_response = MagicMock()
+    mock_response.json.return_value = query_results
+    mock_send_request.return_value = mock_response
+
+    response = imap_data_access.query(**query_params)
+    assert response == expected_filtered_results
+
+
 def test_query_no_params(mock_send_request):
     """Test a call to the Query API that has no parameters.
     Parameters
