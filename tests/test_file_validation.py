@@ -827,3 +827,26 @@ def test_version_sorting():
     assert legacy_version < version2 < version3
 
     assert Version.from_version("xyz", raise_error=False) is None
+
+
+def test_l1const_filename():
+    """Test new L1 constellation data filename parsing."""
+    filename = "imap_l1const_l2_common_20251102_v008.cdf"
+    file_path = ScienceFilePath(filename)
+    assert file_path.instrument == "l1const"
+    assert file_path.data_level == "l2"
+    assert file_path.descriptor == "common"
+    assert file_path.start_date == "20251102"
+    assert file_path.version == "v008"
+    assert file_path.extension == "cdf"
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/l1const/l2/2025/11/imap_l1const_l2_common_20251102_v008.cdf"
+    )
+    assert file_path.construct_path() == expected_output
+
+    quicklook_file_path = QuicklookFilePath(filename.replace(".cdf", ".png"))
+    # Test quicklook path construction for l1const file
+    expected_quicklook_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/quicklook/l1const/l2/2025/11/imap_l1const_l2_common_20251102_v008.png"
+    )
+    assert quicklook_file_path.construct_path() == expected_quicklook_output
