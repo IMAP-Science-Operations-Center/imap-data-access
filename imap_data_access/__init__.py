@@ -28,6 +28,7 @@ from imap_data_access.processing_input import (
     SPICEInput,
     SpinInput,
 )
+from imap_data_access.utils import ImapProductCatalog
 
 __all__ = [
     "VALID_DATALEVELS",
@@ -37,6 +38,7 @@ __all__ = [
     "CadenceFilePath",
     "DependencyFilePath",
     "ImapFilePath",
+    "ImapProductCatalog",
     "ProcessingInputCollection",
     "QuicklookFilePath",
     "ReleaseFilePath",
@@ -101,26 +103,7 @@ VALID_INSTRUMENTS = {
     "ultra",
 }
 
-VALID_DATALEVELS = {
-    "l0",
-    "l1",
-    "l1a",
-    "l1b",
-    "l1c",
-    "l1ca",
-    "l1cb",
-    "l1d",
-    "l2",
-    "l2a",
-    "l2b",
-    "l2c",
-    "l3",
-    "l3a",
-    "l3b",
-    "l3c",
-    "l3d",
-    "l3e",
-}
+VALID_DATALEVELS = ImapProductCatalog().data_levels()
 
 VALID_TABLES = {
     "science",
