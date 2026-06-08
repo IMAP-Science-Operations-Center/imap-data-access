@@ -127,6 +127,12 @@ class ScienceFilePath(ImapFilePath):
     FILENAME_CONVENTION = (
         "<mission>_<instrument>_<datalevel>_<descriptor>_"
         "<startdate>(-<repointing>)_<version>.<extension>"
+        " where version is vRRR.MMM (legacy vXXX is deprecated but supported)"
+    )
+    NEW_VERSION_PATTERN: typing.ClassVar[str] = r"v\d{3}\.\d{3}"
+    DEPRECATED_VERSION_PATTERN: typing.ClassVar[str] = r"v\d{3}"
+    VALID_VERSION_PATTERN: typing.ClassVar[str] = (
+        rf"(?:{NEW_VERSION_PATTERN}|{DEPRECATED_VERSION_PATTERN})"
     )
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
     _dir_prefix = "imap"
@@ -158,7 +164,8 @@ class ScienceFilePath(ImapFilePath):
             repointing the data is from, format: repointXXXXX
         <cr>: This is an optional field describing the Carrington rotation.
             format: crXXXXX.
-        <version>: This stores the data version for this product, format: vXXX
+        <version>: This stores the data version for this product, format: vRRR.MMM.
+            Legacy vXXX is accepted for backward compatibility but deprecated.
 
         Parameters
         ----------
@@ -290,14 +297,6 @@ class ScienceFilePath(ImapFilePath):
                 f"Invalid filename, missing attribute. Filename "
                 f"convention is {ScienceFilePath.FILENAME_CONVENTION} \n"
             )
-        # TODO remove this check once version is updated from vXXX -> vRRR.MMM and add
-        #   self.release_number and self.data_version to the list above.
-        if "." in self.version and (
-            self.release_number is None or self.data_version is None
-        ):
-            error_message = (
-                "Invalid version, missing attribute. Version convention is vRRR.MMM"
-            )
         if self.mission != "imap":
             error_message += f"Invalid mission {self.mission}. Please use imap \n"
 
@@ -315,12 +314,10 @@ class ScienceFilePath(ImapFilePath):
             )
         if not self.is_valid_date(self.start_date):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
-        # TODO update pattern to be r"^(v\d{3}\.\d{3})$" once versions are
-        #  updated from vXXX to vRRR.MMM
-        if not bool(re.match(r"^(v\d{3}|v\d{3}\.\d{3})$", self.version)):
+        if not ScienceFilePath.is_valid_version(self.version):
             error_message += (
                 "Invalid version format. Please use vRRR.MMM format"
-                " (vXXX format is deprecated).\n"
+                " (vXXX format is deprecated but supported for compatibility).\n"
             )
         if self.repointing and not isinstance(self.repointing, int):
             error_message += "The repointing number should be an integer.\n"
@@ -384,9 +381,7 @@ class ScienceFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             # Optional repointing/CR field
             r"(-(?P<interval_type>(?:repoint|cr))(?P<interval>\d{5}))?"
-            # TODO update pattern to be r"_(?P<version>v\d{3}\.\d{3})" once versions are
-            #  updated from vXXX to vRRR.MMM
-            r"_(?P<version>v\d{3}|v\d{3}\.\d{3})"
+            rf"_(?P<version>{ScienceFilePath.VALID_VERSION_PATTERN})"
             r"\.(?P<extension>[^.]+)$"
         )
         if isinstance(filename, Path):
@@ -466,20 +461,13 @@ class ScienceFilePath(ImapFilePath):
 
     @staticmethod
     def is_valid_version(input_version: str) -> bool:
-        """Check input version string is in valid format 'vXXX' or 'latest'.
+        """Check input version string is valid for science files.
 
-        Parameters
-        ----------
-        input_version : str
-            Version to be checked.
-
-        Returns
-        -------
-        bool
-            Whether input version is valid or not.
+        A valid science version is ``vRRR.MMM`` or legacy ``vXXX``. The special value
+        ``latest`` is also accepted for query-style inputs.
         """
-        return input_version == "latest" or re.fullmatch(
-            r"(v\d{3}|v\d{3}\.\d{3})", input_version
+        return input_version == "latest" or bool(
+            re.fullmatch(ScienceFilePath.VALID_VERSION_PATTERN, input_version)
         )
 
 

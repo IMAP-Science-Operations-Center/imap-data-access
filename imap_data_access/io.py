@@ -246,7 +246,7 @@ def _version_sort_key(version) -> tuple[int, int]:
     components = version.split(".")
     if len(components) == 1:
         # Deprecated version format vXXX.
-        return 0, components[0]
+        return 0, int(components[0][1:])
     elif len(components) == 2:
         # Version format vRRR.MMM
         return int(components[0][1:]), int(components[1])
