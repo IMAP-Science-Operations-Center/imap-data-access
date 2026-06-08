@@ -67,6 +67,7 @@ def test_extract_filename_components():
     )
 
 
+# TODO remove this test after file versions are updated from vXXX to vRRR.MMM
 def test_extract_filename_components_deprecated_version_format():
     """Tests the ``extract_filename_components` with old filename convention."""
     valid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
