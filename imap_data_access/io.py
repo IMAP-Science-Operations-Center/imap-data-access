@@ -563,7 +563,7 @@ def release(
         End date in YYYYMMDD format
     release_number : int, optional
         Release number. Defaults to ``None``. Required if release_type is
-        'release' and should be an integer value.
+        'release' or 'reprocess' and should be an integer value.
     exclude_file : str, optional
         Path to exclude file containing list of files to exclude from public release.
     manifest_file : str, optional
@@ -622,6 +622,10 @@ def release(
             f"'{release_type}' release type."
         )
 
+    if release_type == ReleaseType.REPROCESS.value and release_number is None:
+        raise ValueError(
+            "The 'release_number' parameter is required for 'reprocess' release type."
+        )
     # Handle exclude file upload if provided
     if exclude_file is not None:
         # Upload the exclude file using the standard upload function
@@ -642,8 +646,8 @@ def release(
         "end_date": end_date,
     }
 
-    # Add release_number only if release_type is 'release'
-    if release_type == ReleaseType.RELEASE.value:
+    # Add release_number only if release_type is 'release' or 'reprocess'
+    if release_type in {ReleaseType.RELEASE.value, ReleaseType.REPROCESS.value}:
         release_params["release_number"] = release_number
 
     # Add optional parameters if provided
