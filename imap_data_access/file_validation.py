@@ -183,6 +183,8 @@ class ScienceFilePath(ImapFilePath):
         self.repointing = split_filename["repointing"]
         self.cr = split_filename["cr"]
         self.version = split_filename["version"]
+        self.release_number = split_filename["release_number"]
+        self.data_version = split_filename["data_version"]
         self.extension = split_filename["extension"]
 
         self.error_message = self.validate_filename()
@@ -288,6 +290,12 @@ class ScienceFilePath(ImapFilePath):
                 f"Invalid filename, missing attribute. Filename "
                 f"convention is {ScienceFilePath.FILENAME_CONVENTION} \n"
             )
+        if "." in self.version and (
+            self.release_number is None or self.data_version is None
+        ):
+            error_message = (
+                "Invalid version, missing attribute. Version convention is vRRR.MMM"
+            )
         if self.mission != "imap":
             error_message += f"Invalid mission {self.mission}. Please use imap \n"
 
@@ -305,8 +313,11 @@ class ScienceFilePath(ImapFilePath):
             )
         if not self.is_valid_date(self.start_date):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
-        if not bool(re.match(r"^v\d{3}$", self.version)):
-            error_message += "Invalid version format. Please use vXXX format. \n"
+        if not bool(re.match(r"^(v\d{3}|v\d{3}\.\d{3})$", self.version)):
+            error_message += (
+                "Invalid version format. Please use vRRR.MMM format"
+                " (vXXX format is deprecated).\n"
+            )
         if self.repointing and not isinstance(self.repointing, int):
             error_message += "The repointing number should be an integer.\n"
 
@@ -369,7 +380,8 @@ class ScienceFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             # Optional repointing/CR field
             r"(-(?P<interval_type>(?:repoint|cr))(?P<interval>\d{5}))?"
-            r"_(?P<version>v\d{3})"
+            # Handle version as vMMM or XRRR.MMM
+            r"_(?P<version>v\d{3}|v\d{3}\.\d{3})"
             r"\.(?P<extension>[^.]+)$"
         )
         if isinstance(filename, Path):
@@ -398,6 +410,17 @@ class ScienceFilePath(ImapFilePath):
                 components["repointing"] = interval_number
 
         del components["interval_type"]
+
+        # Initialize version components
+        components["release_number"] = None
+        components["data_version"] = None
+        version = components["version"]
+        # If version is in format vRRR.MMM vs vXXX, extract release_number (RRR) and
+        # data_version (MMM)
+        if "." in version:
+            release_number, data_version = version.split(".")
+            components["release_number"] = int(release_number[1:])  # Remove the "v"
+            components["data_version"] = int(data_version)
 
         return components
 
@@ -436,20 +459,22 @@ class ScienceFilePath(ImapFilePath):
             return False
 
     @staticmethod
-    def is_valid_cr(input_cr: str) -> bool:
-        """Check input carrington rotation string is in valid format 'crXXXXX'.
+    def is_valid_version(input_version: str) -> bool:
+        """Check input version string is in valid format 'vXXX' or 'latest'.
 
         Parameters
         ----------
-        input_cr : str
-            Carrington rotation to be checked.
+        input_version : str
+            Version to be checked.
 
         Returns
         -------
         bool
-            Whether input carrington rotation is valid or not.
+            Whether input version is valid or not.
         """
-        return re.fullmatch(r"cr\d{5}", str(input_cr))
+        return input_version == "latest" or re.fullmatch(
+            r"(v\d{3}|v\d{3}\.\d{3})", input_version
+        )
 
 
 # Transform the suffix to the directory structure we are using
