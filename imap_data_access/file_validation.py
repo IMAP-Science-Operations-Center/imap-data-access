@@ -290,6 +290,8 @@ class ScienceFilePath(ImapFilePath):
                 f"Invalid filename, missing attribute. Filename "
                 f"convention is {ScienceFilePath.FILENAME_CONVENTION} \n"
             )
+        # TODO remove this check once version is updated from vXXX -> vRRR.MMM and add
+        #   self.release_number and self.data_version to the list above.
         if "." in self.version and (
             self.release_number is None or self.data_version is None
         ):
@@ -313,6 +315,8 @@ class ScienceFilePath(ImapFilePath):
             )
         if not self.is_valid_date(self.start_date):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
+        # TODO update pattern to be r"^(v\d{3}\.\d{3})$" once versions are
+        #  updated from vXXX to vRRR.MMM
         if not bool(re.match(r"^(v\d{3}|v\d{3}\.\d{3})$", self.version)):
             error_message += (
                 "Invalid version format. Please use vRRR.MMM format"
@@ -380,7 +384,8 @@ class ScienceFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             # Optional repointing/CR field
             r"(-(?P<interval_type>(?:repoint|cr))(?P<interval>\d{5}))?"
-            # Handle version as vMMM or XRRR.MMM
+            # TODO update pattern to be r"_(?P<version>v\d{3}\.\d{3})" once versions are
+            #  updated from vXXX to vRRR.MMM
             r"_(?P<version>v\d{3}|v\d{3}\.\d{3})"
             r"\.(?P<extension>[^.]+)$"
         )
@@ -415,8 +420,9 @@ class ScienceFilePath(ImapFilePath):
         components["release_number"] = None
         components["data_version"] = None
         version = components["version"]
-        # If version is in format vRRR.MMM vs vXXX, extract release_number (RRR) and
-        # data_version (MMM)
+        # TODO update this logic to be more strict once versions are updated from
+        #  vXXX to vRRR.MMM. Right now, we are just checking if there's a "." in the
+        #  version to determine if it's in the new format or old format.
         if "." in version:
             release_number, data_version = version.split(".")
             components["release_number"] = int(release_number[1:])  # Remove the "v"
