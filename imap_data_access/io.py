@@ -201,7 +201,14 @@ def _validate_query_parameters(**kwargs) -> None:
                 ) from err
 
     # Check version make sure to include 'latest'
-    if version is not None and not file_validation.ImapFilePath.is_valid_version(
+    if table == "science":
+        if version is not None and not file_validation.ScienceFilePath.is_valid_version(
+            version
+        ):
+            raise ValueError(
+                "Not a valid version, use format 'vRRR.MMM' or 'vXXX' (deprecated)."
+            )
+    elif version is not None and not file_validation.ImapFilePath.is_valid_version(
         version
     ):
         raise ValueError("Not a valid version, use format 'vXXX'.")
@@ -219,6 +226,32 @@ def _validate_query_parameters(**kwargs) -> None:
             raise ValueError(
                 f"Not a valid extension for '{table}', choose from {valid_extensions}."
             )
+
+
+def _version_sort_key(version) -> tuple[int, int]:
+    """Return a tuple of release number and data version for sorting purposes.
+
+    Parameters
+    ----------
+    version : str
+            Version in the format ``vXXX`` or ``vRRR.MMM`` where RRR is the release
+            number and MMM is the data version. The deprecated format of ``vXXX`` will
+            be treated as release 0 with data version XXX.
+
+    Returns
+    -------
+    tuple
+        A tuple of (release number, data version) for sorting purposes.
+    """
+    components = version.split(".")
+    if len(components) == 1:
+        # Deprecated version format vXXX.
+        return 0, components[0]
+    elif len(components) == 2:
+        # Version format vRRR.MMM
+        return int(components[0][1:]), int(components[1])
+    else:
+        raise ValueError(f"Not a valid release number: {version}")
 
 
 def spice_query(
@@ -400,11 +433,12 @@ def query(
         latest_files = {}
         for item in items:
             key = get_key(item)
+            version_key = _version_sort_key(item["version"])
             if (key not in latest_files) or (
-                item["version"] > latest_files[key]["version"]
+                version_key > latest_files[key]["version_key"]
             ):
-                latest_files[key] = item
-        items = list(latest_files.values())
+                latest_files[key] = {"version_key":version_key, "items": items}
+        items = list(latest_files["items"].values())
     return items
 
 
