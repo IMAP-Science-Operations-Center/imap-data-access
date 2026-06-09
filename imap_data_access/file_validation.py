@@ -460,6 +460,22 @@ class ScienceFilePath(ImapFilePath):
             return False
 
     @staticmethod
+    def is_valid_cr(input_cr: str) -> bool:
+        """Check input carrington rotation string is in valid format 'crXXXXX'.
+
+        Parameters
+        ----------
+        input_cr : str
+            Carrington rotation to be checked.
+
+        Returns
+        -------
+        bool
+            Whether input carrington rotation is valid or not.
+        """
+        return re.fullmatch(r"cr\d{5}", str(input_cr))
+
+    @staticmethod
     def is_valid_version(input_version: str) -> bool:
         """Check input version string is valid for science files.
 
