@@ -387,22 +387,24 @@ def query(
 
     # if latest version was included in search then filter returned query for largest.
     if (version == "latest") and items:
-        latest_per_day = {}
-        for item in items:
-            day = item["start_date"]
-            version_num = int(item["version"][1:4])
-            # filter by highest version per day
-            if (day not in latest_per_day) or (
-                version_num > latest_per_day[day]["_version_num"]
-            ):
-                # add extra field to identify version number
-                latest_per_day[day] = {**item, "_version_num": version_num}
-        # remove the extra field
-        items = [
-            {k: version for k, version in val.items() if k != "_version_num"}
-            for val in latest_per_day.values()
-        ]
 
+        def get_key(file_entry):
+            return (
+                file_entry["instrument"],
+                file_entry["descriptor"],
+                file_entry.get("data_level"),
+                file_entry["start_date"],
+                file_entry.get("repointing"),
+            )
+
+        latest_files = {}
+        for item in items:
+            key = get_key(item)
+            if (key not in latest_files) or (
+                item["version"] > latest_files[key]["version"]
+            ):
+                latest_files[key] = item
+        items = list(latest_files.values())
     return items
 
 
