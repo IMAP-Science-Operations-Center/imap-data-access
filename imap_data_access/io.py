@@ -4,6 +4,7 @@ import contextlib
 import logging
 import os
 from pathlib import Path
+from time import sleep
 from typing import Optional, Union
 
 import requests
@@ -630,12 +631,18 @@ def release(
     if exclude_file is not None:
         # Upload the exclude file using the standard upload function
         upload(exclude_file)
+        # Sleep few seconds to ensure file is uploaded and indexed
+        # before the release API tries to access it.
+        sleep(10)
         logger.info("Exclude file uploaded successfully")
 
     # Handle manifest file upload if provided
     if manifest_file is not None:
         # Upload the manifest file using the standard upload function
         upload(manifest_file)
+        # Sleep few seconds to ensure file is uploaded and indexed
+        # before the release API tries to access it.
+        sleep(10)
         logger.info("Manifest file uploaded successfully")
 
     # Build release parameters
