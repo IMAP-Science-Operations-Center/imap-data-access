@@ -536,14 +536,14 @@ def upload(file_path: Union[Path, str]) -> None:
     logger.info("File %s uploaded successfully", file_path)
 
 
-def query_release_versions() -> list[dict]:
+def query_release_versions() -> dict:
     """Query the latest global release in the IMAP SDC.
 
     Returns
     -------
-    list[dict]
-        A one-item list containing the latest global release record.
-        The record is expected to contain ``release_number`` and ``updated_date``.
+    dict
+        Latest global release record containing ``release_number`` and
+        ``updated_date``.
     """
     url = f"{_get_base_url()}/global-release/latest"
     request = requests.Request(method="GET", url=url).prepare()
@@ -553,12 +553,11 @@ def query_release_versions() -> list[dict]:
         payload = response.json()
         logger.debug("Received JSON: %s", payload)
 
-    # Endpoint returns a single object; normalize to list for existing CLI/table logic.
-    if isinstance(payload, dict):
-        return [payload]
-    if isinstance(payload, list):
-        return payload
-    return []
+    if not isinstance(payload, dict):
+        raise IMAPDataAccessError(
+            "Unexpected response format for global release latest query."
+        )
+    return payload
 
 
 def release(

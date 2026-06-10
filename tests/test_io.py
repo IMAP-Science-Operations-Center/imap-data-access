@@ -984,7 +984,7 @@ def test_query_release_versions(mock_send_request):
     mock_send_request.return_value = mock_response
 
     results = imap_data_access.query_release_versions()
-    assert results == [RELEASE_VERSION_RECORD]
+    assert results == RELEASE_VERSION_RECORD
 
     mock_send_request.assert_called_once()
     sent_request = mock_send_request.call_args[0][0]
@@ -992,8 +992,8 @@ def test_query_release_versions(mock_send_request):
     assert sent_request.method == "GET"
 
 
-def test_query_release_versions_empty(mock_send_request):
-    """Test that query_release_versions handles an empty response.
+def test_query_release_versions_bad_payload(mock_send_request):
+    """Test that query_release_versions rejects non-dict responses.
 
     Parameters
     ----------
@@ -1004,6 +1004,8 @@ def test_query_release_versions_empty(mock_send_request):
     mock_response.json.return_value = []
     mock_send_request.return_value = mock_response
 
-    results = imap_data_access.query_release_versions()
-    assert results == []
+    with pytest.raises(
+        imap_data_access.io.IMAPDataAccessError, match="Unexpected response"
+    ):
+        imap_data_access.query_release_versions()
     mock_send_request.assert_called_once()

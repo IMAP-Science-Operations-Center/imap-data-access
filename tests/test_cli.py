@@ -60,44 +60,16 @@ RELEASE_VERSION_RECORD = {
 }
 
 
-def test_cli_release_query_table(capsys):
-    """Test that `release query` prints a table of release versions."""
+def test_cli_release_query(capsys):
+    """Test that `release query` prints the latest global release dict."""
     with mock.patch.object(sys, "argv", ["imap-data-access", "release", "query"]):
         with mock.patch(
             "imap_data_access.cli.query_release_versions",
-            return_value=[RELEASE_VERSION_RECORD],
+            return_value=RELEASE_VERSION_RECORD,
         ) as mock_qrv:
             cli.main()
 
     captured = capsys.readouterr()
-    assert "Found [1] global release records" in captured.out
-    assert "Release Number" in captured.out
-    assert "Updated Date" in captured.out
-    mock_qrv.assert_called_once_with()
-
-
-def test_cli_release_query_empty(capsys):
-    """Test that `release query` handles an empty response gracefully."""
-    with mock.patch.object(sys, "argv", ["imap-data-access", "release", "query"]):
-        with mock.patch("imap_data_access.cli.query_release_versions", return_value=[]):
-            cli.main()
-
-    captured = capsys.readouterr()
-    assert "Found [0] global release records" in captured.out
-
-
-def test_cli_release_query_json(capsys):
-    """Test that `release query --output-format json` prints raw JSON."""
-    with mock.patch.object(
-        sys,
-        "argv",
-        ["imap-data-access", "release", "query", "--output-format", "json"],
-    ):
-        with mock.patch(
-            "imap_data_access.cli.query_release_versions",
-            return_value=[RELEASE_VERSION_RECORD],
-        ):
-            cli.main()
-
-    captured = capsys.readouterr()
     assert "release_number" in captured.out
+    assert "updated_date" in captured.out
+    mock_qrv.assert_called_once_with()
