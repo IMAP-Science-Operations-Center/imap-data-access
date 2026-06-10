@@ -12,7 +12,7 @@ import requests
 import imap_data_access
 from imap_data_access.io import _get_base_url, _make_request
 
-test_science_filename = "imap_swe_l1_test-description_20100101_v000.cdf"
+test_science_filename = "imap_swe_l1_test-description_20100101_v000.001.cdf"
 test_science_path = "imap/swe/l1/2010/01/" + test_science_filename
 
 
@@ -209,7 +209,7 @@ def test_download_already_exists(mock_send_request):
             "ingestion_start_date": "20100101",
             "ingestion_end_date": "20100102",
             "repointing": "repoint00001",
-            "version": "v000",
+            "version": "v000.001",
             "extension": "pkts",
         },
         # Make sure not all query params are sent if they are missing
@@ -590,7 +590,7 @@ def test_spice_query_bad_params(mock_send_request):
             "Not a valid repointing, use format repoint<num>, "
             "where <num> is a 5 digit integer.",
         ),
-        ("version", "badInput", "Not a valid version, use format 'vXXX'."),
+        ("version", "badInput", "Not a valid version, use format 'vRRR.MMM'."),
         (
             "extension",
             "badInput",
@@ -616,6 +616,68 @@ def test_bad_query_input(query_flag, query_input, expected_output):
     # Check if the ValueError is raised and contains the correct message
     with pytest.raises(ValueError, match=expected_output):
         imap_data_access.query(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("items", "latest_version"),
+    [
+        (
+            [
+                {"version": "v001.001"},
+                {"version": "v002.001"},
+                {
+                    "version": "v002.002",
+                },  # This should be considered the latest version
+            ],
+            "v002.002",
+        ),
+        (
+            [
+                {"version": "v001.001"},
+                {"version": "v100"},
+            ],
+            "v001.001",
+        ),
+    ],
+)
+def test_query_latest_version(mock_send_request, items: list, latest_version: str):
+    """
+    Test a function call to query with the latest version flag.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for requests.Session
+    items : dict
+        List of query response items.
+    """
+    query_params = {
+        "table": "science",
+        "instrument": "swe",
+        "data_level": "l0",
+        "descriptor": "test-description",
+        "start_date": "20100101",
+        "end_date": "20100102",
+        "ingestion_start_date": "20100101",
+        "ingestion_end_date": "20100102",
+        "repointing": "repoint00001",
+        "version": "latest",
+        "extension": "pkts",
+    }
+    mock_response = MagicMock()
+    base_items = {
+        "instrument": "swe",
+        "data_level": "l0",
+        "descriptor": "test-description",
+        "start_date": "20100101",
+    }
+    mock_response.json.return_value = [i | base_items for i in items]
+    mock_send_request.return_value = mock_response
+
+    response = imap_data_access.query(**query_params)
+    # There should be one item returned
+    assert len(response) == 1
+    assert response[0]["version"] == latest_version
 
 
 def test_upload_no_file(mock_send_request):

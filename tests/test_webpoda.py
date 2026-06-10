@@ -125,7 +125,7 @@ def test_download_daily_data(
             data_level="l0",
             descriptor="raw",
             start_time=day.strftime("%Y%m%d"),
-            version="v001",
+            version="v001.001",
         ).construct_path()
         # There are two swapi apids, so we download the same byte stream twice
         n_apids = len(INSTRUMENT_APIDS[instrument])
@@ -208,7 +208,7 @@ def test_download_repointing_data(
             descriptor="raw",
             start_time=date,
             repointing=repoint_id,
-            version="v001",
+            version="v001.001",
         ).construct_path()
         # There are two hi apids, so we download the same byte stream twice
         n_apids = len(INSTRUMENT_APIDS[instrument])
@@ -227,7 +227,7 @@ def test_file_versioning(
 ):
     # Mock the query to return two existing files for the instrument
     # and start time, which will trigger the versioning logic.
-    mock_query.return_value = [{"version": "v001"}, {"version": "v002"}]
+    mock_query.return_value = [{"version": "v001.001"}, {"version": "v001.002"}]
 
     mock_get_packet_times_ert.return_value = [
         datetime.datetime(2024, 12, 1, 0, 0, 0),
@@ -249,7 +249,7 @@ def test_file_versioning(
             data_level="l0",
             descriptor="raw",
             start_time=day.strftime("%Y%m%d"),
-            version="v003",
+            version="v001.003",
         ).construct_path()
         # There are two swapi apids, so we download the same byte stream twice
         n_apids = len(INSTRUMENT_APIDS[instrument])

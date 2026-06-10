@@ -19,7 +19,7 @@ from imap_data_access.file_validation import (
 
 def test_extract_filename_components():
     """Tests the ``extract_filename_components`` function."""
-    valid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst_20210101_v001.001.pkts"
 
     expected_output = {
         "mission": "imap",
@@ -27,48 +27,72 @@ def test_extract_filename_components():
         "data_level": "l1a",
         "descriptor": "burst",
         "start_date": "20210101",
+        "version": "v001.001",
+        "release_number": 1,
+        "data_version": 1,
         "repointing": None,
         "cr": None,
-        "version": "v001",
         "extension": "pkts",
     }
-
     assert (
         ScienceFilePath.extract_filename_components(valid_filename) == expected_output
     )
     # Add a repointing value
-    valid_filename = "imap_mag_l1a_burst_20210101-repoint00001_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst_20210101-repoint00001_v001.001.pkts"
     assert ScienceFilePath.extract_filename_components(
         valid_filename
     ) == expected_output | {"repointing": 1}
 
     # Add a CR value
-    valid_filename = "imap_mag_l1a_burst_20210101-cr00001_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst_20210101-cr00001_v001.001.pkts"
     assert ScienceFilePath.extract_filename_components(
         valid_filename
     ) == expected_output | {"cr": 1}
 
     # Add a multi-part hyphen descriptor
-    valid_filename = "imap_mag_l1a_burst-1min_20210101_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst-1min_20210101_v001.001.pkts"
     assert ScienceFilePath.extract_filename_components(
         valid_filename
     ) == expected_output | {"descriptor": "burst-1min"}
 
     # Descriptor is required
-    invalid_filename = "imap_mag_l1a_20210101_v001.cdf"
+    invalid_filename = "imap_mag_l1a_20210101_v001.001.cdf"
     with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath.extract_filename_components(invalid_filename)
 
-    valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.cdf")
+    valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.001.cdf")
     expected_output["extension"] = "cdf"
     assert (
         ScienceFilePath.extract_filename_components(valid_filepath) == expected_output
     )
 
 
+# TODO remove this test after file versions are updated from vXXX to vRRR.MMM
+def test_extract_filename_components_deprecated_version_format():
+    """Tests the ``extract_filename_components` with old filename convention."""
+    valid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
+    # Use deprecated version format
+    expected_output = {
+        "mission": "imap",
+        "instrument": "mag",
+        "data_level": "l1a",
+        "descriptor": "burst",
+        "start_date": "20210101",
+        "release_number": None,
+        "data_version": None,
+        "repointing": None,
+        "cr": None,
+        "version": "v001",
+        "extension": "pkts",
+    }
+    assert (
+        ScienceFilePath.extract_filename_components(valid_filename) == expected_output
+    )
+
+
 def test_construct_sciencefilepathmanager():
     """Tests that the ``ScienceFilePath`` class constructs a valid filename."""
-    valid_filename = "imap_mag_l1a_burst_20210101_v001.cdf"
+    valid_filename = "imap_mag_l1a_burst_20210101_v001.001.cdf"
     sfm = ScienceFilePath(valid_filename)
     assert sfm.mission == "imap"
     assert sfm.instrument == "mag"
@@ -76,7 +100,9 @@ def test_construct_sciencefilepathmanager():
     assert sfm.descriptor == "burst"
     assert sfm.start_date == "20210101"
     assert sfm.repointing is None
-    assert sfm.version == "v001"
+    assert sfm.version == "v001.001"
+    assert sfm.release_number == 1
+    assert sfm.data_version == 1
     assert sfm.extension == "cdf"
 
     # no extension
