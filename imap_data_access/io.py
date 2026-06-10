@@ -251,7 +251,7 @@ def _version_sort_key(version) -> tuple[int, int]:
         # Version format vRRR.MMM
         return int(components[0][1:]), int(components[1])
     else:
-        raise ValueError(f"Not a valid release number: {version}")
+        raise ValueError(f"Not a valid version: {version}")
 
 
 def spice_query(
