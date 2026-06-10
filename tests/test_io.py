@@ -959,3 +959,51 @@ def test_release_early_release_with_manifest(mock_send_request, api_key, tmp_pat
     last_request = mock_send_request.call_args[0][0]
     assert "/release" in last_request.url
     assert "manifest_file=" in last_request.url
+
+
+# ---------------------------------------------------------------------------
+# query_release_versions tests
+# ---------------------------------------------------------------------------
+
+RELEASE_VERSION_RECORD = {
+    "release_number": 1,
+    "updated_date": "2026-04-01T00:00:00",
+}
+
+
+def test_query_release_versions(mock_send_request):
+    """Test a basic call to query_release_versions hits /global-release/latest.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for requests.Session
+    """
+    mock_response = MagicMock()
+    mock_response.json.return_value = RELEASE_VERSION_RECORD
+    mock_send_request.return_value = mock_response
+
+    results = imap_data_access.query_release_versions()
+    assert results == [RELEASE_VERSION_RECORD]
+
+    mock_send_request.assert_called_once()
+    sent_request = mock_send_request.call_args[0][0]
+    assert sent_request.url == "https://api.test.com/global-release/latest"
+    assert sent_request.method == "GET"
+
+
+def test_query_release_versions_empty(mock_send_request):
+    """Test that query_release_versions handles an empty response.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for requests.Session
+    """
+    mock_response = MagicMock()
+    mock_response.json.return_value = []
+    mock_send_request.return_value = mock_response
+
+    results = imap_data_access.query_release_versions()
+    assert results == []
+    mock_send_request.assert_called_once()

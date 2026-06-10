@@ -29,7 +29,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     generate_imap_file_path,
 )
-from imap_data_access.io import query, release, spice_query
+from imap_data_access.io import query, query_release_versions, release, spice_query
 from imap_data_access.utils import ReleaseType
 from imap_data_access.webpoda import download_daily_data
 
@@ -348,7 +348,12 @@ def _release_parser(args: argparse.Namespace):
     args : argparse.Namespace
         An object containing the parsed arguments and their values
     """
-    # All validation is now handled in io.py
+    if not getattr(args, "release_type", None):
+        raise ValueError(
+            "--release-type is required when submitting a release. "
+            "Run 'release -h' for more information."
+        )
+    # All other validation is handled in io.py
     release(
         instrument=args.instrument,
         release_type=args.release_type,
@@ -359,6 +364,42 @@ def _release_parser(args: argparse.Namespace):
         manifest_file=args.manifest_file,
     )
     print("Successfully submitted release request to the IMAP SDC.")
+
+
+def _print_release_versions_table(results: list[dict]) -> None:
+    """Print latest global release query results in a simple table."""
+    num_records = len(results)
+    print(f"Found [{num_records}] global release records")
+    if num_records == 0:
+        return
+
+    headers = ["Release Number", "Updated Date"]
+    keys = ["release_number", "updated_date"]
+    column_widths = {
+        header: max(len(header), *(len(str(item.get(key, ""))) for item in results))
+        for header, key in zip(headers, keys)
+    }
+
+    format_string = (
+        "| " + " | ".join(f"{{:<{column_widths[h]}}}" for h in headers) + " |"
+    )
+    hyphens = "|" + "-" * (sum(column_widths.values()) + 3 * len(headers) - 1) + "|"
+
+    print(hyphens)
+    print(format_string.format(*headers))
+    print(hyphens)
+    for item in results:
+        print(format_string.format(*(str(item.get(key, "")) for key in keys)))
+    print(hyphens)
+
+
+def _release_versions_parser(args: argparse.Namespace):
+    """Query the latest global release number from the IMAP SDC."""
+    results = query_release_versions()
+    if args.output_format == "json":
+        print(results)
+    else:
+        _print_release_versions_table(results)
 
 
 def add_query_args(subparser: ArgumentParser) -> None:
@@ -696,7 +737,39 @@ def main():
         "release",
         help=release_help,
         formatter_class=argparse.RawTextHelpFormatter,
+        description=(
+            "Submit a release to the IMAP SDC, or use the 'query' subcommand\n"
+            "to look up the latest global release number.\n\n"
+            "Examples:\n"
+            "  imap-data-access release --release-type release ...\n"
+            "  imap-data-access release query\n"
+        ),
     )
+    # --- nested subparsers (e.g. `release query`) ---
+    release_subparsers = parser_release.add_subparsers(dest="release_subcommand")
+
+    release_query_parser = release_subparsers.add_parser(
+        "query",
+        help="Query the latest global release number.",
+        description=(
+            "Query the IMAP SDC latest global release.\n"
+            "Returns one record with release_number and updated_date.\n\n"
+            "Example:\n"
+            "  imap-data-access release query\n"
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    release_query_parser.add_argument(
+        "--output-format",
+        type=str,
+        required=False,
+        help="How to format the output, default is 'table'",
+        choices=["table", "json"],
+        default="table",
+    )
+    release_query_parser.set_defaults(func=_release_versions_parser)
+
+    # --- submit/unrelease arguments
     parser_release.add_argument(
         "--instrument",
         type=str,
@@ -722,7 +795,7 @@ def main():
     parser_release.add_argument(
         "--release-type",
         type=str,
-        required=True,
+        required=False,  # enforced in _release_parser when no subcommand is given
         metavar="ReleaseType",
         help=(
             "Type of release:\n"
