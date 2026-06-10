@@ -431,14 +431,14 @@ def query(
             )
 
         latest_files = {}
+        version_sort_keys = {}
         for item in items:
             key = get_key(item)
             version_key = _version_sort_key(item["version"])
-            if (key not in latest_files) or (
-                version_key > latest_files[key]["version_key"]
-            ):
-                latest_files[key] = {"version_key":version_key, "items": items}
-        items = list(latest_files["items"].values())
+            if (key not in latest_files) or (version_key > version_sort_keys[key]):
+                latest_files[key] = item
+                version_sort_keys[key] = version_key
+        items = list(latest_files.values())
     return items
 
 
