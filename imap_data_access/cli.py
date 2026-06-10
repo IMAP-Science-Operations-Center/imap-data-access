@@ -366,40 +366,9 @@ def _release_parser(args: argparse.Namespace):
     print("Successfully submitted release request to the IMAP SDC.")
 
 
-def _print_release_versions_table(results: list[dict]) -> None:
-    """Print latest global release query results in a simple table."""
-    num_records = len(results)
-    print(f"Found [{num_records}] global release records")
-    if num_records == 0:
-        return
-
-    headers = ["Release Number", "Updated Date"]
-    keys = ["release_number", "updated_date"]
-    column_widths = {
-        header: max(len(header), *(len(str(item.get(key, ""))) for item in results))
-        for header, key in zip(headers, keys)
-    }
-
-    format_string = (
-        "| " + " | ".join(f"{{:<{column_widths[h]}}}" for h in headers) + " |"
-    )
-    hyphens = "|" + "-" * (sum(column_widths.values()) + 3 * len(headers) - 1) + "|"
-
-    print(hyphens)
-    print(format_string.format(*headers))
-    print(hyphens)
-    for item in results:
-        print(format_string.format(*(str(item.get(key, "")) for key in keys)))
-    print(hyphens)
-
-
 def _release_versions_parser(args: argparse.Namespace):
     """Query the latest global release number from the IMAP SDC."""
-    results = query_release_versions()
-    if args.output_format == "json":
-        print(results)
-    else:
-        _print_release_versions_table(results)
+    print(query_release_versions())
 
 
 def add_query_args(subparser: ArgumentParser) -> None:
@@ -758,14 +727,6 @@ def main():
             "  imap-data-access release query\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
-    )
-    release_query_parser.add_argument(
-        "--output-format",
-        type=str,
-        required=False,
-        help="How to format the output, default is 'table'",
-        choices=["table", "json"],
-        default="table",
     )
     release_query_parser.set_defaults(func=_release_versions_parser)
 
