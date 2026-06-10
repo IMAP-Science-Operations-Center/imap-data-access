@@ -629,10 +629,9 @@ def test_bad_query_input(query_flag, query_input, expected_output):
     [
         (
             [
-                {"start_date": "20200101", "version": "v001.001"},
-                {"start_date": "20200101", "version": "v002.001"},
+                {"version": "v001.001"},
+                {"version": "v002.001"},
                 {
-                    "start_date": "20200101",
                     "version": "v002.002",
                 },  # This should be considered the latest version
             ],
@@ -640,8 +639,8 @@ def test_bad_query_input(query_flag, query_input, expected_output):
         ),
         (
             [
-                {"start_date": "20200101", "version": "v001.001"},
-                {"start_date": "20200101", "version": "v100"},
+                {"version": "v001.001"},
+                {"version": "v100"},
             ],
             "v001.001",
         ),
@@ -672,7 +671,13 @@ def test_query_latest_version(mock_send_request, items: list, latest_version: st
         "extension": "pkts",
     }
     mock_response = MagicMock()
-    mock_response.json.return_value = items
+    base_items = {
+        "instrument": "swe",
+        "data_level": "l0",
+        "descriptor": "test-description",
+        "start_date": "20100101",
+    }
+    mock_response.json.return_value = [i | base_items for i in items]
     mock_send_request.return_value = mock_response
 
     response = imap_data_access.query(**query_params)

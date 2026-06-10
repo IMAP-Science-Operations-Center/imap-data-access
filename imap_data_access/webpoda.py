@@ -23,7 +23,7 @@ from typing import Optional
 import requests
 
 import imap_data_access
-from imap_data_access.io import IMAPDataAccessError, _make_request
+from imap_data_access.io import IMAPDataAccessError, _make_request, _version_sort_key
 
 logger = logging.getLogger(__name__)
 
@@ -536,11 +536,25 @@ def _get_latest_version_file_path(
         end_date=start_time.strftime("%Y%m%d"),
         repointing=repointing,
     )
+    # TODO query for release number and replace with variable below.
+    release_number = 1
     if len(current_files):
-        version_string = sorted(file["version"] for file in current_files)[-1]
-        latest_version = f"v{str(int(version_string[1:]) + 1).zfill(3)}"
+        # Get the release number and data versions as a tuple of ints e.g. (1,1)
+        versions = [_version_sort_key(file["version"]) for file in current_files]
+        # Find version tuples where the release number matches the current release
+        # number
+        release_number_keys = [key for key in versions if key[0] == release_number]
+        if len(release_number_keys) == 0:
+            # If there are no versions with this release_number this is the first one
+            latest_version = f"v{release_number:03}.001"
+        else:
+            # find the data max version with the current release number key and
+            # increment
+            latest_version = (
+                f"v{release_number:03}.{max(release_number_keys)[1] + 1:03}"
+            )
     else:
-        latest_version = "v001"
+        latest_version = f"v{release_number:03}.001"
     logger.info(
         f"Found [{len(current_files)}] existing l0 files for "
         f"instrument [{instrument}] with start time {start_time} "
