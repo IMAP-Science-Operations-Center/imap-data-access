@@ -9,3 +9,4 @@ class ReleaseType(Enum):
     RELEASE = "release"
     EARLY_RELEASE = "early-release"
     UNRELEASE = "unrelease"
+    REPROCESS = "reprocess"
