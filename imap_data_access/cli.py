@@ -707,28 +707,28 @@ def main():
         help=release_help,
         formatter_class=argparse.RawTextHelpFormatter,
         description=(
-            "Submit a release to the IMAP SDC, or use the 'query' subcommand\n"
+            "Submit a release to the IMAP SDC, or use the 'latest' subcommand\n"
             "to look up the latest global release number.\n\n"
             "Examples:\n"
             "  imap-data-access release --release-type release ...\n"
-            "  imap-data-access release query\n"
+            "  imap-data-access release latest\n"
         ),
     )
-    # --- nested subparsers (e.g. `release query`) ---
+    # --- nested subparsers (e.g. `release latest`) ---
     release_subparsers = parser_release.add_subparsers(dest="release_subcommand")
 
-    release_query_parser = release_subparsers.add_parser(
-        "query",
+    release_latest_parser = release_subparsers.add_parser(
+        "latest",
         help="Query the latest global release number.",
         description=(
             "Query the IMAP SDC latest global release.\n"
             "Returns one record with release_number and updated_date.\n\n"
             "Example:\n"
-            "  imap-data-access release query\n"
+            "  imap-data-access release latest\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
-    release_query_parser.set_defaults(func=_release_versions_parser)
+    release_latest_parser.set_defaults(func=_release_versions_parser)
 
     # --- submit/unrelease arguments
     parser_release.add_argument(

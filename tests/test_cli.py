@@ -52,7 +52,7 @@ def test_cli_error_message(capsys):
 
 
 # ---------------------------------------------------------------------------
-# release query CLI tests
+# release latest CLI tests
 # ---------------------------------------------------------------------------
 RELEASE_VERSION_RECORD = {
     "release_number": 1,
@@ -60,9 +60,9 @@ RELEASE_VERSION_RECORD = {
 }
 
 
-def test_cli_release_query(capsys):
-    """Test that `release query` prints the latest global release dict."""
-    with mock.patch.object(sys, "argv", ["imap-data-access", "release", "query"]):
+def test_cli_release_latest(capsys):
+    """Test that `release latest` prints the latest global release dict."""
+    with mock.patch.object(sys, "argv", ["imap-data-access", "release", "latest"]):
         with mock.patch(
             "imap_data_access.cli.query_release_versions",
             return_value=RELEASE_VERSION_RECORD,
