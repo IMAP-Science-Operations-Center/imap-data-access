@@ -49,3 +49,27 @@ def test_cli_error_message(capsys):
             cli.main()
     captured = capsys.readouterr()
     assert "FileNotFoundError" in captured.err
+
+
+# ---------------------------------------------------------------------------
+# release query CLI tests
+# ---------------------------------------------------------------------------
+RELEASE_VERSION_RECORD = {
+    "release_number": 1,
+    "updated_date": "2026-04-01T00:00:00",
+}
+
+
+def test_cli_release_query(capsys):
+    """Test that `release query` returns the latest global release dict."""
+    with mock.patch.object(sys, "argv", ["imap-data-access", "release", "query"]):
+        with mock.patch(
+            "imap_data_access.cli.query_release_versions",
+            return_value=RELEASE_VERSION_RECORD,
+        ) as mock_qrv:
+            cli.main()
+
+    captured = capsys.readouterr()
+    assert "release_number" in captured.out
+    assert "updated_date" in captured.out
+    mock_qrv.assert_called_once_with()
