@@ -537,7 +537,8 @@ def _get_latest_version_file_path(
         repointing=repointing,
     )
     # TODO query for release number and replace with variable below.
-    release_number = 1
+    release_number = imap_data_access.query_release_versions()["release_number"]
+    release_str = f"v{release_number:03}"
     if len(current_files):
         # Get the release number and data versions as a tuple of ints e.g. (1,1)
         versions = [_version_sort_key(file["version"]) for file in current_files]
@@ -546,15 +547,13 @@ def _get_latest_version_file_path(
         release_number_keys = [key for key in versions if key[0] == release_number]
         if len(release_number_keys) == 0:
             # If there are no versions with this release_number this is the first one
-            latest_version = f"v{release_number:03}.001"
+            latest_version = f"{release_str}.001"
         else:
             # find the data max version with the current release number key and
             # increment
-            latest_version = (
-                f"v{release_number:03}.{max(release_number_keys)[1] + 1:03}"
-            )
+            latest_version = f"{release_str}.{max(release_number_keys)[1] + 1:03}"
     else:
-        latest_version = f"v{release_number:03}.001"
+        latest_version = f"{release_str}.001"
     logger.info(
         f"Found [{len(current_files)}] existing l0 files for "
         f"instrument [{instrument}] with start time {start_time} "
