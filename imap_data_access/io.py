@@ -536,30 +536,6 @@ def upload(file_path: Union[Path, str]) -> None:
     logger.info("File %s uploaded successfully", file_path)
 
 
-def query_release_versions() -> dict:
-    """Query the latest global release in the IMAP SDC.
-
-    Returns
-    -------
-    dict
-        Latest global release record containing ``release_number`` and
-        ``updated_date``.
-    """
-    url = f"{_get_base_url()}/global-release/latest"
-    request = requests.Request(method="GET", url=url).prepare()
-
-    logger.info("Querying release versions at url %s", request.url)
-    with _make_request(request) as response:
-        payload = response.json()
-        logger.debug("Received JSON: %s", payload)
-
-    if not isinstance(payload, dict):
-        raise IMAPDataAccessError(
-            "Unexpected response format for global release latest query."
-        )
-    return payload
-
-
 def release(
     *,
     instrument: Optional[str] = None,
