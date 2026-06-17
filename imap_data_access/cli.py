@@ -29,7 +29,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     generate_imap_file_path,
 )
-from imap_data_access.io import query, query_release_versions, release, spice_query
+from imap_data_access.io import query, release, spice_query
 from imap_data_access.utils import ReleaseType
 from imap_data_access.webpoda import download_daily_data
 
@@ -348,12 +348,7 @@ def _release_parser(args: argparse.Namespace):
     args : argparse.Namespace
         An object containing the parsed arguments and their values
     """
-    if not getattr(args, "release_type", None):
-        raise ValueError(
-            "--release-type is required when submitting a release. "
-            "Run 'release -h' for more information."
-        )
-    # All other validation is handled in io.py
+    # All validation is now handled in io.py
     release(
         instrument=args.instrument,
         release_type=args.release_type,
@@ -364,11 +359,6 @@ def _release_parser(args: argparse.Namespace):
         manifest_file=args.manifest_file,
     )
     print("Successfully submitted release request to the IMAP SDC.")
-
-
-def _release_versions_parser(args: argparse.Namespace):
-    """Query the latest global release number from the IMAP SDC."""
-    print(query_release_versions())
 
 
 def add_query_args(subparser: ArgumentParser) -> None:
@@ -706,31 +696,7 @@ def main():
         "release",
         help=release_help,
         formatter_class=argparse.RawTextHelpFormatter,
-        description=(
-            "Submit a release to the IMAP SDC, or use the 'query' subcommand\n"
-            "to look up the latest global release number.\n\n"
-            "Examples:\n"
-            "  imap-data-access release --release-type release ...\n"
-            "  imap-data-access release query\n"
-        ),
     )
-    # --- nested subparsers (e.g. `release query`) ---
-    release_subparsers = parser_release.add_subparsers(dest="release_subcommand")
-
-    release_query_parser = release_subparsers.add_parser(
-        "query",
-        help="Query the latest global release number.",
-        description=(
-            "Query the IMAP SDC latest global release.\n"
-            "Returns one record with release_number and updated_date.\n\n"
-            "Example:\n"
-            "  imap-data-access release query\n"
-        ),
-        formatter_class=argparse.RawTextHelpFormatter,
-    )
-    release_query_parser.set_defaults(func=_release_versions_parser)
-
-    # --- submit/unrelease arguments
     parser_release.add_argument(
         "--instrument",
         type=str,
@@ -756,7 +722,7 @@ def main():
     parser_release.add_argument(
         "--release-type",
         type=str,
-        required=False,  # enforced in _release_parser when no subcommand is given
+        required=True,
         metavar="ReleaseType",
         help=(
             "Type of release:\n"
