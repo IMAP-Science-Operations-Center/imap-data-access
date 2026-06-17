@@ -24,14 +24,14 @@ from imap_data_access.processing_input import (
 
 def test_create_science_files():
     one_file = processing_input.ScienceInput(
-        "imap_mag_l1a_norm-magi_20240312_v000.001.cdf"
+        "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf"
     )
     two_files = processing_input.ScienceInput(
-        "imap_mag_l1a_burst-magi_20240312_v000.001.cdf",
-        "imap_mag_l1a_burst-magi_20240310_v000.001.cdf",
+        "imap_mag_l1a_burst-magi_20240312_v000.0001.cdf",
+        "imap_mag_l1a_burst-magi_20240310_v000.0001.cdf",
     )
 
-    assert one_file.filename_list == ["imap_mag_l1a_norm-magi_20240312_v000.001.cdf"]
+    assert one_file.filename_list == ["imap_mag_l1a_norm-magi_20240312_v000.0001.cdf"]
     assert len(one_file.imap_file_paths) == 1
     assert isinstance(one_file.imap_file_paths[0], ScienceFilePath)
     assert one_file.input_type == ProcessingInputType.SCIENCE_FILE
@@ -40,8 +40,8 @@ def test_create_science_files():
     assert one_file.data_type == "l1a"
 
     assert two_files.filename_list == [
-        "imap_mag_l1a_burst-magi_20240312_v000.001.cdf",
-        "imap_mag_l1a_burst-magi_20240310_v000.001.cdf",
+        "imap_mag_l1a_burst-magi_20240312_v000.0001.cdf",
+        "imap_mag_l1a_burst-magi_20240310_v000.0001.cdf",
     ]
     assert all([isinstance(obj, ScienceFilePath) for obj in two_files.imap_file_paths])
     assert len(two_files.imap_file_paths) == 2
@@ -52,8 +52,8 @@ def test_create_science_files():
 
     with pytest.raises(ProcessingInput.ProcessingInputError, match="same source"):
         processing_input.ScienceInput(
-            "imap_mag_l1a_burst-magi_20240312_v000.001.cdf",
-            "imap_mag_l1a_norm-magi_20240312_v000.001.cdf",
+            "imap_mag_l1a_burst-magi_20240312_v000.0001.cdf",
+            "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf",
         )
 
 
@@ -223,8 +223,8 @@ def test_create_collection():  # noqa: PLR0915
         "imap_mag_l1b-cal_20250103_20250104_v002.cdf",
     )
     science = processing_input.ScienceInput(
-        "imap_mag_l1a_norm-magi_20240312_v000.001.cdf",
-        "imap_mag_l1a_norm-magi_20240312_v001.001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v001.0001.cdf",
     )
     input_collection = processing_input.ProcessingInputCollection(ancillary, science)
 
@@ -241,7 +241,7 @@ def test_create_collection():  # noqa: PLR0915
     assert deser.processing_input[1].input_type == ProcessingInputType.SCIENCE_FILE
 
     extra_files = processing_input.ProcessingInputCollection(
-        processing_input.ScienceInput("imap_glows_l1a_hist_20250202_v001.001.cdf")
+        processing_input.ScienceInput("imap_glows_l1a_hist_20250202_v001.0001.cdf")
     )
     assert len(extra_files.processing_input) == 1
     deser.deserialize(extra_files.serialize())
@@ -373,14 +373,14 @@ def test_get_file_paths():
     # and it has three dependencies, one primary dependent (HIT l1b)
     # and two ancillary dependents, MAG l1a and HIT ancillary.
     mag_sci_anc = ScienceInput(
-        "imap_mag_l1a_norm-magi_20240312_v000.001.cdf",
-        "imap_mag_l1a_norm-magi_20240312_v001.001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v001.0001.cdf",
     )
     hit_anc = AncillaryInput(
         "imap_hit_l1b-cal_20240312_v000.cdf",
     )
     hit_sci = ScienceInput(
-        "imap_hit_l1b_sci_20240312_v000.001.cdf",
+        "imap_hit_l1b_sci_20240312_v000.0001.cdf",
     )
 
     input_collection = processing_input.ProcessingInputCollection(
@@ -415,20 +415,20 @@ def test_get_file_paths_descriptor():
     # Test that we can get all the ultra 45/90 files, hi 45/90 files, etc.
     # by filtering by sensor and/or instrument.
     ultra_sci_45sensor = ScienceInput(
-        "imap_ultra_l1c_45sensor-pset_20240312_v000.001.cdf",
-        "imap_ultra_l1c_45sensor-pset_20240313_v000.001.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240312_v000.0001.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240313_v000.0001.cdf",
     )
     ultra_sci_90sensor = ScienceInput(
-        "imap_ultra_l1c_90sensor-pset_20240312_v000.001.cdf",
+        "imap_ultra_l1c_90sensor-pset_20240312_v000.0001.cdf",
     )
     hi_sci_45sensor = ScienceInput(
-        "imap_hi_l1c_45sensor-pset_20240312_v000.001.cdf",
+        "imap_hi_l1c_45sensor-pset_20240312_v000.0001.cdf",
     )
     hi_sci_90sensor = ScienceInput(
-        "imap_hi_l1c_90sensor-pset_20240312_v000.001.cdf",
+        "imap_hi_l1c_90sensor-pset_20240312_v000.0001.cdf",
     )
     mag_sci_anc = ScienceInput(
-        "imap_mag_l1a_norm-magi_20240312_v000.001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf",
     )
     spice_files = processing_input.SPICEInput(
         "imap_1000_100_1000_100_01.ah.bc",
@@ -496,14 +496,14 @@ def test_download_all_files():
     # and it has three dependencies, one primary dependent (HIT l1b)
     # and two ancillary dependents, MAG l1a and HIT ancillary.
     mag_sci_anc = ScienceInput(
-        "imap_mag_l1a_norm-magi_20240312_v000.001.cdf",
-        "imap_mag_l1a_norm-magi_20240312_v001.001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v001.0001.cdf",
     )
     hit_anc = AncillaryInput(
         "imap_hit_l1b-cal_20240312_v000.cdf",
     )
     hit_sci = ScienceInput(
-        "imap_hit_l1b_sci_20240312_v000.001.cdf",
+        "imap_hit_l1b_sci_20240312_v000.0001.cdf",
     )
     spice_files = processing_input.SPICEInput(
         "naif0012.tls", "imap_sclk_0001.tsc", "imap_1000_100_1000_100_01.ah.bc"
@@ -535,8 +535,8 @@ def test_get_valid_inputs_for_start_date():
         "imap_hit_l1b-cal_20250103_v000.cdf",
     )
     hit_sci = ScienceInput(
-        "imap_hit_l1b_sci_20250101_v000.001.cdf",
-        "imap_hit_l1b_sci_20250102_v000.001.cdf",
+        "imap_hit_l1b_sci_20250101_v000.0001.cdf",
+        "imap_hit_l1b_sci_20250102_v000.0001.cdf",
     )
     input_collection = processing_input.ProcessingInputCollection(
         mag_sci_anc, hit_anc, hit_sci
@@ -579,20 +579,20 @@ def test_get_valid_inputs_for_start_date():
 
 def test_get_processing_inputs():
     ultra_sci_45sensor = ScienceInput(
-        "imap_ultra_l1c_45sensor-pset_20240312_v000.001.cdf",
-        "imap_ultra_l1c_45sensor-pset_20240313_v000.001.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240312_v000.0001.cdf",
+        "imap_ultra_l1c_45sensor-pset_20240313_v000.0001.cdf",
     )
     ultra_sci_90sensor = ScienceInput(
-        "imap_ultra_l1c_90sensor-pset_20240312_v000.001.cdf",
+        "imap_ultra_l1c_90sensor-pset_20240312_v000.0001.cdf",
     )
     hi_sci_45sensor = ScienceInput(
-        "imap_hi_l1c_45sensor-pset_20240312_v000.001.cdf",
+        "imap_hi_l1c_45sensor-pset_20240312_v000.0001.cdf",
     )
     hi_sci_90sensor = ScienceInput(
-        "imap_hi_l1c_90sensor-pset_20240312_v000.001.cdf",
+        "imap_hi_l1c_90sensor-pset_20240312_v000.0001.cdf",
     )
     mag_sci_anc = ScienceInput(
-        "imap_mag_l1a_norm-magi_20240312_v000.001.cdf",
+        "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf",
     )
     hit_anc = AncillaryInput(
         "imap_hit_l1b-cal_20250101_v000.cdf",
@@ -663,7 +663,7 @@ def test_generate_imap_input():
     assert result.data_type == "repoint"
 
     # Test with a Science file
-    science_file = "imap_mag_l1a_norm-magi_20250101_v000.001.cdf"
+    science_file = "imap_mag_l1a_norm-magi_20250101_v000.0001.cdf"
     result = generate_imap_input(science_file)
     assert isinstance(result, ScienceInput)
     assert result.source == "mag"

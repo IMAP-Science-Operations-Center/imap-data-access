@@ -23,6 +23,7 @@ from typing import Optional
 import requests
 
 import imap_data_access
+from imap_data_access.file_validation import Version
 from imap_data_access.io import IMAPDataAccessError, _make_request
 
 logger = logging.getLogger(__name__)
@@ -527,7 +528,6 @@ def _get_latest_version_file_path(
     """
     # See what the latest version is for this file, if any.
     # If there are no files, we will return the first version (v000.0001).
-    # ** NOTE ** For l0 files, the major_version is always 0.
     current_files = imap_data_access.query(
         instrument=instrument,
         data_level="l0",
@@ -538,14 +538,15 @@ def _get_latest_version_file_path(
         repointing=repointing,
     )
     if len(current_files):
-        # Get the latest minor version
-        max_minor_version = sorted([file["minor_version"] for file in current_files])[
-            -1
-        ]
-        # Increment by 1 (this is never reset)
-        latest_version = f"v000.{(max_minor_version + 1):04}"
+        # Get the latest minor version incremented by 1 (this is never reset)
+        max_minor_version = (
+            sorted([file["minor_version"] for file in current_files])[-1] + 1
+        )
     else:
-        latest_version = "v000.0001"
+        max_minor_version = 1
+
+    # L0 raw files always have major version 0
+    latest_version = Version.to_version(0, max_minor_version)
 
     logger.info(
         f"Found [{len(current_files)}] existing l0 files for "

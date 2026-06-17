@@ -14,6 +14,7 @@ from imap_data_access.file_validation import (
     ReleaseFilePath,
     ScienceFilePath,
     SPICEFilePath,
+    Version,
 )
 
 
@@ -79,7 +80,7 @@ def test_extract_filename_components_deprecated_version_format():
         "descriptor": "burst",
         "start_date": "20210101",
         "major_version": None,
-        "minor_version": None,
+        "minor_version": 1,
         "repointing": None,
         "cr": None,
         "version": "v001",
@@ -759,3 +760,44 @@ def test_with_release_file_path():
         "imap/release/mag/imap_mag_withhold-data-release-001_20260201_20260430_v001.txt"
     )
     assert release_file_mag.construct_path() == expected_output
+
+
+# Version class tests
+
+
+def test_from_version():
+    """Tests the Version.from_version function"""
+
+    major, minor = Version.from_version("v001")
+    assert major is None
+    assert minor == 1
+
+    major, minor = Version.from_version("v002.0001")
+    assert major == 2
+    assert minor == 1
+
+
+def test_to_version():
+    """Tests the Version.to_version function"""
+
+    version_string = Version.to_version(1, 2)
+    assert version_string == "v001.0002"
+
+    version_string = Version.to_version(major=None, minor=4)
+    assert version_string == "v004"
+
+    version_string = Version.to_version(major="v002", minor="0004")
+    assert version_string == "v002.0004"
+
+    # Assert that the default behavior raises an error
+    with pytest.raises(ValueError, match="Version 1000 must be between 0 and 999"):
+        Version.to_version(major=None, minor=1000)
+
+    # Assert that when raise_error = False, it returns none.
+    version_string = Version.to_version(major=None, minor=1000, raise_error=False)
+    assert version_string is None
+
+
+def test_version_regex():
+    """Tests the Version.regex function"""
+    assert Version.version_regex() == r"(?:v\d{3}\.\d{4}|v\d{3})"
