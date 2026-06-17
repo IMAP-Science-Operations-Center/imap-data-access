@@ -31,8 +31,14 @@ def test_configuration_updates(config_var, default, expected):
         f"import imap_data_access; print(imap_data_access.config['{config_var}'])",
     ]
     # Default case
+    # Strip any IMAP_ overrides from the current environment so the built-in
+    # default is what gets used in `subprocess.run`.
+    default_env = {
+        key: value for key, value in os.environ.items() if f"IMAP_{config_var}" != key
+    }
     proc = subprocess.run(
         command,
+        env=default_env,
         capture_output=True,
         check=True,
         text=True,
