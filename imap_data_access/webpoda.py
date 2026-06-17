@@ -23,7 +23,7 @@ from typing import Optional
 import requests
 
 import imap_data_access
-from imap_data_access.io import IMAPDataAccessError, _make_request, _version_sort_key
+from imap_data_access.io import IMAPDataAccessError, _make_request
 
 logger = logging.getLogger(__name__)
 
@@ -526,7 +526,8 @@ def _get_latest_version_file_path(
         The science file path with the version number included.
     """
     # See what the latest version is for this file, if any.
-    # If there are no files, we will return the first version (v001).
+    # If there are no files, we will return the first version (v000.0001).
+    # ** NOTE ** For l0 files, the major_version is always 0.
     current_files = imap_data_access.query(
         instrument=instrument,
         data_level="l0",
@@ -536,24 +537,16 @@ def _get_latest_version_file_path(
         end_date=start_time.strftime("%Y%m%d"),
         repointing=repointing,
     )
-    # TODO query for release number and replace with variable below.
-    release_number = imap_data_access.query_release_versions()["release_number"]
-    release_str = f"v{release_number:03}"
     if len(current_files):
-        # Get the release number and data versions as a tuple of ints e.g. (1,1)
-        versions = [_version_sort_key(file["version"]) for file in current_files]
-        # Find version tuples where the release number matches the current release
-        # number
-        release_number_keys = [key for key in versions if key[0] == release_number]
-        if len(release_number_keys) == 0:
-            # If there are no versions with this release_number this is the first one
-            latest_version = f"{release_str}.001"
-        else:
-            # find the data max version with the current release number key and
-            # increment
-            latest_version = f"{release_str}.{max(release_number_keys)[1] + 1:03}"
+        # Get the latest minor version
+        max_minor_version = sorted([file["minor_version"] for file in current_files])[
+            -1
+        ]
+        # Increment by 1 (this is never reset)
+        latest_version = f"v000.{(max_minor_version + 1):04}"
     else:
-        latest_version = f"{release_str}.001"
+        latest_version = "v000.0001"
+
     logger.info(
         f"Found [{len(current_files)}] existing l0 files for "
         f"instrument [{instrument}] with start time {start_time} "

@@ -12,7 +12,7 @@ import requests
 import imap_data_access
 from imap_data_access.io import _get_base_url, _make_request
 
-test_science_filename = "imap_swe_l1_test-description_20100101_v000.001.cdf"
+test_science_filename = "imap_swe_l1_test-description_20100101_v000.0001.cdf"
 test_science_path = "imap/swe/l1/2010/01/" + test_science_filename
 
 
@@ -215,7 +215,7 @@ def test_download_already_exists(mock_send_request):
             "ingestion_start_date": "20100101",
             "ingestion_end_date": "20100102",
             "repointing": "repoint00001",
-            "version": "v000.001",
+            "version": "v000.0001",
             "extension": "pkts",
         },
         # Make sure not all query params are sent if they are missing
@@ -596,7 +596,7 @@ def test_spice_query_bad_params(mock_send_request):
             "Not a valid repointing, use format repoint<num>, "
             "where <num> is a 5 digit integer.",
         ),
-        ("version", "badInput", "Not a valid version, use format 'vRRR.MMM'."),
+        ("version", "badInput", "Not a valid version, use format 'vMMM.mmmm."),
         (
             "extension",
             "badInput",
@@ -629,20 +629,20 @@ def test_bad_query_input(query_flag, query_input, expected_output):
     [
         (
             [
-                {"version": "v001.001"},
-                {"version": "v002.001"},
+                {"version": "v001.0001"},
+                {"version": "v002.0001"},
                 {
-                    "version": "v002.002",
+                    "version": "v002.0002",
                 },  # This should be considered the latest version
             ],
-            "v002.002",
+            "v002.0002",
         ),
         (
             [
-                {"version": "v001.001"},
+                {"version": "v001.0001"},
                 {"version": "v100"},
             ],
-            "v001.001",
+            "v001.0001",
         ),
     ],
 )

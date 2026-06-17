@@ -207,7 +207,7 @@ def _validate_query_parameters(**kwargs) -> None:
             version
         ):
             raise ValueError(
-                "Not a valid version, use format 'vRRR.MMM' or 'vXXX' (deprecated)."
+                "Not a valid version, use format 'vMMM.mmmm' or 'vXXX' (deprecated)."
             )
     elif version is not None and not file_validation.ImapFilePath.is_valid_version(
         version
@@ -235,7 +235,7 @@ def _version_sort_key(version) -> tuple[int, int]:
     Parameters
     ----------
     version : str
-            Version in the format ``vXXX`` or ``vRRR.MMM`` where RRR is the release
+            Version in the format ``vXXX`` or ``vMMM.mmmm`` where RRR is the release
             number and MMM is the data version. The deprecated format of ``vXXX`` will
             be treated as release 0 with data version XXX.
 
@@ -249,7 +249,7 @@ def _version_sort_key(version) -> tuple[int, int]:
         # Deprecated version format vXXX.
         return 0, int(components[0][1:])
     elif len(components) == 2:
-        # Version format vRRR.MMM
+        # Version format vMMM.mmmm
         return int(components[0][1:]), int(components[1])
     else:
         raise ValueError(f"Not a valid version: {version}")

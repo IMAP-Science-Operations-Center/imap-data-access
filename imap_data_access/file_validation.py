@@ -127,9 +127,9 @@ class ScienceFilePath(ImapFilePath):
     FILENAME_CONVENTION = (
         "<mission>_<instrument>_<datalevel>_<descriptor>_"
         "<startdate>(-<repointing>)_<version>.<extension>"
-        " where version is vRRR.MMM (legacy vXXX is deprecated but supported)"
+        " where version is vMMM.mmmm (legacy vXXX is deprecated but supported)"
     )
-    NEW_VERSION_PATTERN: typing.ClassVar[str] = r"v\d{3}\.\d{3}"
+    NEW_VERSION_PATTERN: typing.ClassVar[str] = r"v\d{3}\.\d{4}"
     DEPRECATED_VERSION_PATTERN: typing.ClassVar[str] = r"v\d{3}"
     VALID_VERSION_PATTERN: typing.ClassVar[str] = (
         rf"(?:{NEW_VERSION_PATTERN}|{DEPRECATED_VERSION_PATTERN})"
@@ -164,7 +164,7 @@ class ScienceFilePath(ImapFilePath):
             repointing the data is from, format: repointXXXXX
         <cr>: This is an optional field describing the Carrington rotation.
             format: crXXXXX.
-        <version>: This stores the data version for this product, format: vRRR.MMM.
+        <version>: This stores the data version for this product, format: vMMM.mmmm.
             Legacy vXXX is accepted for backward compatibility but deprecated.
 
         Parameters
@@ -190,8 +190,8 @@ class ScienceFilePath(ImapFilePath):
         self.repointing = split_filename["repointing"]
         self.cr = split_filename["cr"]
         self.version = split_filename["version"]
-        self.release_number = split_filename["release_number"]
-        self.data_version = split_filename["data_version"]
+        self.major_version = split_filename["major_version"]
+        self.minor_version = split_filename["minor_version"]
         self.extension = split_filename["extension"]
 
         self.error_message = self.validate_filename()
@@ -316,7 +316,7 @@ class ScienceFilePath(ImapFilePath):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
         if not ScienceFilePath.is_valid_version(self.version):
             error_message += (
-                "Invalid version format. Please use vRRR.MMM format"
+                "Invalid version format. Please use vMMM.mmmm format"
                 " (vXXX format is deprecated but supported for compatibility).\n"
             )
         if self.repointing and not isinstance(self.repointing, int):
@@ -412,16 +412,16 @@ class ScienceFilePath(ImapFilePath):
         del components["interval_type"]
 
         # Initialize version components
-        components["release_number"] = None
-        components["data_version"] = None
+        components["major_version"] = None
+        components["minor_version"] = None
         version = components["version"]
         # TODO update this logic to be more strict once versions are updated from
-        #  vXXX to vRRR.MMM. Right now, we are just checking if there's a "." in the
+        #  vXXX to vMMM.mmmm. Right now, we are just checking if there's a "." in the
         #  version to determine if it's in the new format or old format.
         if "." in version:
-            release_number, data_version = version.split(".")
-            components["release_number"] = int(release_number[1:])  # Remove the "v"
-            components["data_version"] = int(data_version)
+            major_version, minor_version = version.split(".")
+            components["major_version"] = int(major_version[1:])  # Remove the "v"
+            components["minor_version"] = int(minor_version)
 
         return components
 
@@ -479,7 +479,7 @@ class ScienceFilePath(ImapFilePath):
     def is_valid_version(input_version: str) -> bool:
         """Check input version string is valid for science files.
 
-        A valid science version is ``vRRR.MMM`` or legacy ``vXXX``. The special value
+        A valid science version is ``vMMM.mmmm`` or legacy ``vXXX``. The special value
         ``latest`` is also accepted for query-style inputs.
         """
         return input_version == "latest" or bool(
