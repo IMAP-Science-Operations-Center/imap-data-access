@@ -229,32 +229,6 @@ def _validate_query_parameters(**kwargs) -> None:
             )
 
 
-def _version_sort_key(version) -> tuple[int, int]:
-    """Return a tuple of release number and data version for sorting purposes.
-
-    Parameters
-    ----------
-    version : str
-            Version in the format ``vXXX`` or ``vMMM.mmmm`` where RRR is the release
-            number and MMM is the data version. The deprecated format of ``vXXX`` will
-            be treated as release 0 with data version XXX.
-
-    Returns
-    -------
-    tuple
-        A tuple of (release number, data version) for sorting purposes.
-    """
-    components = version.split(".")
-    if len(components) == 1:
-        # Deprecated version format vXXX.
-        return 0, int(components[0][1:])
-    elif len(components) == 2:
-        # Version format vMMM.mmmm
-        return int(components[0][1:]), int(components[1])
-    else:
-        raise ValueError(f"Not a valid version: {version}")
-
-
 def spice_query(
     *,
     start_date: Optional[str] = None,
@@ -432,13 +406,13 @@ def query(
             )
 
         latest_files = {}
-        version_sort_keys = {}
         for item in items:
             key = get_key(item)
-            version_key = _version_sort_key(item["version"])
-            if (key not in latest_files) or (version_key > version_sort_keys[key]):
+            version_sort_var = "minor_version" if "minor_version" in item else "version"
+            if (key not in latest_files) or (
+                item[version_sort_var] > latest_files[key][version_sort_var]
+            ):
                 latest_files[key] = item
-                version_sort_keys[key] = version_key
         items = list(latest_files.values())
     return items
 

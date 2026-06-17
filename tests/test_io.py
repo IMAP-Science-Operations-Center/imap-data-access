@@ -267,7 +267,8 @@ glows_l3e_hi_repoint1 = {
     "instrument": "glows",
     "data_level": "l3e",
     "descriptor": "survival-probability-hi-45",
-    "version": "v001",
+    "version": "v001.0001",
+    "minor_version": 1,
     "start_date": "20250101",
     "repointing": 1,
 }
@@ -276,7 +277,8 @@ glows_l3e_hi_repoint2_v1 = {
     "instrument": "glows",
     "data_level": "l3e",
     "descriptor": "survival-probability-hi-45",
-    "version": "v001",
+    "version": "v001.0001",
+    "minor_version": 1,
     "start_date": "20250101",
     "repointing": 2,
 }
@@ -285,7 +287,8 @@ glows_l3e_hi_repoint2_v2 = {
     "instrument": "glows",
     "data_level": "l3e",
     "descriptor": "survival-probability-hi-45",
-    "version": "v002",
+    "version": "v000.0002",
+    "minor_version": 2,
     "start_date": "20250101",
     "repointing": 2,
 }
@@ -294,7 +297,8 @@ swapi_l3b_day1_v2 = {
     "instrument": "swapi",
     "data_level": "l3b",
     "descriptor": "combined",
-    "version": "v002",
+    "version": "v001.0002",
+    "minor_version": 2,
     "start_date": "20250101",
     "repointing": None,
 }
@@ -302,7 +306,8 @@ swapi_l3b_day2_v2 = {
     "instrument": "swapi",
     "data_level": "l3b",
     "descriptor": "combined",
-    "version": "v002",
+    "version": "v001.0002",
+    "minor_version": 2,
     "start_date": "20250102",
     "repointing": None,
 }
@@ -310,7 +315,8 @@ swapi_l3b_day2_v3 = {
     "instrument": "swapi",
     "data_level": "l3b",
     "descriptor": "combined",
-    "version": "v003",
+    "version": "v002.0003",
+    "minor_version": 3,
     "start_date": "20250102",
     "repointing": None,
 }
@@ -319,7 +325,8 @@ hi_l1b_45_day1_v1 = {
     "instrument": "hi",
     "data_level": "l1b",
     "descriptor": "45pset",
-    "version": "v001",
+    "version": "v001.0001",
+    "minor_version": 1,
     "start_date": "20250101",
     "repointing": None,
 }
@@ -328,7 +335,8 @@ lo_l1c_45_day1_v1 = {
     "instrument": "lo",
     "data_level": "l1c",
     "descriptor": "45pset",
-    "version": "v001",
+    "version": "v001.0001",
+    "minor_version": 1,
     "start_date": "20250101",
     "repointing": None,
 }
@@ -337,7 +345,8 @@ hi_l1c_45_day1_v1 = {
     "instrument": "hi",
     "data_level": "l1c",
     "descriptor": "45pset",
-    "version": "v001",
+    "version": "v001.0001",
+    "minor_version": 1,
     "start_date": "20250101",
     "repointing": None,
 }
@@ -346,7 +355,8 @@ hi_l1c_90_day1_v1 = {
     "instrument": "hi",
     "data_level": "l1c",
     "descriptor": "90pset",
-    "version": "v001",
+    "version": "v001.0001",
+    "minor_version": 1,
     "start_date": "20250101",
     "repointing": None,
 }
@@ -629,20 +639,20 @@ def test_bad_query_input(query_flag, query_input, expected_output):
     [
         (
             [
-                {"version": "v001.0001"},
-                {"version": "v002.0001"},
+                {"minor_version": 1},
+                {"minor_version": 1},
                 {
-                    "version": "v002.0002",
+                    "minor_version": 2,
                 },  # This should be considered the latest version
             ],
-            "v002.0002",
+            2,
         ),
         (
             [
-                {"version": "v001.0001"},
-                {"version": "v100"},
+                {"minor_version": 1},
+                {"minor_version": 100},
             ],
-            "v001.0001",
+            100,
         ),
     ],
 )
@@ -683,7 +693,7 @@ def test_query_latest_version(mock_send_request, items: list, latest_version: st
     response = imap_data_access.query(**query_params)
     # There should be one item returned
     assert len(response) == 1
-    assert response[0]["version"] == latest_version
+    assert response[0]["minor_version"] == latest_version
 
 
 def test_upload_no_file(mock_send_request):
