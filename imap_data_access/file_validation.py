@@ -8,6 +8,7 @@ import typing
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from functools import total_ordering
 from pathlib import Path
 
 import imap_data_access
@@ -43,6 +44,187 @@ def generate_imap_file_path(filename: str) -> ImapFilePath:
     raise ValueError(
         f"Invalid file type for {filename}. It does not matchany file formats."
     )
+
+
+@total_ordering
+class Version:
+    """Class for validating version numbers."""
+
+    max_major = 999
+    max_minor_if_major = 9999  # If major version is not none, minor can be up to 9999
+    max_minor = 999
+    # Regex patters for valid versions
+    minor_only_version_pattern: typing.ClassVar[str] = rf"v\d{{{len(str(max_minor))}}}"
+    science_version_pattern: typing.ClassVar[str] = (
+        rf"v\d{{{len(str(max_major))}}}\.\d{{{len(str(max_minor_if_major))}}}"
+    )
+    valid_imap_version_pattern: typing.ClassVar[str] = (
+        rf"(?:{science_version_pattern}|{minor_only_version_pattern})"
+    )
+
+    def __init__(self, major: int | str | None, minor: int | str):
+        """Initialize a Version object with major and minor version numbers.
+
+        Parameters
+        ----------
+        major : int | str | None
+            The major version number, or None if the version has no major
+            component (e.g. 'vXXX' format). If a string, any leading 'v' is
+            stripped.
+        minor : int | str
+            The minor version number. Always required, even when ``major``
+            is None. If a string, any leading 'v' is stripped.
+        """
+        # Strip any "v" off the major and minor if they are strings, and convert to int
+        if isinstance(major, str):
+            major = int(major.strip("v"))
+        if isinstance(minor, str):
+            minor = int(minor.strip("v"))
+
+        # Validate the range. This raises ValueError on an invalid version.
+        if major is not None:
+            self._validate_range(major, self.max_major)
+            self._validate_range(minor, self.max_minor_if_major)
+        else:
+            self._validate_range(minor, self.max_minor)
+
+        self.major = major
+        self.minor = minor
+
+    def __str__(self) -> str:
+        """Convert the version to its canonical string form.
+
+        Returns
+        -------
+        str
+            The version string in 'vMMM.mmmm' format if ``major`` is set,
+            or 'vXXX' format otherwise.
+        """
+        if self.major is not None:
+            major_width = len(str(Version.max_major))
+            minor_width = len(str(Version.max_minor_if_major))
+            return f"v{self.major:0{major_width}}.{self.minor:0{minor_width}}"
+        minor_width = len(str(Version.max_minor))
+        return f"v{self.minor:0{minor_width}}"
+
+    def __eq__(self, other: object) -> bool:
+        """Compare two Version objects for equality."""
+        if not isinstance(other, Version):
+            return NotImplemented
+        return (self.major, self.minor) == (other.major, other.minor)
+
+    def __hash__(self) -> int:
+        """Define the hash value for Version object."""
+        return hash((self.major, self.minor))
+
+    def __lt__(self, other: object) -> bool:
+        """Compare two Version objects.
+
+        A version with no major component always sorts before a version
+        that has one.
+        """
+        if not isinstance(other, Version):
+            return NotImplemented
+        self_has_major = self.major is not None
+        other_has_major = other.major is not None
+        if self_has_major != other_has_major:
+            return not self_has_major
+        if self_has_major:
+            return (self.major, self.minor) < (other.major, other.minor)
+        return self.minor < other.minor
+
+    @staticmethod
+    def from_version(version: str, raise_error: bool = True) -> Version | None:
+        """Return the major and minor version numbers from a version string.
+
+        Parameters
+        ----------
+        version : str
+            The version string to parse, e.g. 'vMMM.mmmm' or 'vXXX'.
+        raise_error : bool, optional
+            If True (default), raise a ValueError for an invalid version.
+            If False, return None instead.
+
+        Returns
+        -------
+        Version
+            A Version object with major and minor attributes.
+        """
+        # Validate version string
+        if not Version.is_valid_version(version):
+            if raise_error:
+                raise ValueError(f"Version {version} is not a valid version string.")
+            else:
+                return None
+
+        # Check if version string contains both major and minor components
+        if "." in version:
+            components = version[1:].split(".")
+            major, minor = int(components[0]), int(components[1])
+        else:
+            major = None
+            minor = int(version[1:])
+
+        return Version(major, minor)
+
+    @staticmethod
+    def version_regex() -> str:
+        """Return the regex used to validate the version string.
+
+        Returns
+        -------
+        str
+            Regex pattern matching either the 'vMMM.mmmm' or legacy 'vXXX'
+            format.
+        """
+        return Version.valid_imap_version_pattern
+
+    @staticmethod
+    def is_valid_version(version: str) -> bool:
+        """Check if the version string has a valid format 'vXXX' or 'vMMM.mmmm'.
+
+        Parameters
+        ----------
+        version : str
+            Version string to check.
+
+        Returns
+        -------
+        bool
+            Whether the version string is valid or not.
+        """
+        return bool(re.fullmatch(Version.valid_imap_version_pattern, version))
+
+    @staticmethod
+    def is_valid_version_minor_only(version: str) -> bool:
+        """Check if the version string is in the valid minor-only format 'vXXX'.
+
+        Parameters
+        ----------
+        version : str
+            Version string to check.
+
+        Returns
+        -------
+        bool
+            Whether the version string is valid or not.
+        """
+        return bool(re.fullmatch(Version.minor_only_version_pattern, version))
+
+    @staticmethod
+    def _validate_range(value: int, max_value: int) -> None:
+        """Validate that a value is within the allowed range, raising if not.
+
+        Parameters
+        ----------
+        value : int
+            The value to validate.
+        max_value : int
+            The maximum allowed value (inclusive). The minimum allowed
+            value is always 0.
+        """
+        if not 0 <= value <= max_value:
+            raise ValueError(f"Version {value} must be between 0 and {max_value}")
 
 
 class ImapFilePath:
@@ -108,7 +290,9 @@ class ImapFilePath:
         bool
             Whether input version is valid or not.
         """
-        return input_version == "latest" or re.fullmatch(r"v\d{3}", input_version)
+        return input_version == "latest" or Version.is_valid_version_minor_only(
+            input_version
+        )
 
     @abstractmethod
     def construct_path(self) -> Path:
@@ -127,7 +311,11 @@ class ScienceFilePath(ImapFilePath):
     FILENAME_CONVENTION = (
         "<mission>_<instrument>_<datalevel>_<descriptor>_"
         "<startdate>(-<repointing>)_<version>.<extension>"
+        " where version is vMMM.mmmm (legacy vXXX is deprecated but supported)"
     )
+    # TODO update this to be Version.science_version_pattern once files have been
+    #  renamed.
+    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.valid_imap_version_pattern
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
     _dir_prefix = "imap"
 
@@ -158,7 +346,8 @@ class ScienceFilePath(ImapFilePath):
             repointing the data is from, format: repointXXXXX
         <cr>: This is an optional field describing the Carrington rotation.
             format: crXXXXX.
-        <version>: This stores the data version for this product, format: vXXX
+        <version>: This stores the data version for this product, format: vMMM.mmmm.
+            Legacy vXXX is accepted for backward compatibility but deprecated.
 
         Parameters
         ----------
@@ -183,6 +372,8 @@ class ScienceFilePath(ImapFilePath):
         self.repointing = split_filename["repointing"]
         self.cr = split_filename["cr"]
         self.version = split_filename["version"]
+        self.major_version = split_filename["major_version"]
+        self.minor_version = split_filename["minor_version"]
         self.extension = split_filename["extension"]
 
         self.error_message = self.validate_filename()
@@ -305,8 +496,11 @@ class ScienceFilePath(ImapFilePath):
             )
         if not self.is_valid_date(self.start_date):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
-        if not bool(re.match(r"^v\d{3}$", self.version)):
-            error_message += "Invalid version format. Please use vXXX format. \n"
+        if not ScienceFilePath.is_valid_version(self.version):
+            error_message += (
+                "Invalid version format. Please use vMMM.mmmm format"
+                " (vXXX format is deprecated but supported for compatibility).\n"
+            )
         if self.repointing and not isinstance(self.repointing, int):
             error_message += "The repointing number should be an integer.\n"
 
@@ -369,7 +563,7 @@ class ScienceFilePath(ImapFilePath):
             r"(?P<start_date>\d{8})"
             # Optional repointing/CR field
             r"(-(?P<interval_type>(?:repoint|cr))(?P<interval>\d{5}))?"
-            r"_(?P<version>v\d{3})"
+            rf"_(?P<version>{ScienceFilePath.VALID_VERSION_PATTERN})"
             r"\.(?P<extension>[^.]+)$"
         )
         if isinstance(filename, Path):
@@ -398,6 +592,11 @@ class ScienceFilePath(ImapFilePath):
                 components["repointing"] = interval_number
 
         del components["interval_type"]
+
+        # Get major and minor versions
+        version = Version.from_version(components["version"])
+        components["major_version"] = version.major
+        components["minor_version"] = version.minor
 
         return components
 
@@ -450,6 +649,15 @@ class ScienceFilePath(ImapFilePath):
             Whether input carrington rotation is valid or not.
         """
         return re.fullmatch(r"cr\d{5}", str(input_cr))
+
+    @staticmethod
+    def is_valid_version(input_version: str) -> bool:
+        """Check input version string is valid for science files.
+
+        A valid science version is ``vMMM.mmmm`` or legacy ``vXXX``. The special value
+        ``latest`` is also accepted for query-style inputs.
+        """
+        return input_version == "latest" or Version.is_valid_version(input_version)
 
 
 # Transform the suffix to the directory structure we are using
@@ -823,6 +1031,7 @@ class AncillaryFilePath(ImapFilePath):
         "<mission>_<instrument>_<description>_"
         "<start_date>(_<end_date>)_<version>.<extension>"
     )
+    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.minor_only_version_pattern
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {
         "cdf",
         "csv",
@@ -1046,7 +1255,7 @@ class AncillaryFilePath(ImapFilePath):
             r"(?P<descriptor>[^_]+)_"
             r"(?P<start_date>\d{8})"
             r"(_(?P<end_date>\d{8}))?"  # Optional end_date
-            r"_(?P<version>v\d{3})"
+            rf"_(?P<version>{cls.VALID_VERSION_PATTERN})"
             rf"\.(?P<extension>{extension_regex})$"
         )
         if isinstance(filename, Path):

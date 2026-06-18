@@ -202,7 +202,14 @@ def _validate_query_parameters(**kwargs) -> None:
                 ) from err
 
     # Check version make sure to include 'latest'
-    if version is not None and not file_validation.ImapFilePath.is_valid_version(
+    if table == "science":
+        if version is not None and not file_validation.ScienceFilePath.is_valid_version(
+            version
+        ):
+            raise ValueError(
+                "Not a valid version, use format 'vMMM.mmmm' or 'vXXX' (deprecated)."
+            )
+    elif version is not None and not file_validation.ImapFilePath.is_valid_version(
         version
     ):
         raise ValueError("Not a valid version, use format 'vXXX'.")
@@ -401,8 +408,9 @@ def query(
         latest_files = {}
         for item in items:
             key = get_key(item)
+            version_sort_var = "minor_version" if "minor_version" in item else "version"
             if (key not in latest_files) or (
-                item["version"] > latest_files[key]["version"]
+                item[version_sort_var] > latest_files[key][version_sort_var]
             ):
                 latest_files[key] = item
         items = list(latest_files.values())

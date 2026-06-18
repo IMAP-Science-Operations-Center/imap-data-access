@@ -14,12 +14,13 @@ from imap_data_access.file_validation import (
     ReleaseFilePath,
     ScienceFilePath,
     SPICEFilePath,
+    Version,
 )
 
 
 def test_extract_filename_components():
     """Tests the ``extract_filename_components`` function."""
-    valid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst_20210101_v001.0001.pkts"
 
     expected_output = {
         "mission": "imap",
@@ -27,48 +28,72 @@ def test_extract_filename_components():
         "data_level": "l1a",
         "descriptor": "burst",
         "start_date": "20210101",
+        "version": "v001.0001",
+        "major_version": 1,
+        "minor_version": 1,
         "repointing": None,
         "cr": None,
-        "version": "v001",
         "extension": "pkts",
     }
-
     assert (
         ScienceFilePath.extract_filename_components(valid_filename) == expected_output
     )
     # Add a repointing value
-    valid_filename = "imap_mag_l1a_burst_20210101-repoint00001_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst_20210101-repoint00001_v001.0001.pkts"
     assert ScienceFilePath.extract_filename_components(
         valid_filename
     ) == expected_output | {"repointing": 1}
 
     # Add a CR value
-    valid_filename = "imap_mag_l1a_burst_20210101-cr00001_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst_20210101-cr00001_v001.0001.pkts"
     assert ScienceFilePath.extract_filename_components(
         valid_filename
     ) == expected_output | {"cr": 1}
 
     # Add a multi-part hyphen descriptor
-    valid_filename = "imap_mag_l1a_burst-1min_20210101_v001.pkts"
+    valid_filename = "imap_mag_l1a_burst-1min_20210101_v001.0001.pkts"
     assert ScienceFilePath.extract_filename_components(
         valid_filename
     ) == expected_output | {"descriptor": "burst-1min"}
 
     # Descriptor is required
-    invalid_filename = "imap_mag_l1a_20210101_v001.cdf"
+    invalid_filename = "imap_mag_l1a_20210101_v001.0001.cdf"
     with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath.extract_filename_components(invalid_filename)
 
-    valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.cdf")
+    valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.0001.cdf")
     expected_output["extension"] = "cdf"
     assert (
         ScienceFilePath.extract_filename_components(valid_filepath) == expected_output
     )
 
 
+# TODO remove this test after file versions are updated from vXXX to vRRR.MMM
+def test_extract_filename_components_deprecated_version_format():
+    """Tests the ``extract_filename_components` with old filename convention."""
+    valid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
+    # Use deprecated version format
+    expected_output = {
+        "mission": "imap",
+        "instrument": "mag",
+        "data_level": "l1a",
+        "descriptor": "burst",
+        "start_date": "20210101",
+        "major_version": None,
+        "minor_version": 1,
+        "repointing": None,
+        "cr": None,
+        "version": "v001",
+        "extension": "pkts",
+    }
+    assert (
+        ScienceFilePath.extract_filename_components(valid_filename) == expected_output
+    )
+
+
 def test_construct_sciencefilepathmanager():
     """Tests that the ``ScienceFilePath`` class constructs a valid filename."""
-    valid_filename = "imap_mag_l1a_burst_20210101_v001.cdf"
+    valid_filename = "imap_mag_l1a_burst_20210101_v001.0001.cdf"
     sfm = ScienceFilePath(valid_filename)
     assert sfm.mission == "imap"
     assert sfm.instrument == "mag"
@@ -76,7 +101,9 @@ def test_construct_sciencefilepathmanager():
     assert sfm.descriptor == "burst"
     assert sfm.start_date == "20210101"
     assert sfm.repointing is None
-    assert sfm.version == "v001"
+    assert sfm.version == "v001.0001"
+    assert sfm.major_version == 1
+    assert sfm.minor_version == 1
     assert sfm.extension == "cdf"
 
     # no extension
@@ -733,3 +760,69 @@ def test_with_release_file_path():
         "imap/release/mag/imap_mag_withhold-data-release-001_20260201_20260430_v001.txt"
     )
     assert release_file_mag.construct_path() == expected_output
+
+
+# Version class tests
+
+
+def test_from_version():
+    """Tests the Version.from_version function"""
+
+    version = Version.from_version("v001")
+    assert version.major is None
+    assert version.minor == 1
+
+    version = Version.from_version("v002.0001")
+    assert version.major == 2
+    assert version.minor == 1
+
+    # Assert that an invalid string raises an error
+    with pytest.raises(ValueError, match="is not a valid version string"):
+        Version.from_version("v0.0001")
+
+    # Assert that an invalid string returns none when raise_error = False
+    version = Version.from_version("v0.0001", raise_error=False)
+    assert not version
+
+
+def test_to_version():
+    """Tests the Version.to_version function"""
+
+    version_string = str(Version(1, 2))
+    assert version_string == "v001.0002"
+
+    version_string = str(Version(major=None, minor=4))
+    assert version_string == "v004"
+
+    version_string = str(Version(major="v002", minor="0004"))
+    assert version_string == "v002.0004"
+
+    # Assert that an invalid minor version raises an error
+    with pytest.raises(ValueError, match="Version 1000 must be between 0 and 999"):
+        Version(major=None, minor=1000)
+
+    # Assert that an invalid major version raises an error
+    with pytest.raises(ValueError, match="Version 2000 must be between 0 and 999"):
+        Version(major=2000, minor=100)
+
+
+def test_version_regex():
+    """Tests the Version.regex function"""
+    assert Version.version_regex() == r"(?:v\d{3}\.\d{4}|v\d{3})"
+
+
+def test_version_sorting():
+    """Tests the sorting of the Version class"""
+
+    legacy_version = Version(None, 42)
+    assert legacy_version.major is None
+    assert legacy_version.minor == 42
+
+    version2 = Version(2, 1)
+    assert str(version2) == "v002.0001"
+
+    version3 = Version.from_version("v003.0002")
+
+    assert legacy_version < version2 < version3
+
+    assert Version.from_version("xyz", raise_error=False) is None
