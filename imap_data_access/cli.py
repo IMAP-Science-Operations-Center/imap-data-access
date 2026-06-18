@@ -227,6 +227,8 @@ def _query_parser(args: argparse.Namespace):
         "ingestion_end_date",
         "repointing",
         "version",
+        "major_version",
+        "minor_version",
         "extension",
         "filename",
         "type",
@@ -431,10 +433,24 @@ def add_query_args(subparser: ArgumentParser) -> None:
         "--version",
         type=str,
         required=False,
-        help="Version of the product in the format 'v001'."
+        help="Version of the product. Use 'v000' for a minor version or "
+        "'v000.0000' for a full major.minor version."
         " Must have one other parameter to run."
         " Passing 'latest' will return latest version of a file "
         "per dataset (instrument, data_level, descriptor) and day or repointing",
+    )
+    subparser.add_argument(
+        "--major-version",
+        type=str,
+        required=False,
+        help="Science major version to filter on (e.g. '1'). When omitted, "
+        "science queries default to the latest major version.",
+    )
+    subparser.add_argument(
+        "--minor-version",
+        type=str,
+        required=False,
+        help="Science minor version to filter on (e.g. '2').",
     )
     subparser.add_argument(
         "--extension", type=str, required=False, help="File extension (cdf, pkts)"
