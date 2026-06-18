@@ -1031,6 +1031,7 @@ class AncillaryFilePath(ImapFilePath):
         "<mission>_<instrument>_<description>_"
         "<start_date>(_<end_date>)_<version>.<extension>"
     )
+    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.minor_only_version_pattern
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {
         "cdf",
         "csv",
@@ -1254,7 +1255,7 @@ class AncillaryFilePath(ImapFilePath):
             r"(?P<descriptor>[^_]+)_"
             r"(?P<start_date>\d{8})"
             r"(_(?P<end_date>\d{8}))?"  # Optional end_date
-            rf"_(?P<version>{Version.minor_only_version_pattern})"
+            rf"_(?P<version>{cls.VALID_VERSION_PATTERN})"
             rf"\.(?P<extension>{extension_regex})$"
         )
         if isinstance(filename, Path):
