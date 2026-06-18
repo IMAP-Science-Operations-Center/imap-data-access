@@ -8,6 +8,7 @@ import typing
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from functools import total_ordering
 from pathlib import Path
 
 import imap_data_access
@@ -45,6 +46,7 @@ def generate_imap_file_path(filename: str) -> ImapFilePath:
     )
 
 
+@total_ordering
 class Version:
     """Class for validating version numbers."""
 
@@ -60,31 +62,18 @@ class Version:
         rf"(?:{science_version_pattern}|{minor_only_version_pattern})"
     )
 
-    @staticmethod
-    def to_version(
-        major: str | int | None, minor: str | int, raise_error: bool = True
-    ) -> str | None:
-        """Convert the major and minor values to an imap version string.
+    def __init__(self, major: int | str | None, minor: int | str):
+        """Initialize a Version object with major and minor version numbers.
 
         Parameters
         ----------
-        major : str | int | None
+        major : int | str | None
             The major version number, or None if the version has no major
-            component (e.g. legacy 'vXXX' files). If a string, any leading
-            'v' is stripped.
-        minor : str | int
+            component (e.g. 'vXXX' format). If a string, any leading 'v' is
+            stripped.
+        minor : int | str
             The minor version number. Always required, even when ``major``
             is None. If a string, any leading 'v' is stripped.
-        raise_error : bool, optional
-            If True (default), raise a ValueError for an invalid version.
-            If False, return None instead.
-
-        Returns
-        -------
-        str | None
-            The version string in 'vMMM.mmmm' format if ``major`` is given,
-            or 'vXXX' format otherwise. None if the version is invalid and
-            ``raise_error`` is False.
         """
         # Strip any "v" off the major and minor if they are strings, and convert to int
         if isinstance(major, str):
@@ -92,32 +81,60 @@ class Version:
         if isinstance(minor, str):
             minor = int(minor.strip("v"))
 
+        # Validate the range. This raises ValueError on an invalid version.
         if major is not None:
+            self._validate_range(major, self.max_major)
+            self._validate_range(minor, self.max_minor_if_major)
+        else:
+            self._validate_range(minor, self.max_minor)
+
+        self.major = major
+        self.minor = minor
+
+    def __str__(self) -> str:
+        """Convert the version to its canonical string form.
+
+        Returns
+        -------
+        str
+            The version string in 'vMMM.mmmm' format if ``major`` is set,
+            or 'vXXX' format otherwise.
+        """
+        if self.major is not None:
             major_width = len(str(Version.max_major))
             minor_width = len(str(Version.max_minor_if_major))
-            if not Version._validate_range(major, Version.max_major, raise_error):
-                return None
-            if not Version._validate_range(
-                minor, Version.max_minor_if_major, raise_error
-            ):
-                return None
+            return f"v{self.major:0{major_width}}.{self.minor:0{minor_width}}"
+        minor_width = len(str(Version.max_minor))
+        return f"v{self.minor:0{minor_width}}"
 
-            return f"v{major:0{major_width}}.{minor:0{minor_width}}"
-        elif minor is not None:
-            minor_width = len(str(Version.max_minor))
+    def __eq__(self, other: object) -> bool:
+        """Compare two Version objects for equality."""
+        if not isinstance(other, Version):
+            return NotImplemented
+        return (self.major, self.minor) == (other.major, other.minor)
 
-            if not Version._validate_range(minor, Version.max_minor, raise_error):
-                return None
-            return f"v{minor:0{minor_width}}"
-        elif raise_error:
-            raise ValueError("Invalid version format.")
-        else:
-            return None
+    def __hash__(self) -> int:
+        """Define the hash value for Version object."""
+        return hash((self.major, self.minor))
+
+    def __lt__(self, other: object) -> bool:
+        """Compare two Version objects.
+
+        A version with no major component always sorts before a version
+        that has one.
+        """
+        if not isinstance(other, Version):
+            return NotImplemented
+        self_has_major = self.major is not None
+        other_has_major = other.major is not None
+        if self_has_major != other_has_major:
+            return not self_has_major
+        if self_has_major:
+            return (self.major, self.minor) < (other.major, other.minor)
+        return self.minor < other.minor
 
     @staticmethod
-    def from_version(
-        version: str, raise_error: bool = True
-    ) -> tuple[int | None, int] | None:
+    def from_version(version: str, raise_error: bool = True) -> Version | None:
         """Return the major and minor version numbers from a version string.
 
         Parameters
@@ -130,10 +147,8 @@ class Version:
 
         Returns
         -------
-        tuple[int | None, int] | None
-            A tuple of (major, minor), where ``major`` is None if the
-            version string has no major component. None if the version is
-            invalid and ``raise_error`` is False.
+        Version
+            A Version object with major and minor attributes.
         """
         # Validate version string
         if not Version.is_valid_version(version):
@@ -150,7 +165,7 @@ class Version:
             major = None
             minor = int(version[1:])
 
-        return major, minor
+        return Version(major, minor)
 
     @staticmethod
     def version_regex() -> str:
@@ -197,13 +212,19 @@ class Version:
         return bool(re.fullmatch(Version.minor_only_version_pattern, version))
 
     @staticmethod
-    def _validate_range(value, max_value, raise_error=True):
-        """Validate the given value range helper."""
+    def _validate_range(value: int, max_value: int) -> None:
+        """Validate that a value is within the allowed range, raising if not.
+
+        Parameters
+        ----------
+        value : int
+            The value to validate.
+        max_value : int
+            The maximum allowed value (inclusive). The minimum allowed
+            value is always 0.
+        """
         if not 0 <= value <= max_value:
-            if raise_error:
-                raise ValueError(f"Version {value} must be between 0 and {max_value}")
-            return False
-        return True
+            raise ValueError(f"Version {value} must be between 0 and {max_value}")
 
 
 class ImapFilePath:
@@ -573,9 +594,9 @@ class ScienceFilePath(ImapFilePath):
         del components["interval_type"]
 
         # Get major and minor versions
-        major_version, minor_version = Version.from_version(components["version"])
-        components["major_version"] = major_version
-        components["minor_version"] = minor_version
+        version = Version.from_version(components["version"])
+        components["major_version"] = version.major
+        components["minor_version"] = version.minor
 
         return components
 

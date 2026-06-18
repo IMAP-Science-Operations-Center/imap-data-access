@@ -546,7 +546,7 @@ def _get_latest_version_file_path(
         max_minor_version = 1
 
     # L0 raw files always have major version 0
-    latest_version = Version.to_version(0, max_minor_version)
+    latest_version = str(Version(0, max_minor_version))
 
     logger.info(
         f"Found [{len(current_files)}] existing l0 files for "

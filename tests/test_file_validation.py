@@ -768,36 +768,61 @@ def test_with_release_file_path():
 def test_from_version():
     """Tests the Version.from_version function"""
 
-    major, minor = Version.from_version("v001")
-    assert major is None
-    assert minor == 1
+    version = Version.from_version("v001")
+    assert version.major is None
+    assert version.minor == 1
 
-    major, minor = Version.from_version("v002.0001")
-    assert major == 2
-    assert minor == 1
+    version = Version.from_version("v002.0001")
+    assert version.major == 2
+    assert version.minor == 1
+
+    # Assert that an invalid string raises an error
+    with pytest.raises(ValueError, match="is not a valid version string"):
+        Version.from_version("v0.0001")
+
+    # Assert that an invalid string returns none when raise_error = False
+    version = Version.from_version("v0.0001", raise_error=False)
+    assert not version
 
 
 def test_to_version():
     """Tests the Version.to_version function"""
 
-    version_string = Version.to_version(1, 2)
+    version_string = str(Version(1, 2))
     assert version_string == "v001.0002"
 
-    version_string = Version.to_version(major=None, minor=4)
+    version_string = str(Version(major=None, minor=4))
     assert version_string == "v004"
 
-    version_string = Version.to_version(major="v002", minor="0004")
+    version_string = str(Version(major="v002", minor="0004"))
     assert version_string == "v002.0004"
 
-    # Assert that the default behavior raises an error
+    # Assert that an invalid minor version raises an error
     with pytest.raises(ValueError, match="Version 1000 must be between 0 and 999"):
-        Version.to_version(major=None, minor=1000)
+        Version(major=None, minor=1000)
 
-    # Assert that when raise_error = False, it returns none.
-    version_string = Version.to_version(major=None, minor=1000, raise_error=False)
-    assert version_string is None
+    # Assert that an invalid major version raises an error
+    with pytest.raises(ValueError, match="Version 2000 must be between 0 and 999"):
+        Version(major=2000, minor=100)
 
 
 def test_version_regex():
     """Tests the Version.regex function"""
     assert Version.version_regex() == r"(?:v\d{3}\.\d{4}|v\d{3})"
+
+
+def test_version_sorting():
+    """Tests the sorting of the Version class"""
+
+    legacy_version = Version(None, 42)
+    assert legacy_version.major is None
+    assert legacy_version.minor == 42
+
+    version2 = Version(2, 1)
+    assert str(version2) == "v002.0001"
+
+    version3 = Version.from_version("v003.0002")
+
+    assert legacy_version < version2 < version3
+
+    assert Version.from_version("xyz", raise_error=False) is None
