@@ -378,12 +378,15 @@ def query(
     query_params = {key: value for key, value in locals().items() if value is not None}
     logger.debug("Input query parameters: %s", query_params)
 
-    # removing version from query if it is 'latest',
-    # ensuring other parameters are passed
-    if version == "latest":
+    # the science table is resolved server-side via a
+    # `latest=true` flag (mirrors spice_query); other tables are still filtered
+    # client-side after the query.
+    # Server-side filtering reduces the server errors seen by users when queries return
+    # too much data.
+    request_latest = version == "latest"
+    science_latest = request_latest and table == "science"
+    if request_latest:
         del query_params["version"]
-        if not query_params:
-            raise ValueError("One other parameter must be run with 'version'")
 
     # Copy params and remove table to ensure one other param was passed
     non_table_params = query_params.copy()
@@ -404,6 +407,10 @@ def query(
         else:
             query_params["repointing"] = int(repointing)
 
+    # Let the server resolve 'latest' for science instead of filtering here.
+    if science_latest:
+        query_params["latest"] = "true"
+
     url = f"{_get_base_url()}/query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()
 
@@ -413,8 +420,8 @@ def query(
         items = response.json()
         logger.debug("Received JSON: %s", items)
 
-    # if latest version was included in search then filter returned query for largest.
-    if (version == "latest") and items:
+    # Non-science tables still resolve 'latest' client-side
+    if request_latest and not science_latest and items:
 
         def get_key(file_entry):
             return (
@@ -434,6 +441,7 @@ def query(
             ):
                 latest_files[key] = item
         items = list(latest_files.values())
+
     return items
 
 

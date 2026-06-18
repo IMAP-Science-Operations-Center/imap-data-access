@@ -27,6 +27,7 @@ import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
     ScienceFilePath,
+    Version,
     generate_imap_file_path,
 )
 from imap_data_access.io import query, release, spice_query
@@ -47,6 +48,19 @@ def _download_parser(args: argparse.Namespace):
 
 
 # ruff: noqa: PLR0912, PLR0915
+def _format_science_version(item: dict) -> str:
+    """Build a combined version display string for a science result.
+
+    Science responses carry separate ``major_version`` / ``minor_version``
+    columns; render them as a single ``vMMM.mmmm`` string. Falls back to a
+    legacy ``version`` value if present.
+    """
+    minor = item.get("minor_version")
+    if minor is None:
+        return str(item.get("version", ""))
+    return str(Version(item.get("major_version"), minor))
+
+
 def _print_query_results_table(query_results: list[dict]):
     """Print the query results in a table.
 
@@ -69,6 +83,12 @@ def _print_query_results_table(query_results: list[dict]):
         query_table = "ancillary"
     elif "repointing" in query_results[0]:
         query_table = "science"
+
+    # Science responses split version into major/minor; synthesize a combined
+    # 'version' value so the width calc and printing can treat it as one column.
+    if query_table == "science":
+        for item in query_results:
+            item["version"] = _format_science_version(item)
 
     # Use the query_results for the header
     headers_science = [
