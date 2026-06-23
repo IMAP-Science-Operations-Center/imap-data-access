@@ -125,7 +125,7 @@ def download(file_path: Union[Path, str]) -> Path:
 
 
 # Too many branches (16 >12)
-# ruff: noqa: PLR0912
+# ruff: noqa: PLR0912, PLR0915
 def _validate_query_parameters(**kwargs) -> None:
     """Validate all parameters used in the query function.
 
@@ -213,6 +213,15 @@ def _validate_query_parameters(**kwargs) -> None:
         version
     ):
         raise ValueError("Not a valid version, use format 'vXXX'.")
+
+    # Check the explicit major/minor version params (science only). Omit
+    # major_version entirely to get the latest major version.
+    major_version = kwargs.get("major_version")
+    minor_version = kwargs.get("minor_version")
+    if major_version is not None and not str(major_version).isdigit():
+        raise ValueError("Not a valid major_version, use an integer.")
+    if minor_version is not None and not str(minor_version).isdigit():
+        raise ValueError("Not a valid minor_version, use an integer.")
 
     # check extension
     if extension is not None:
@@ -309,6 +318,8 @@ def query(
     ingestion_end_date: Optional[str] = None,
     repointing: Optional[Union[str, int]] = None,
     version: Optional[str] = None,
+    major_version: Optional[Union[str, int]] = None,
+    minor_version: Optional[Union[str, int]] = None,
     extension: Optional[str] = None,
 ) -> list[dict[str, str]]:
     """Query the data archive for files matching the parameters.
@@ -344,7 +355,16 @@ def query(
     repointing : str, optional
         Repointing string, in the format 'repoint00000'.
     version : str, optional
-        Data version in the format ``vXXX`` or 'latest'.
+        Science data version in the format ``vMMM.mmmm`` (full) or the
+        deprecated minor-only ``vXXX``. ``latest`` returns the latest version
+        of a file per dataset. For science files this is a convenience that maps
+        to ``minor_version`` (and ``major_version`` for the full form);
+        prefer ``major_version`` / ``minor_version`` for new code.
+    major_version : str or int, optional
+        Science major version to filter on. When omitted, science queries
+        default to the latest major version (with all of its minor versions).
+    minor_version : str or int, optional
+        Science minor version to filter on.
     extension : str, optional
         File extension (``cdf``, ``pkts``)
 
@@ -358,12 +378,15 @@ def query(
     query_params = {key: value for key, value in locals().items() if value is not None}
     logger.debug("Input query parameters: %s", query_params)
 
-    # removing version from query if it is 'latest',
-    # ensuring other parameters are passed
-    if version == "latest":
+    # the science table is resolved server-side via a
+    # `latest=true` flag (mirrors spice_query); other tables are still filtered
+    # client-side after the query.
+    # Server-side filtering reduces the server errors seen by users when queries return
+    # too much data.
+    request_latest = version == "latest"
+    science_latest = request_latest and table == "science"
+    if request_latest:
         del query_params["version"]
-        if not query_params:
-            raise ValueError("One other parameter must be run with 'version'")
 
     # Copy params and remove table to ensure one other param was passed
     non_table_params = query_params.copy()
@@ -384,6 +407,10 @@ def query(
         else:
             query_params["repointing"] = int(repointing)
 
+    # Let the server resolve 'latest' for science instead of filtering here.
+    if science_latest:
+        query_params["latest"] = "true"
+
     url = f"{_get_base_url()}/query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()
 
@@ -393,8 +420,8 @@ def query(
         items = response.json()
         logger.debug("Received JSON: %s", items)
 
-    # if latest version was included in search then filter returned query for largest.
-    if (version == "latest") and items:
+    # Non-science tables still resolve 'latest' client-side
+    if request_latest and not science_latest and items:
 
         def get_key(file_entry):
             return (
@@ -414,6 +441,7 @@ def query(
             ):
                 latest_files[key] = item
         items = list(latest_files.values())
+
     return items
 
 

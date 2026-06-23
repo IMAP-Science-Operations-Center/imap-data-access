@@ -384,22 +384,15 @@ codice_ancillary_day2_v1 = {
 
 
 @pytest.mark.parametrize(
-    ("query_params", "query_results", "expected_filtered_results"),
+    ("query_params", "query_results"),
     [
         (
             {"instrument": "glows", "data_level": "l3e", "version": "latest"},
-            [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v1, glows_l3e_hi_repoint2_v2],
-            [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v2],
-        ),
-        (
-            {"instrument": "glows", "data_level": "l3e"},
-            [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v1, glows_l3e_hi_repoint2_v2],
             [glows_l3e_hi_repoint1, glows_l3e_hi_repoint2_v1, glows_l3e_hi_repoint2_v2],
         ),
         (
             {"instrument": "swapi", "data_level": "l3b", "version": "latest"},
             [swapi_l3b_day1_v2, swapi_l3b_day2_v2, swapi_l3b_day2_v3],
-            [swapi_l3b_day1_v2, swapi_l3b_day2_v3],
         ),
         (
             {"start_date": "20250101", "end_date": "20250103", "version": "latest"},
@@ -409,13 +402,45 @@ codice_ancillary_day2_v1 = {
                 hi_l1c_45_day1_v1,
                 hi_l1c_90_day1_v1,
             ],
-            [
-                hi_l1b_45_day1_v1,
-                lo_l1c_45_day1_v1,
-                hi_l1c_45_day1_v1,
-                hi_l1c_90_day1_v1,
-            ],
         ),
+    ],
+)
+def test_query_science_latest_resolved_server_side(
+    mock_send_request,
+    query_params: dict,
+    query_results: list[dict],
+):
+    """Science `version=latest` is resolved server-side, not client-side.
+
+    The client must forward a ``latest=true`` flag (dropping the ``version``
+    param) and return the server's results without any client-side filtering.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for requests.Session
+    query_params : dict
+        Dictionary of key/value pairs that set the query parameters
+    query_results : list[dict]
+        Result returned by the query API call
+    """
+    mock_response = MagicMock()
+    mock_response.json.return_value = query_results
+    mock_send_request.return_value = mock_response
+
+    response = imap_data_access.query(**query_params)
+    # No client-side filtering: results pass through unchanged.
+    assert response == query_results
+
+    # The outgoing request carries latest=true and drops the version param.
+    sent_request = mock_send_request.call_args[0][0]
+    assert "latest=true" in sent_request.url
+    assert "version=" not in sent_request.url
+
+
+@pytest.mark.parametrize(
+    ("query_params", "query_results", "expected_filtered_results"),
+    [
         (
             {"table": "ancillary", "instrument": "codice", "version": "latest"},
             [
@@ -430,13 +455,16 @@ codice_ancillary_day2_v1 = {
         ),
     ],
 )
-def test_query_with_version_latest(
+def test_query_nonscience_latest_filtered_client_side(
     mock_send_request,
     query_params: dict,
     query_results: list[dict],
     expected_filtered_results: list[dict],
 ):
-    """Test Query version latest filtering.
+    """Non-science `version=latest` is still resolved client-side.
+
+    The server only resolves latest for science, so for other tables the client
+    keeps the highest-version file per dataset and does not send latest=true.
 
     Parameters
     ----------
@@ -445,7 +473,7 @@ def test_query_with_version_latest(
     query_params : dict
         Dictionary of key/value pairs that set the query parameters
     query_results : list[dict]
-        Result returned by query API call
+        Result returned by the query API call
     expected_filtered_results : list[dict]
         The expected results after latest version filtering
     """
@@ -455,6 +483,10 @@ def test_query_with_version_latest(
 
     response = imap_data_access.query(**query_params)
     assert response == expected_filtered_results
+
+    # The client does not delegate latest for non-science tables.
+    sent_request = mock_send_request.call_args[0][0]
+    assert "latest=true" not in sent_request.url
 
 
 def test_query_no_params(mock_send_request):
@@ -635,36 +667,23 @@ def test_bad_query_input(query_flag, query_input, expected_output):
 
 
 @pytest.mark.parametrize(
-    ("items", "latest_version"),
+    "items",
     [
-        (
-            [
-                {"minor_version": 1},
-                {"minor_version": 1},
-                {
-                    "minor_version": 2,
-                },  # This should be considered the latest version
-            ],
-            2,
-        ),
-        (
-            [
-                {"minor_version": 1},
-                {"minor_version": 100},
-            ],
-            100,
-        ),
+        [{"minor_version": 1}, {"minor_version": 1}, {"minor_version": 2}],
+        [{"minor_version": 1}, {"minor_version": 100}],
     ],
 )
-def test_query_latest_version(mock_send_request, items: list, latest_version: str):
-    """
-    Test a function call to query with the latest version flag.
+def test_query_latest_version(mock_send_request, items: list):
+    """Science `version=latest` is delegated to the server, not filtered here.
+
+    The client sends ``latest=true`` (dropping ``version``) and returns the
+    server's results unchanged; choosing the latest is the server's job.
 
     Parameters
     ----------
     mock_send_request : unittest.mock.MagicMock
         Mock object for requests.Session
-    items : dict
+    items : list
         List of query response items.
     """
     query_params = {
@@ -687,13 +706,18 @@ def test_query_latest_version(mock_send_request, items: list, latest_version: st
         "descriptor": "test-description",
         "start_date": "20100101",
     }
-    mock_response.json.return_value = [i | base_items for i in items]
+    expected_items = [i | base_items for i in items]
+    mock_response.json.return_value = expected_items
     mock_send_request.return_value = mock_response
 
     response = imap_data_access.query(**query_params)
-    # There should be one item returned
-    assert len(response) == 1
-    assert response[0]["minor_version"] == latest_version
+    # Results pass through unchanged: the server resolves 'latest'.
+    assert response == expected_items
+
+    # The request delegates via latest=true and drops the version param.
+    sent_request = mock_send_request.call_args[0][0]
+    assert "latest=true" in sent_request.url
+    assert "version=" not in sent_request.url
 
 
 def test_upload_no_file(mock_send_request):
