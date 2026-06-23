@@ -387,7 +387,8 @@ class ScienceFilePath(ImapFilePath):
         data_level: str,
         descriptor: str,
         start_time: str,
-        version: str,
+        major_version: int | None,
+        minor_version: int,
         extension: str = "cdf",
         repointing: int | str | None = None,
         cr: int | None = None,
@@ -411,8 +412,11 @@ class ScienceFilePath(ImapFilePath):
             The data level for the filename
         start_time: str
             The start time for the filename
-        version : str
-            The version of the data
+        major_version : int | None
+            The major version of the data. If None, the version will be constructed
+             using the minor version in the legacy vXXX format.
+        minor_version : int
+            The minor version of the data
         extension : str, optional
             The extension type of the file. Default is "cdf"
             For l0 files, the extension is always "pkts"
@@ -443,9 +447,10 @@ class ScienceFilePath(ImapFilePath):
                 )
         if cr:
             time_field += f"-cr{cr:05d}"
+        version_str = str(Version(major_version, minor_version))
         filename = (
             f"imap_{instrument}_{data_level}_{descriptor}_{time_field}_"
-            f"{version}.{extension}"
+            f"{version_str}.{extension}"
         )
         return cls(filename)
 

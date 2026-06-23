@@ -171,11 +171,9 @@ def test_construct_upload_path():
 
 def test_generate_from_inputs():
     """Tests the ``generate_from_inputs`` method."""
-    sfm = ScienceFilePath.generate_from_inputs(
-        "mag", "l1a", "burst", "20210101", "v001"
-    )
+    sfm = ScienceFilePath.generate_from_inputs("mag", "l1a", "burst", "20210101", 0, 1)
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_v001.cdf"
+        "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_v000.0001.cdf"
     )
 
     assert sfm.construct_path() == expected_output
@@ -184,12 +182,12 @@ def test_generate_from_inputs():
     assert sfm.descriptor == "burst"
     assert sfm.start_date == "20210101"
     assert sfm.repointing is None
-    assert sfm.version == "v001"
+    assert sfm.version == "v000.0001"
     assert sfm.extension == "cdf"
 
-    sfm = ScienceFilePath.generate_from_inputs("mag", "l0", "raw", "20210101", "v001")
+    sfm = ScienceFilePath.generate_from_inputs("mag", "l0", "raw", "20210101", 0, 1)
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101_v001.pkts"
+        "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101_v000.0001.pkts"
     )
 
     assert sfm.construct_path() == expected_output
@@ -199,25 +197,26 @@ def test_generate_from_inputs():
         "l0",
         "raw",
         "20210101",
-        "v001",
+        0,
+        1,
         repointing=1,
     )
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101-repoint00001_v001.pkts"
+        "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101-repoint00001_v000.0001.pkts"
     )
     assert sfm.construct_path() == expected_output
 
     sfm = ScienceFilePath.generate_from_inputs(
-        "glows", "l3a", "test", "20210101", "v001", cr=23
+        "glows", "l3a", "test", "20210101", 0, 1, cr=23
     )
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/glows/l3a/2021/01/imap_glows_l3a_test_20210101-cr00023_v001.cdf"
+        "imap/glows/l3a/2021/01/imap_glows_l3a_test_20210101-cr00023_v000.0001.cdf"
     )
     assert sfm.construct_path() == expected_output
 
     with pytest.raises(ImapFilePath.InvalidImapFileError):
         sfm = ScienceFilePath.generate_from_inputs(
-            "glows", "l3a", "test", "20210101", "v001", cr=23, repointing=1
+            "glows", "l3a", "test", "20210101", 0, 1, cr=23, repointing=1
         )
 
 
@@ -574,7 +573,8 @@ def test_deprecated_data_dir():
         "l1a",
         "burst",
         "20210101",
-        "v001",
+        0,
+        1,
     )
     with pytest.deprecated_call():
         assert imap_data_access.config["DATA_DIR"] == science_file.data_dir
@@ -588,7 +588,8 @@ def test_science_file_creation_data_dir(monkeypatch):
         "l1a",
         "burst",
         "20210101",
-        "v001",
+        0,
+        1,
     )
     # Typical case
     assert science_file.construct_path().is_relative_to(
@@ -615,7 +616,8 @@ def test_quicklook_file_path():
             data_level="l1a",
             descriptor="test",
             start_time="20210101",
-            version="v001",
+            major_version=0,
+            minor_version=1,
             extension="png",
         )
     # Test for an invalid quicklook file (incorrect extension type)
@@ -625,7 +627,8 @@ def test_quicklook_file_path():
             data_level="l1a",
             descriptor="test",
             start_time="20210101",
-            version="v001",
+            major_version=0,
+            minor_version=1,
             extension="cdf",
         )
 
@@ -635,11 +638,12 @@ def test_quicklook_file_path():
         data_level="l1a",
         descriptor="test",
         start_time="20210101",
-        version="v001",
+        major_version=0,
+        minor_version=1,
         extension="png",
     )
     expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v001.png"
+        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v000.0001.png"
     )
     assert file_no_repointing.construct_path() == expected_output_no_end_date
 
@@ -650,11 +654,12 @@ def test_quicklook_file_path():
         descriptor="test",
         start_time="20210101",
         repointing=1,
-        version="v001",
+        major_version=1,
+        minor_version=1,
         extension="png",
     )
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v001.png"
+        "imap/quicklook/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v001.0001.png"
     )
     assert file_all_params.construct_path() == expected_output
 
@@ -673,7 +678,8 @@ def test_dependency_file_path():
             data_level="l1a",
             descriptor="test",
             start_time="20210101",
-            version="v001",
+            major_version=0,
+            minor_version=1,
             extension="json",
         )
     # Test for an invalid dependency file (incorrect extension type)
@@ -683,7 +689,8 @@ def test_dependency_file_path():
             data_level="l1a",
             descriptor="test",
             start_time="20210101",
-            version="v001",
+            major_version=0,
+            minor_version=1,
             extension="cdf",
         )
 
@@ -693,11 +700,12 @@ def test_dependency_file_path():
         data_level="l1a",
         descriptor="test",
         start_time="20210101",
-        version="v001",
+        major_version=0,
+        minor_version=1,
         extension="json",
     )
     expected_output_no_end_date = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/dependency/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v001.json"
+        "imap/dependency/mag/l1a/2021/01/imap_mag_l1a_test_20210101_v000.0001.json"
     )
     assert file_no_repointing.construct_path() == expected_output_no_end_date
 
@@ -708,11 +716,12 @@ def test_dependency_file_path():
         descriptor="test",
         start_time="20210101",
         repointing=1,
-        version="v001",
+        major_version=0,
+        minor_version=1,
         extension="json",
     )
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/dependency/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v001.json"
+        "imap/dependency/mag/l1a/2021/01/imap_mag_l1a_test_20210101-repoint00001_v000.0001.json"
     )
     assert file_all_params.construct_path() == expected_output
 
