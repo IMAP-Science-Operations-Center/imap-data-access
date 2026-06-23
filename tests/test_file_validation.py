@@ -28,7 +28,6 @@ def test_extract_filename_components():
         "data_level": "l1a",
         "descriptor": "burst",
         "start_date": "20210101",
-        "version": "v001.0001",
         "major_version": 1,
         "minor_version": 1,
         "repointing": None,
@@ -68,29 +67,6 @@ def test_extract_filename_components():
     )
 
 
-# TODO remove this test after file versions are updated from vXXX to vRRR.MMM
-def test_extract_filename_components_deprecated_version_format():
-    """Tests the ``extract_filename_components` with old filename convention."""
-    valid_filename = "imap_mag_l1a_burst_20210101_v001.pkts"
-    # Use deprecated version format
-    expected_output = {
-        "mission": "imap",
-        "instrument": "mag",
-        "data_level": "l1a",
-        "descriptor": "burst",
-        "start_date": "20210101",
-        "major_version": None,
-        "minor_version": 1,
-        "repointing": None,
-        "cr": None,
-        "version": "v001",
-        "extension": "pkts",
-    }
-    assert (
-        ScienceFilePath.extract_filename_components(valid_filename) == expected_output
-    )
-
-
 def test_construct_sciencefilepathmanager():
     """Tests that the ``ScienceFilePath`` class constructs a valid filename."""
     valid_filename = "imap_mag_l1a_burst_20210101_v001.0001.cdf"
@@ -101,33 +77,32 @@ def test_construct_sciencefilepathmanager():
     assert sfm.descriptor == "burst"
     assert sfm.start_date == "20210101"
     assert sfm.repointing is None
-    assert sfm.version == "v001.0001"
     assert sfm.major_version == 1
     assert sfm.minor_version == 1
     assert sfm.extension == "cdf"
 
     # no extension
-    invalid_filename = "imap_mag_l1a_burst_20210101_v001"
+    invalid_filename = "imap_mag_l1a_burst_20210101_v001.0001"
     with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # invalid extension
-    invalid_filename = "imap_mag_l1a_burst_20210101_v001.abc"
+    invalid_filename = "imap_mag_l1a_burst_20210101_v001.0001.abc"
     with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # invalid instrument
-    invalid_filename = "imap_sdc_l1a_burst_20210101_v001.cdf"
+    invalid_filename = "imap_sdc_l1a_burst_20210101_v001.0001.cdf"
     with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # Bad repointing, not 5 digits
-    invalid_filename = "imap_mag_l1a_burst_20210101-repoint0001_v001.cdf"
+    invalid_filename = "imap_mag_l1a_burst_20210101-repoint0001_v001.0001.cdf"
     with pytest.raises(ScienceFilePath.InvalidImapFileError):
         ScienceFilePath(invalid_filename)
 
     # good path with an extra "test" directory
-    valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.cdf")
+    valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.0001.cdf")
     sfm = ScienceFilePath(valid_filepath)
 
     assert sfm.instrument == "mag"
@@ -135,7 +110,8 @@ def test_construct_sciencefilepathmanager():
     assert sfm.descriptor == "burst"
     assert sfm.start_date == "20210101"
     assert sfm.repointing is None
-    assert sfm.version == "v001"
+    assert sfm.major_version == 1
+    assert sfm.minor_version == 1
     assert sfm.extension == "cdf"
 
     # Test valid date for given start_date
@@ -160,10 +136,10 @@ def test_is_valid_date():
 
 def test_construct_upload_path():
     """Tests the ``construct_path`` method."""
-    valid_filename = "imap_mag_l1a_burst_20210101_v001.cdf"
+    valid_filename = "imap_mag_l1a_burst_20210101_v001.0001.cdf"
     sfm = ScienceFilePath(valid_filename)
     expected_output = imap_data_access.config["DATA_DIR"] / Path(
-        "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_v001.cdf"
+        "imap/mag/l1a/2021/01/imap_mag_l1a_burst_20210101_v001.0001.cdf"
     )
 
     assert sfm.construct_path() == expected_output
@@ -182,7 +158,8 @@ def test_generate_from_inputs():
     assert sfm.descriptor == "burst"
     assert sfm.start_date == "20210101"
     assert sfm.repointing is None
-    assert sfm.version == "v000.0001"
+    assert sfm.major_version == 0
+    assert sfm.minor_version == 1
     assert sfm.extension == "cdf"
 
     sfm = ScienceFilePath.generate_from_inputs("mag", "l0", "raw", "20210101", 0, 1)
@@ -664,7 +641,7 @@ def test_quicklook_file_path():
     assert file_all_params.construct_path() == expected_output
 
     # Test by passing the file
-    file = QuicklookFilePath("imap_mag_l1a_test_20210101_v001.png")
+    file = QuicklookFilePath("imap_mag_l1a_test_20210101_v001.0001.png")
     assert file.instrument == "mag"
     assert file.start_date == "20210101"
 
@@ -726,7 +703,7 @@ def test_dependency_file_path():
     assert file_all_params.construct_path() == expected_output
 
     # Test by passing the file
-    file = DependencyFilePath("imap_mag_l1a_test_20210101_v001.json")
+    file = DependencyFilePath("imap_mag_l1a_test_20210101_v000.0001.json")
     assert file.instrument == "mag"
     assert file.start_date == "20210101"
 

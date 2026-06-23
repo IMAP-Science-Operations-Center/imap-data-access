@@ -638,7 +638,7 @@ def test_spice_query_bad_params(mock_send_request):
             "Not a valid repointing, use format repoint<num>, "
             "where <num> is a 5 digit integer.",
         ),
-        ("version", "badInput", "Not a valid version, use format 'vMMM.mmmm."),
+        ("version", "badInput", "Not a valid version, use format 'vXXX"),
         (
             "extension",
             "badInput",

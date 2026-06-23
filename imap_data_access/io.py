@@ -125,7 +125,7 @@ def download(file_path: Union[Path, str]) -> Path:
 
 
 # Too many branches (16 >12)
-# ruff: noqa: PLR0912, PLR0915
+# ruff: noqa: PLR0912
 def _validate_query_parameters(**kwargs) -> None:
     """Validate all parameters used in the query function.
 
@@ -201,14 +201,6 @@ def _validate_query_parameters(**kwargs) -> None:
                     " where <num> is a 5 digit integer."
                 ) from err
 
-    # Check version make sure to include 'latest'
-    if table == "science":
-        if version is not None and not file_validation.ScienceFilePath.is_valid_version(
-            version
-        ):
-            raise ValueError(
-                "Not a valid version, use format 'vMMM.mmmm' or 'vXXX' (deprecated)."
-            )
     elif version is not None and not file_validation.ImapFilePath.is_valid_version(
         version
     ):
