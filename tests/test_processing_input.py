@@ -59,9 +59,11 @@ def test_create_science_files():
 
 # TODO remove this test after file versions are updated from vXXX to vRRR.MMM
 def test_create_science_files_deprecated_version_format():
-    one_file = processing_input.ScienceInput("imap_mag_l1a_norm-magi_20240312_v000.cdf")
+    one_file = processing_input.ScienceInput(
+        "imap_mag_l1a_norm-magi_20240312_v000.0001.cdf"
+    )
 
-    assert one_file.filename_list == ["imap_mag_l1a_norm-magi_20240312_v000.cdf"]
+    assert one_file.filename_list == ["imap_mag_l1a_norm-magi_20240312_v000.0001.cdf"]
     assert len(one_file.imap_file_paths) == 1
     assert isinstance(one_file.imap_file_paths[0], ScienceFilePath)
 
@@ -315,7 +317,7 @@ def test_create_collection():  # noqa: PLR0915
 
     input_collection_str = [
         {"type": "spice", "files": ["naif0012.tls", "imap_sclk_0001.tsc"]},
-        {"type": "science", "files": ["imap_swe_l0_raw_20260924_v007.pkts"]},
+        {"type": "science", "files": ["imap_swe_l0_raw_20260924_v000.0007.pkts"]},
         {"type": "spin", "files": ["imap_1000_100_1000_100_01.spin.csv"]},
         {"type": "repoint", "files": ["imap_1000_001_03.repoint.csv"]},
     ]
@@ -526,8 +528,8 @@ def test_download_all_files():
 
 def test_get_valid_inputs_for_start_date():
     mag_sci_anc = ScienceInput(
-        "imap_mag_l1a_norm-magi_20250101_v000.cdf",
-        "imap_mag_l1a_norm-magi_20250102_v001.cdf",
+        "imap_mag_l1a_norm-magi_20250101_v000.0001.cdf",
+        "imap_mag_l1a_norm-magi_20250102_v001.0001.cdf",
     )
     hit_anc = AncillaryInput(
         "imap_hit_l1b-cal_20250101_v000.cdf",

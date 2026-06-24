@@ -180,36 +180,35 @@ class Version:
         return Version.valid_imap_version_pattern
 
     @staticmethod
-    def is_valid_version(version: str) -> bool:
+    def is_valid_version(
+        version: str, pattern: str = valid_imap_version_pattern
+    ) -> bool:
         """Check if the version string has a valid format 'vXXX' or 'vMMM.mmmm'.
 
         Parameters
         ----------
         version : str
             Version string to check.
+        pattern : str, optional
+            Regex pattern to use for validation. Defaults to
+            valid_imap_version_pattern for version patterns vXXX or vMMM.mmmm.
 
         Returns
         -------
         bool
             Whether the version string is valid or not.
         """
-        return bool(re.fullmatch(Version.valid_imap_version_pattern, version))
+        return bool(re.fullmatch(pattern, version))
+
+    @staticmethod
+    def is_valid_science_version(version: str) -> bool:
+        """Check if the version string has a valid format 'vMMM.mmmm'."""
+        return Version.is_valid_version(version, Version.science_version_pattern)
 
     @staticmethod
     def is_valid_version_minor_only(version: str) -> bool:
-        """Check if the version string is in the valid minor-only format 'vXXX'.
-
-        Parameters
-        ----------
-        version : str
-            Version string to check.
-
-        Returns
-        -------
-        bool
-            Whether the version string is valid or not.
-        """
-        return bool(re.fullmatch(Version.minor_only_version_pattern, version))
+        """Check if the version string is in the valid minor-only format 'vXXX'."""
+        return Version.is_valid_version(version, Version.minor_only_version_pattern)
 
     @staticmethod
     def _validate_range(value: int, max_value: int) -> None:
@@ -233,6 +232,8 @@ class ImapFilePath:
     Includes shared static methods and provides correct typing for ScienceFilePath,
     AncillaryFilePath, and SPICEFilePath.
     """
+
+    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.minor_only_version_pattern
 
     class InvalidImapFileError(Exception):
         """Indicates a bad file type."""
@@ -276,9 +277,9 @@ class ImapFilePath:
         except ValueError:
             return False
 
-    @staticmethod
-    def is_valid_version(input_version: str) -> bool:
-        """Check input version string is in valid format 'vXXX' or 'latest'.
+    @classmethod
+    def is_valid_version(cls, input_version: str) -> bool:
+        """Check input version string is "latest" or the class's valid version pattern.
 
         Parameters
         ----------
@@ -290,8 +291,8 @@ class ImapFilePath:
         bool
             Whether input version is valid or not.
         """
-        return input_version == "latest" or Version.is_valid_version_minor_only(
-            input_version
+        return input_version == "latest" or Version.is_valid_version(
+            input_version, cls.VALID_VERSION_PATTERN
         )
 
     @abstractmethod
@@ -311,11 +312,10 @@ class ScienceFilePath(ImapFilePath):
     FILENAME_CONVENTION = (
         "<mission>_<instrument>_<datalevel>_<descriptor>_"
         "<startdate>(-<repointing>)_<version>.<extension>"
-        " where version is vMMM.mmmm (legacy vXXX is deprecated but supported)"
+        " where version is vMMM.mmmm (legacy vXXX is deprecated and no longer "
+        "supported.)"
     )
-    # TODO update this to be Version.science_version_pattern once files have been
-    #  renamed.
-    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.valid_imap_version_pattern
+    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.science_version_pattern
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
     _dir_prefix = "imap"
 
@@ -347,7 +347,7 @@ class ScienceFilePath(ImapFilePath):
         <cr>: This is an optional field describing the Carrington rotation.
             format: crXXXXX.
         <version>: This stores the data version for this product, format: vMMM.mmmm.
-            Legacy vXXX is accepted for backward compatibility but deprecated.
+            vXXX format is deprecated and will raise an error.
 
         Parameters
         ----------
@@ -371,7 +371,6 @@ class ScienceFilePath(ImapFilePath):
         self.start_date = split_filename["start_date"]
         self.repointing = split_filename["repointing"]
         self.cr = split_filename["cr"]
-        self.version = split_filename["version"]
         self.major_version = split_filename["major_version"]
         self.minor_version = split_filename["minor_version"]
         self.extension = split_filename["extension"]
@@ -387,7 +386,8 @@ class ScienceFilePath(ImapFilePath):
         data_level: str,
         descriptor: str,
         start_time: str,
-        version: str,
+        major_version: int | None,
+        minor_version: int,
         extension: str = "cdf",
         repointing: int | str | None = None,
         cr: int | None = None,
@@ -411,8 +411,11 @@ class ScienceFilePath(ImapFilePath):
             The data level for the filename
         start_time: str
             The start time for the filename
-        version : str
-            The version of the data
+        major_version : int | None
+            The major version of the data. If None, the version will be constructed
+             using the minor version in the legacy vXXX format.
+        minor_version : int
+            The minor version of the data
         extension : str, optional
             The extension type of the file. Default is "cdf"
             For l0 files, the extension is always "pkts"
@@ -443,9 +446,10 @@ class ScienceFilePath(ImapFilePath):
                 )
         if cr:
             time_field += f"-cr{cr:05d}"
+        version_str = str(Version(major_version, minor_version))
         filename = (
             f"imap_{instrument}_{data_level}_{descriptor}_{time_field}_"
-            f"{version}.{extension}"
+            f"{version_str}.{extension}"
         )
         return cls(filename)
 
@@ -471,8 +475,9 @@ class ScienceFilePath(ImapFilePath):
                 self.data_level,
                 self.descriptor,
                 self.start_date,
-                self.version,
                 self.extension,
+                self.major_version,
+                self.minor_version,
             ]
         ):
             error_message = (
@@ -496,11 +501,6 @@ class ScienceFilePath(ImapFilePath):
             )
         if not self.is_valid_date(self.start_date):
             error_message += "Invalid start date format. Please use YYYYMMDD format. \n"
-        if not ScienceFilePath.is_valid_version(self.version):
-            error_message += (
-                "Invalid version format. Please use vMMM.mmmm format"
-                " (vXXX format is deprecated but supported for compatibility).\n"
-            )
         if self.repointing and not isinstance(self.repointing, int):
             error_message += "The repointing number should be an integer.\n"
 
@@ -537,7 +537,8 @@ class ScienceFilePath(ImapFilePath):
         """Extract all components from filename. Does not validate instrument or level.
 
         Will return a dictionary with the following keys:
-        { instrument, datalevel, descriptor, startdate, enddate, version, extension, cr,
+        { instrument, datalevel, descriptor, startdate, enddate, major_version,
+        minor_version, extension, cr,
         repointing }
 
         If a match is not found, a ValueError will be raised.
@@ -594,7 +595,7 @@ class ScienceFilePath(ImapFilePath):
         del components["interval_type"]
 
         # Get major and minor versions
-        version = Version.from_version(components["version"])
+        version = Version.from_version(components.pop("version"))
         components["major_version"] = version.major
         components["minor_version"] = version.minor
 
@@ -649,15 +650,6 @@ class ScienceFilePath(ImapFilePath):
             Whether input carrington rotation is valid or not.
         """
         return re.fullmatch(r"cr\d{5}", str(input_cr))
-
-    @staticmethod
-    def is_valid_version(input_version: str) -> bool:
-        """Check input version string is valid for science files.
-
-        A valid science version is ``vMMM.mmmm`` or legacy ``vXXX``. The special value
-        ``latest`` is also accepted for query-style inputs.
-        """
-        return input_version == "latest" or Version.is_valid_version(input_version)
 
 
 # Transform the suffix to the directory structure we are using
