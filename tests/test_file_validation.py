@@ -66,6 +66,14 @@ def test_extract_filename_components():
         ScienceFilePath.extract_filename_components(valid_filepath) == expected_output
     )
 
+    valid_filepath = Path("/test/imap_mag_l1a_burst_20210101_v001.cdf")  # test with
+    # vXXX format
+    expected_output["extension"] = "cdf"
+    expected_output["major_version"] = None
+    assert (
+        ScienceFilePath.extract_filename_components(valid_filepath) == expected_output
+    )
+
 
 def test_construct_sciencefilepathmanager():
     """Tests that the ``ScienceFilePath`` class constructs a valid filename."""
@@ -195,6 +203,13 @@ def test_generate_from_inputs():
         sfm = ScienceFilePath.generate_from_inputs(
             "glows", "l3a", "test", "20210101", 0, 1, cr=23, repointing=1
         )
+
+    sfm = ScienceFilePath.generate_from_inputs("mag", "l0", "raw", "20210101", None, 1)
+    expected_output = imap_data_access.config["DATA_DIR"] / Path(
+        "imap/mag/l0/2021/01/imap_mag_l0_raw_20210101_v001.pkts"
+    )
+
+    assert sfm.construct_path() == expected_output
 
 
 def test_spice_file_path():

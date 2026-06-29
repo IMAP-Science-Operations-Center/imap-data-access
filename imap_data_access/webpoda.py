@@ -560,7 +560,7 @@ def _get_latest_version_file_path(
         descriptor="raw",
         start_time=start_time.strftime("%Y%m%d"),
         repointing=repointing,
-        major_version=0,
+        major_version=1,  # L0 files always use major version 1
         minor_version=max_minor_version,
     )
     return science_file.construct_path()
