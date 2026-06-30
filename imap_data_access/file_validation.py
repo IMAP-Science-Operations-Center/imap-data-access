@@ -312,10 +312,9 @@ class ScienceFilePath(ImapFilePath):
     FILENAME_CONVENTION = (
         "<mission>_<instrument>_<datalevel>_<descriptor>_"
         "<startdate>(-<repointing>)_<version>.<extension>"
-        " where version is vMMM.mmmm (legacy vXXX is deprecated and no longer "
-        "supported.)"
+        " where version is vMMM.mmmm or vXXX."
     )
-    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.science_version_pattern
+    VALID_VERSION_PATTERN: typing.ClassVar[str] = Version.valid_imap_version_pattern
     VALID_EXTENSIONS: typing.ClassVar[set[str]] = {"cdf", "pkts"}
     _dir_prefix = "imap"
 
@@ -346,8 +345,8 @@ class ScienceFilePath(ImapFilePath):
             repointing the data is from, format: repointXXXXX
         <cr>: This is an optional field describing the Carrington rotation.
             format: crXXXXX.
-        <version>: This stores the data version for this product, format: vMMM.mmmm.
-            vXXX format is deprecated and will raise an error.
+        <version>: This stores the data version for this product, format: vMMM.mmmm or
+        vXXX.
 
         Parameters
         ----------
@@ -397,7 +396,7 @@ class ScienceFilePath(ImapFilePath):
         This can be used instead of the __init__ method to make a new instance:
         ```
         science_file_path = ScienceFilePath.generate_from_inputs("mag", "l0", "test",
-            "20240213", "v001")
+            "20240213", 1, 1)
         full_path = science_file_path.construct_path()
         ```
 
@@ -476,7 +475,6 @@ class ScienceFilePath(ImapFilePath):
                 self.descriptor,
                 self.start_date,
                 self.extension,
-                self.major_version,
                 self.minor_version,
             ]
         ):

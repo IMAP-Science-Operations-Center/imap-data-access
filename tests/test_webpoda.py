@@ -125,7 +125,7 @@ def test_download_daily_data(
             data_level="l0",
             descriptor="raw",
             start_time=day.strftime("%Y%m%d"),
-            major_version=0,
+            major_version=1,
             minor_version=1,
         ).construct_path()
         # There are two swapi apids, so we download the same byte stream twice
@@ -209,7 +209,7 @@ def test_download_repointing_data(
             descriptor="raw",
             start_time=date,
             repointing=repoint_id,
-            major_version=0,
+            major_version=1,
             minor_version=1,
         ).construct_path()
         # There are two hi apids, so we download the same byte stream twice
@@ -251,7 +251,7 @@ def test_file_versioning(
             data_level="l0",
             descriptor="raw",
             start_time=day.strftime("%Y%m%d"),
-            major_version=0,
+            major_version=1,
             minor_version=3,
         ).construct_path()
         # There are two swapi apids, so we download the same byte stream twice
