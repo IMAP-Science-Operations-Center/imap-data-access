@@ -720,6 +720,47 @@ def test_query_latest_version(mock_send_request, items: list):
     assert "version=" not in sent_request.url
 
 
+def test_upload_rejects_legacy_science_file_format(mock_send_request):
+    """Test that uploading a science file with the legacy vXXX format is rejected.
+
+    Science files must use the new file format (version vMMM.mmmm). Uploads of
+    science files using the legacy vXXX version format should be rejected before
+    any request is made.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for ``requests.session``
+    """
+    legacy_name = "imap_mag_l1a_test_20240101_v001.cdf"
+    file_to_upload = imap_data_access.config["DATA_DIR"] / legacy_name
+    file_to_upload.parent.mkdir(parents=True, exist_ok=True)
+    file_to_upload.write_bytes(b"test file content")
+
+    with pytest.raises(ValueError, match="Invalid science file"):
+        imap_data_access.upload(file_to_upload)
+    assert mock_send_request.call_count == 0
+
+
+def test_upload_accepts_new_science_file_format(mock_send_request):
+    """Test that uploading a science file with the new vMMM.mmmm format succeeds.
+
+    Parameters
+    ----------
+    mock_send_request : unittest.mock.MagicMock
+        Mock object for ``requests.session``
+    """
+    mock_send_request.return_value.json.return_value = "https://s3-test-bucket.com"
+    new_name = "imap_mag_l1a_test_20240101_v001.0002.cdf"
+    file_to_upload = imap_data_access.config["DATA_DIR"] / new_name
+    file_to_upload.parent.mkdir(parents=True, exist_ok=True)
+    file_to_upload.write_bytes(b"test file content")
+
+    imap_data_access.upload(file_to_upload)
+    # Two requests: get presigned URL, then PUT the file
+    assert mock_send_request.call_count == 2
+
+
 def test_upload_no_file(mock_send_request):
     """Test a call to the upload API that has no filename supplied.
     Parameters
