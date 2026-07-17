@@ -737,7 +737,7 @@ def test_upload_rejects_legacy_science_file_format(mock_send_request):
     file_to_upload.parent.mkdir(parents=True, exist_ok=True)
     file_to_upload.write_bytes(b"test file content")
 
-    with pytest.raises(ValueError, match="new file format"):
+    with pytest.raises(ValueError, match="Invalid science file"):
         imap_data_access.upload(file_to_upload)
     assert mock_send_request.call_count == 0
 
