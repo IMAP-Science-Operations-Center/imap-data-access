@@ -543,9 +543,7 @@ def upload(file_path: Union[Path, str]) -> None:
     except ScienceFilePath.InvalidImapFileError:
         science_file = None
     if science_file is not None and science_file.major_version is None:
-        raise ValueError(
-            f"Invalid science file {file_path.name}."
-        )
+        raise ValueError(f"Invalid science file {file_path.name}.")
 
     # The upload name needs to be given as a path parameter
     url = f"{_get_base_url()}/upload/{file_path.name}"
