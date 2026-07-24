@@ -574,21 +574,14 @@ def upload(file_path: Union[Path, str]) -> None:
 
 def release(
     *,
-    instrument: Optional[str] = None,
-    release_type: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    release_number: Optional[int] = None,
-    exclude_file: Optional[Union[Path, str]] = None,
-    manifest_file: Optional[Union[Path, str]] = None,
+    release_type: str,
+    manifest_file: Path,
 ) -> None:
     """Submit a release file to the data archive API.
 
     Parameters
     ----------
-    instrument : str, optional
-        Instrument name (e.g., ``mag``, ``swe``)
-    release_type : str, optional
+    release_type : str
         Type of release:
         - 'release': IMAP mission-wide public release. By default, all files
           are released unless specified in the exception list to be withheld.
@@ -596,18 +589,8 @@ def release(
           instrument and project.
         - 'unrelease': Unrelease previously released files due to various
           causes and reasons.
-    start_date : str, optional
-        Start date in YYYYMMDD format
-    end_date : str, optional
-        End date in YYYYMMDD format
-    release_number : int, optional
-        Release number. Defaults to ``None``. Required if release_type is
-        'release' or 'reprocess' and should be an integer value.
-    exclude_file : str, optional
-        Path to exclude file containing list of files to exclude from public release.
-    manifest_file : str, optional
-        Path to manifest file containing list of files to apply action to in
-        'early-release' or 'unrelease' types.
+    manifest_file : Path
+        Path to manifest file containing specification.
 
     Raises
     ------
@@ -623,6 +606,9 @@ def release(
             "Set the IMAP_API_KEY environment variable or use --api-key argument."
         )
 
+    if manifest_file is None:
+        raise ValueError("Manifest file is required or check that the path is valid.")
+
     # Validate release_type
     valid_release_types = [e.value for e in ReleaseType]
     if release_type not in valid_release_types:
@@ -630,79 +616,21 @@ def release(
             f"Not a valid release type, please choose from {valid_release_types}"
         )
 
-    if release_type == ReleaseType.RELEASE.value:
-        # Validate required inputs for 'release' type
-        if instrument not in imap_data_access.VALID_INSTRUMENTS:
-            raise ValueError(
-                "Not a valid instrument, please choose from "
-                + ", ".join(imap_data_access.VALID_INSTRUMENTS)
-            )
-
-        # Validate release_type == "release" requires release_number
-        if release_type == ReleaseType.RELEASE.value and release_number is None:
-            raise ValueError(
-                "The 'release_number' parameter is required for 'release' release type."
-            )
-
-        # Validate start_date
-        if not file_validation.ImapFilePath.is_valid_date(start_date):
-            raise ValueError("Not a valid start date, use format 'YYYYMMDD'.")
-
-        # Validate end_date
-        if not file_validation.ImapFilePath.is_valid_date(end_date):
-            raise ValueError("Not a valid end date, use format 'YYYYMMDD'.")
-
-    if (
-        release_type in [ReleaseType.EARLY_RELEASE.value, ReleaseType.UNRELEASE.value]
-        and manifest_file is None
-    ):
-        raise ValueError(
-            "The 'manifest_file' parameter is required for "
-            f"'{release_type}' release type."
-        )
-
-    if release_type == ReleaseType.REPROCESS.value and release_number is None:
-        raise ValueError(
-            "The 'release_number' parameter is required for 'reprocess' release type."
-        )
-    # Handle exclude file upload if provided
-    if exclude_file is not None:
-        # Upload the exclude file using the standard upload function
-        upload(exclude_file)
-        # Sleep few seconds to ensure file is uploaded and indexed
-        # before the release API tries to access it.
-        sleep(10)
-        logger.info("Exclude file uploaded successfully")
-
-    # Handle manifest file upload if provided
-    if manifest_file is not None:
-        # Upload the manifest file using the standard upload function
-        upload(manifest_file)
-        # Sleep few seconds to ensure file is uploaded and indexed
-        # before the release API tries to access it.
-        sleep(10)
-        logger.info("Manifest file uploaded successfully")
+    if release_type in [ReleaseType.EARLY_RELEASE.value, ReleaseType.UNRELEASE.value]:
+        raise ValueError(f"release_type '{release_type}' is not supported yet")
+    # Upload the manifest file using the standard upload function
+    upload(manifest_file)
+    # Sleep few seconds to ensure file is uploaded and indexed
+    # before the release API tries to access it.
+    sleep(10)
+    logger.info("Manifest file uploaded successfully")
 
     # Build release parameters
     release_params = {
-        "instrument": instrument,
         "release_type": release_type,
-        "start_date": start_date,
-        "end_date": end_date,
+        # Release API only needs the filename, not the full path
+        "manifest_file": os.path.basename(manifest_file),
     }
-
-    # Add release_number only if release_type is 'release' or 'reprocess'
-    if release_type in {ReleaseType.RELEASE.value, ReleaseType.REPROCESS.value}:
-        release_params["release_number"] = release_number
-
-    # Add optional parameters if provided
-    if exclude_file is not None:
-        # API only needs the filename, not the full path
-        release_params["exclude_file"] = os.path.basename(exclude_file)
-
-    if manifest_file is not None:
-        # API only needs the filename, not the full path
-        release_params["manifest_file"] = os.path.basename(manifest_file)
 
     logger.debug("Input release parameters: %s", release_params)
 
@@ -714,7 +642,4 @@ def release(
         result = response.json()
         logger.debug("Received JSON: %s", result)
 
-    logger.info(
-        f"Release request submitted successfully for {instrument} "
-        f"from {start_date} to {end_date}."
-    )
+    logger.info(f"Release request submitted successfully for {manifest_file}")

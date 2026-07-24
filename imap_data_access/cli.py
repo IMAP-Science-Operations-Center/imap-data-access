@@ -372,12 +372,7 @@ def _release_parser(args: argparse.Namespace):
     """
     # All validation is now handled in io.py
     release(
-        instrument=args.instrument,
         release_type=args.release_type,
-        start_date=args.start_date,
-        end_date=args.end_date,
-        release_number=args.release_number,
-        exclude_file=args.exclude_file,
         manifest_file=args.manifest_file,
     )
     print("Successfully submitted release request to the IMAP SDC.")
@@ -734,71 +729,25 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser_release.add_argument(
-        "--instrument",
-        type=str,
-        required=False,
-        metavar="INSTRUMENT",
-        help="Name of the instrument (e.g., mag, swe, lo, codice)",
-        choices=imap_data_access.VALID_INSTRUMENTS,
-    )
-    parser_release.add_argument(
-        "--start-date",
-        type=str,
-        required=False,
-        metavar="YYYYMMDD",
-        help="Start date for the release",
-    )
-    parser_release.add_argument(
-        "--end-date",
-        type=str,
-        required=False,
-        metavar="YYYYMMDD",
-        help="End date for the release",
-    )
-    parser_release.add_argument(
         "--release-type",
         type=str,
         required=True,
         metavar="ReleaseType",
         help=(
             "Type of release:\n"
-            "- 'release': IMAP mission-wide public release. By default, all\n"
-            "  files are released unless specified in the --exclude-file to\n"
-            "  be withheld.\n"
-            "- 'early-release': Early release of selected files approved by\n"
+            "- 'release': IMAP mission-wide public release. Use --manifest-file to\n"
+            "  specify which data to release.\n"
+            "[NOT SUPPORTED YET] - 'early-release': Early release approved by\n"
             "  both instrument and project. Use --manifest-file to specify\n"
-            "  files to release early.\n"
-            "- 'unrelease': Unrelease previously released files due to\n"
+            "  data to release early.\n"
+            "[NOT SUPPORTED YET] - 'unrelease': Unrelease previously released "
+            "data due to\n"
             "  various causes and reasons. Use --manifest-file to specify\n"
-            "  files to unrelease.\n"
-            "- 'reprocess': Trigger reprocessing for the specified "
-            "--release-number."
+            "  data to unrelease.\n"
         ),
         choices=[e.value for e in ReleaseType],
     )
-    parser_release.add_argument(
-        "--release-number",
-        type=int,
-        required=False,
-        metavar="NUMBER",
-        help=(
-            "Release number (required only when --release-type is "
-            "'release' or 'reprocess')."
-        ),
-    )
-    parser_release.add_argument(
-        "--exclude-file",
-        type=str,
-        required=False,
-        metavar="PATH",
-        default=None,
-        help=(
-            "Path to a file listing files to exclude from public release.\n"
-            "\nUsed for 'release' type to specify files to withhold.\n"
-            "File name should follow: \n  imap_<instrument>_withhold-data-"
-            "release-<###>_<start_date>_<end_date>_<version>.txt\n"
-        ),
-    )
+
     parser_release.add_argument(
         "--manifest-file",
         type=str,
@@ -806,16 +755,10 @@ def main():
         metavar="PATH",
         default=None,
         help=(
-            "Path to a file listing files to apply action to in 'early-release'"
-            " or\n 'unrelease' types. (required for 'early-release' and "
-            "'unrelease').\n\n"
-            "This file serves as the manifest for files\n"
-            "to be released early or unreleased.\n"
+            "File containing list of specification for each release type. "
             "File name should follow:\n"
-            "  - early-release: "
-            "imap_<instrument>_early-release_<start_date>_<end_date>_<version>.txt\n"
-            "  - unrelease: "
-            "imap_<instrument>_unrelease_<start_date>_<end_date>_<version>.txt\n"
+            "imap_<instrument>_data-release-<release-number>_<start_date>_<end_date>_<version>.txt\n"
+            "Eg. imap_hit_data-release-001_20260101_20260131_v001.txt\n"
         ),
     )
     parser_release.set_defaults(func=_release_parser)
