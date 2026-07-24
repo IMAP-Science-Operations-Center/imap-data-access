@@ -581,7 +581,7 @@ def release(
 
     Parameters
     ----------
-    release_type : str, optional
+    release_type : str
         Type of release:
         - 'release': IMAP mission-wide public release. By default, all files
           are released unless specified in the exception list to be withheld.
@@ -589,11 +589,13 @@ def release(
           instrument and project.
         - 'unrelease': Unrelease previously released files due to various
           causes and reasons.
-    manifest_file : str
+    manifest_file : Path
         Path to manifest file containing specification.
 
     Raises
     ------
+    ValueError
+        If API key is not configured or if any of the required parameters are invalid
     IMAPDataAccessError
         If the API request fails
     """
@@ -615,8 +617,7 @@ def release(
         )
 
     if release_type in [ReleaseType.EARLY_RELEASE.value, ReleaseType.UNRELEASE.value]:
-        raise ValueError("Not supported yet")
-
+        raise ValueError(f"release_type '{release_type}' is not supported yet")
     # Upload the manifest file using the standard upload function
     upload(manifest_file)
     # Sleep few seconds to ensure file is uploaded and indexed
