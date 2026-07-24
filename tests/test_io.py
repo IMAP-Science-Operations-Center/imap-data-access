@@ -943,22 +943,12 @@ def test_reprocess_bad_instrument(mock_send_request):
     "release_params",
     [
         {
-            "instrument": "hit",
             "release_type": "release",
-            "start_date": "20260401",
-            "end_date": "20260430",
-            "release_number": 1,
-        },
-        {
-            "instrument": "mag",
-            "release_type": "release",
-            "start_date": "20260101",
-            "end_date": "20260131",
-            "release_number": 0,
+            "manifest_file": "imap_hit_release_20260101_20260131_v001.txt",
         },
     ],
 )
-def test_release(mock_send_request, api_key, release_params):
+def test_release(mock_send_request, api_key, release_params, tmp_path, monkeypatch):
     """Test a successful call to the release API with release type.
 
     Parameters
@@ -970,29 +960,49 @@ def test_release(mock_send_request, api_key, release_params):
     release_params : dict
         Parameters passed to release().
     """
-    mock_response = MagicMock()
-    mock_response.json.return_value = {}
-    mock_send_request.return_value = mock_response
+    monkeypatch.setattr("imap_data_access.io.sleep", lambda _seconds: None)
+
+    manifest_name = release_params["manifest_file"]
+    manifest_path = tmp_path / manifest_name
+    manifest_path.write_text("hit, l0, hk, true\n")
+    release_params = {**release_params, "manifest_file": str(manifest_path)}
+
+    # release() does 3 requests:
+    # 1) GET /upload/<manifest>
+    # 2) PUT <presigned_s3_url>
+    # 3) GET /release?... with manifest basename
+    s3_response = MagicMock()
+    s3_response.json.return_value = "https://s3-test-bucket.com/imap/release/"
+    put_response = MagicMock()
+    put_response.json.return_value = {}
+    release_response = MagicMock()
+    release_response.json.return_value = {}
+    mock_send_request.side_effect = [s3_response, put_response, release_response]
 
     imap_data_access.release(**release_params)
 
-    mock_send_request.assert_called_once()
-    sent_request = mock_send_request.call_args[0][0]
-    assert "/release" in sent_request.url
-    assert sent_request.method == "GET"
-    for key, value in release_params.items():
-        assert f"{key}={value}" in sent_request.url
+    assert mock_send_request.call_count == 3
+
+    upload_request = mock_send_request.mock_calls[0].args[0]
+    assert upload_request.method == "GET"
+    assert f"/upload/{manifest_name}" in upload_request.url
+
+    put_request = mock_send_request.mock_calls[1].args[0]
+    assert put_request.method == "PUT"
+
+    release_request = mock_send_request.mock_calls[2].args[0]
+    assert "/release" in release_request.url
+    assert release_request.method == "GET"
+    assert f"release_type={release_params['release_type']}" in release_request.url
+    assert f"manifest_file={manifest_name}" in release_request.url
 
 
 def test_release_no_api_key(mock_send_request):
     """Test that release() raises when no API key is set."""
     with pytest.raises(ValueError, match="API key is required"):
         imap_data_access.release(
-            instrument="hit",
             release_type="release",
-            start_date="20260401",
-            end_date="20260430",
-            release_number=1,
+            manifest_file="imap_hit_release_20260101_20260131_v001.txt",
         )
     assert mock_send_request.call_count == 0
 
@@ -1001,98 +1011,18 @@ def test_release_invalid_release_type(mock_send_request, api_key):
     """Test that release() raises on an unrecognised release_type."""
     with pytest.raises(ValueError, match="Not a valid release type"):
         imap_data_access.release(
-            instrument="hit",
+            manifest_file="imap_hit_release_20260101_20260131_v001.txt",
             release_type="bad-type",
-            start_date="20260401",
-            end_date="20260430",
         )
     assert mock_send_request.call_count == 0
 
 
-def test_release_invalid_instrument(mock_send_request, api_key):
-    """Test that release() raises on an invalid instrument for release type."""
-    with pytest.raises(ValueError, match="Not a valid instrument"):
-        imap_data_access.release(
-            instrument="bad_instrument",
-            release_type="release",
-            start_date="20260401",
-            end_date="20260430",
-            release_number=1,
-        )
-    assert mock_send_request.call_count == 0
-
-
-def test_release_missing_release_number(mock_send_request, api_key):
-    """Test that release() raises when release_number is missing for release type."""
-    with pytest.raises(ValueError, match=r"release_number.*required"):
-        imap_data_access.release(
-            instrument="hit",
-            release_type="release",
-            start_date="20260401",
-            end_date="20260430",
-        )
-    assert mock_send_request.call_count == 0
-
-
-def test_release_invalid_start_date(mock_send_request, api_key):
-    """Test that release() raises on a bad start_date."""
-    with pytest.raises(ValueError, match="Not a valid start date"):
-        imap_data_access.release(
-            instrument="hit",
-            release_type="release",
-            start_date="bad-date",
-            end_date="20260430",
-            release_number=1,
-        )
-    assert mock_send_request.call_count == 0
-
-
-def test_release_invalid_end_date(mock_send_request, api_key):
-    """Test that release() raises on a bad end_date."""
-    with pytest.raises(ValueError, match="Not a valid end date"):
-        imap_data_access.release(
-            instrument="hit",
-            release_type="release",
-            start_date="20260401",
-            end_date="bad-date",
-            release_number=1,
-        )
-    assert mock_send_request.call_count == 0
-
-
-@pytest.mark.parametrize("release_type", ["early-release", "unrelease"])
+@pytest.mark.parametrize("release_type", ["release"])
 def test_release_missing_manifest_file(mock_send_request, api_key, release_type):
-    """Test that early-release and unrelease require a manifest_file."""
-    with pytest.raises(ValueError, match=r"manifest_file.*required"):
+    """Test that release require a manifest_file."""
+    with pytest.raises(
+        TypeError,
+        match=r"release\(\) missing 1 required keyword-only argument: 'manifest_file'",
+    ):
         imap_data_access.release(release_type=release_type)
     assert mock_send_request.call_count == 0
-
-
-def test_release_reprocess_missing_release_number(mock_send_request, api_key):
-    """Test that reprocess release type requires release_number."""
-    with pytest.raises(ValueError, match=r"release_number.*required"):
-        imap_data_access.release(release_type="reprocess")
-    assert mock_send_request.call_count == 0
-
-
-def test_release_early_release_with_manifest(mock_send_request, api_key, tmp_path):
-    """Test early-release type uploads manifest and calls the release endpoint."""
-    manifest = tmp_path / "imap_hit_unrelease_20260101_20260131_v001.txt"
-    manifest.write_text("imap_hit_l2_standard-intensity_20260101_v001.cdf\n")
-
-    # upload() makes two requests: first returns an S3 presigned URL string,
-    # second (PUT to S3) and the final release GET each return an empty dict.
-    s3_response = MagicMock()
-    s3_response.json.return_value = "https://s3-test-bucket.com/manifest"
-    put_response = MagicMock()
-    put_response.json.return_value = {}
-    release_response = MagicMock()
-    release_response.json.return_value = {}
-    mock_send_request.side_effect = [s3_response, put_response, release_response]
-
-    imap_data_access.release(release_type="early-release", manifest_file=manifest)
-
-    assert mock_send_request.call_count == 3
-    last_request = mock_send_request.call_args[0][0]
-    assert "/release" in last_request.url
-    assert "manifest_file=" in last_request.url
