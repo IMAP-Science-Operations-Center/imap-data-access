@@ -735,17 +735,15 @@ def main():
         metavar="ReleaseType",
         help=(
             "Type of release:\n"
-            "- 'release': IMAP mission-wide public release. By default, all\n"
-            "  files are released unless specified in the --exclude-file to\n"
-            "  be withheld.\n"
-            "[NOT SUPPORTED YET] - 'early-release': Early release of selected "
-            "files approved by\n"
+            "- 'release': IMAP mission-wide public release. Use --manifest-file to\n"
+            "  specify which data to release.\n"
+            "[NOT SUPPORTED YET] - 'early-release': Early release approved by\n"
             "  both instrument and project. Use --manifest-file to specify\n"
-            "  files to release early.\n"
+            "  data to release early.\n"
             "[NOT SUPPORTED YET] - 'unrelease': Unrelease previously released "
-            "files due to\n"
+            "data due to\n"
             "  various causes and reasons. Use --manifest-file to specify\n"
-            "  files to unrelease.\n"
+            "  data to unrelease.\n"
         ),
         choices=[e.value for e in ReleaseType],
     )
@@ -759,7 +757,8 @@ def main():
         help=(
             "File containing list of specification for each release type. "
             "File name should follow:\n"
-            "imap_<instrument>_data-release-xxx_<start_date>_<end_date>_<version>.txt\n"
+            "imap_<instrument>_data-release-<release-number>_<start_date>_<end_date>_<version>.txt\n"
+            "Eg. imap_hit_data-release-001_20260101_20260131_v001.txt\n"
         ),
     )
     parser_release.set_defaults(func=_release_parser)

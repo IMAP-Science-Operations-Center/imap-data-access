@@ -605,7 +605,7 @@ def release(
         )
 
     if manifest_file is None:
-        raise ValueError("Manifest file is required or valid path")
+        raise ValueError("Manifest file is required or check that the path is valid.")
 
     # Validate release_type
     valid_release_types = [e.value for e in ReleaseType]
