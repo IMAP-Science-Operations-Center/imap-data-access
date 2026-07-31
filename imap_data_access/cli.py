@@ -18,6 +18,7 @@ Use
 
 import argparse
 import datetime
+import json
 import logging
 import os
 from argparse import ArgumentParser
@@ -323,8 +324,7 @@ def _query_parser(args: argparse.Namespace):
     if args.output_format == "table":
         _print_query_results_table(query_results)
     elif args.output_format == "json":
-        # Dump the content directly
-        print(query_results)
+        print(json.dumps(query_results))
 
 
 def _upload_parser(args: argparse.Namespace):
