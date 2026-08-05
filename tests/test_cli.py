@@ -1,11 +1,19 @@
 """Tests for the CLI options."""
 
+import json
 import sys
+from argparse import Namespace
 from unittest import mock
 
 import pytest
 
 from imap_data_access import cli
+
+from .test_io import (
+    glows_l3e_hi_repoint1,
+    glows_l3e_hi_repoint2_v1,
+    glows_l3e_hi_repoint2_v2,
+)
 
 
 def test_cli_works():
@@ -37,6 +45,37 @@ def test_cli_spice_query(capsys):
     captured = capsys.readouterr()
     assert "Found [0] matching files" in captured.out
     mock_spice_query.assert_called_once_with(type="ephemeris_predicted")
+
+
+def test_cli_query_json(mock_send_request, capsys):
+    """
+    Test the CLI query subcommand's json output formatting
+
+    Ensure the query subcommand with '--output-format json'
+    produces valid, expected json
+    """
+    query_params = {
+        "instrument": "glows",
+        "data_level": "l3e",
+        "version": "latest",
+        "filename": None,
+        "output_format": "json",
+    }
+    query_output_expected = [
+        glows_l3e_hi_repoint1,
+        glows_l3e_hi_repoint2_v1,
+        glows_l3e_hi_repoint2_v2,
+    ]
+    json_output_expected = json.dumps(query_output_expected)
+
+    mock_response = mock.MagicMock()
+    mock_response.json.return_value = query_output_expected
+    mock_send_request.return_value = mock_response
+
+    args = Namespace(**query_params)
+    cli._query_parser(args)
+    captured = capsys.readouterr()
+    assert captured.out.strip() == json_output_expected
 
 
 def test_cli_error_message(capsys):
