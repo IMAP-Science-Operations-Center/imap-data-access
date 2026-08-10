@@ -242,7 +242,10 @@ def get_packet_binary_data_sctime(
         f"Getting binary packet data for apid [{apid}] between "
         f"{start_time} and {end_time}"
     )
-
+    print(
+        f"Getting binary packet data for apid [{apid}] between "
+        f"{start_time} and {end_time}"
+    )
     # Add a .bin suffix to get the binary data back
     query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.bin"
     params = (
@@ -267,42 +270,67 @@ def download_daily_data(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     upload_to_server=False,
+    query_by_ert=True,
 ):
     """Download data for the apid and start/end time range from webpoda.
 
     PODA stands for packet on demand access. This function requests the IMAP specific
     API endpoint, so all APIDs must be from the IMAP mission.
 
-    The query is based on earth received time (ert), so all packets received during
-    a specific downlink to the ground, not the spacecraft time.
-
     Parameters
     ----------
     instrument : str
         The instrument to download data for.
     start_time : datetime.datetime
-        The start time of the query in Earth Received Time (ERT).
+        The start time of the query. If query_by_ert is True, this uses Earth Received
+        Time (ERT). If query_by_ert is False, this uses Spacecraft Time (SCT).
     end_time : datetime.datetime
-        The end time of the query in Earth Received Time (ERT).
+        The end time of the query. If query_by_ert is True, this uses Earth Received
+        Time (ERT). If query_by_ert is False, this uses Spacecraft Time (SCT).
     upload_to_server : bool, optional
         If True, upload the data to the SDC data bucket, by default False
+    query_by_ert : bool, optional
+        If True, queries all data for all APIDs using the Earth Received Time (ERT)
+        date range. If False, queries all data for all APIDs with Spacecraft Time (SCT)
+        within the specified start and end date range. Default to False.
     """
     apids = INSTRUMENT_APIDS[instrument]
     logger.info(f"Downloading data for instrument [{instrument}]")
-    # Make a query to get the timestamps of the packets during this ERT
-    # range. We can/will get packets outside of this range because of the way we are
-    # only getting data after the fact and potentially backfilling data gaps.
-    packet_times = [
-        p for apid in apids for p in get_packet_times_ert(apid, start_time, end_time)
-    ]
 
-    # Get the unique dates from the packet times
-    unique_dates = sorted(set([dt.date() for dt in packet_times]))
-    logger.info(
-        f"Found [{len(packet_times)}] packets for instrument [{instrument}] "
-        f"between earth received time {start_time} and {end_time}"
-    )
-    logger.info(f"Unique spacecraft dates with packets: {unique_dates}")
+    if query_by_ert:
+        # Query by ERT to find unique spacecraft dates
+        logger.info(
+            f"Querying Earth Received Time (ERT) range from {start_time} to {end_time}"
+        )
+        packet_times = [
+            p
+            for apid in apids
+            for p in get_packet_times_ert(apid, start_time, end_time)
+        ]
+        # Get the unique dates from the packet times
+        unique_dates = sorted(set([dt.date() for dt in packet_times]))
+        logger.info(
+            f"Found [{len(packet_times)}] packets for instrument [{instrument}] "
+            f"between earth received time {start_time} and {end_time}"
+        )
+        logger.info(f"Unique spacecraft dates with packets: {unique_dates}")
+    else:
+        # Query by SCT - generate all dates in the range
+        logger.info(
+            f"Querying Spacecraft Time (SCT) range from {start_time} to {end_time}"
+        )
+        unique_dates = []
+        current_date = start_time.date()
+        end_date = end_time.date()
+        while current_date <= end_date:
+            unique_dates.append(current_date)
+            current_date += datetime.timedelta(days=1)
+        logger.info(
+            f"Querying {len(unique_dates)} spacecraft dates for "
+            f"instrument [{instrument}] between spacecraft time "
+            f"{start_time} and {end_time}"
+        )
+        logger.info(f"Spacecraft dates to query: {unique_dates}")
 
     # Iterate over the packet dates to make a query for each individual spacecraft day
     # packet_date 00:00:00 -> packet_date+1 00:00:00
