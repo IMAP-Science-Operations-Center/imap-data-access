@@ -347,17 +347,16 @@ def _webpoda_parser(args: argparse.Namespace):
     args : argparse.Namespace
         An object containing the parsed arguments and their values
     """
-    if args.end_date:
-        end_time = args.end_date
-    else:
-        end_time = args.start_date
+    end_time = args.end_date if args.end_date else args.start_date
     # Now push that out to 23:59:59
     end_time = datetime.datetime.combine(end_time, datetime.time.max)
 
+    query_by_ert = args.query_mode == "ert"
     download_daily_data(
         instrument=args.instrument,
         start_time=args.start_date,
         end_time=end_time,
+        query_by_ert=query_by_ert,
     )
     print("Successfully downloaded the data from webpoda.")
 
@@ -654,7 +653,17 @@ def main():
 
     # Webpoda command
     parser_webpoda = subparsers.add_parser(
-        "webpoda", help="Raw packet data download per instrument"
+        "webpoda",
+        help="Raw packet data download per instrument",
+        description="Download raw packet data from IMAP webpoda.\n\n"
+        "Two query modes are supported:\n"
+        "  ERT mode (ert):  Queries all data for all APIDs using\n"
+        "                        Earth Received Time (ERT) date range\n"
+        "  SCT mode (sct):    Queries all data for all APIDs with\n"
+        "                        Spacecraft Time (SCT) within the date range\n\n"
+        "Use --query-mode ert for ERT mode (default), or sct for SCT mode\n"
+        ".",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser_webpoda.add_argument(
         "--instrument",
@@ -667,16 +676,23 @@ def main():
         "--start-date",
         type=lambda d: datetime.datetime.strptime(d, "%Y%m%d"),
         required=True,
-        help="Start date for the query in YYYYMMDD format. "
-        "The query uses Earth Received Time (ERT).",
+        help="Start date for the query in YYYYMMDD format.",
     )
     parser_webpoda.add_argument(
         "--end-date",
         type=lambda d: datetime.datetime.strptime(d, "%Y%m%d"),
         required=False,
-        help="End date for the query in YYYYMMDD format. "
-        "The query uses Earth Received Time (ERT). If not provided "
-        "the query will be for the start date only.",
+        help="End date for the query in YYYYMMDD format. If not "
+        "provided, the query will be for the start date only.",
+    )
+    parser_webpoda.add_argument(
+        "--query-mode",
+        type=str,
+        default="sct",
+        choices=["ert", "sct"],
+        help="Query mode: 'ert' to query by Earth Received Time "
+        "(ERT) or 'sct' to query all data with Spacecraft Time (SCT) "
+        "within the date range.",
     )
     parser_webpoda.set_defaults(func=_webpoda_parser)
 
