@@ -661,8 +661,8 @@ def main():
         "                        Earth Received Time (ERT) date range\n"
         "  SCT mode (sct):    Queries all data for all APIDs with\n"
         "                        Spacecraft Time (SCT) within the date range\n\n"
-        "Use --query-mode ert for ERT mode, or sct for SCT mode\n"
-        "(default).",
+        "Use --query-mode ert for ERT mode (default), or sct for SCT mode\n"
+        ".",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser_webpoda.add_argument(
@@ -691,7 +691,7 @@ def main():
         default="sct",
         choices=["ert", "sct"],
         help="Query mode: 'ert' to query by Earth Received Time "
-        "(ERT) or 'sct' to query all data with Spacecraft Time (SC) "
+        "(ERT) or 'sct' to query all data with Spacecraft Time (SCT) "
         "within the date range.",
     )
     parser_webpoda.set_defaults(func=_webpoda_parser)

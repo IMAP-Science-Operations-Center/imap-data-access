@@ -242,10 +242,6 @@ def get_packet_binary_data_sctime(
         f"Getting binary packet data for apid [{apid}] between "
         f"{start_time} and {end_time}"
     )
-    print(
-        f"Getting binary packet data for apid [{apid}] between "
-        f"{start_time} and {end_time}"
-    )
     # Add a .bin suffix to get the binary data back
     query_range = f"{WEBPODA_APID_URL}/{SYSTEM_ID}/apid_{apid}.bin"
     params = (
@@ -292,7 +288,7 @@ def download_daily_data(
     query_by_ert : bool, optional
         If True, queries all data for all APIDs using the Earth Received Time (ERT)
         date range. If False, queries all data for all APIDs with Spacecraft Time (SCT)
-        within the specified start and end date range. Default to False.
+        within the specified start and end date range. Default to True.
     """
     apids = INSTRUMENT_APIDS[instrument]
     logger.info(f"Downloading data for instrument [{instrument}]")
@@ -317,7 +313,8 @@ def download_daily_data(
     else:
         # Query by SCT - generate all dates in the range
         logger.info(
-            f"Querying Spacecraft Time (SCT) range from {start_time} to {end_time}"
+            "Querying Spacecraft Time (SCT) data that are in the "
+            f"range from {start_time} to {end_time}"
         )
         unique_dates = []
         current_date = start_time.date()
