@@ -71,9 +71,9 @@ def _print_query_results_table(query_results: list[dict]):
         A list of dictionaries containing the query results
     """
     num_files = len(query_results)
-    query_table = "science"  # default to science so empty list can be printed
-    print(f"Found [{num_files}] matching files in {query_table} table")
+
     if num_files == 0:
+        print(f"Found [{num_files}] matching files")
         return
 
     # Get the database table
@@ -84,6 +84,8 @@ def _print_query_results_table(query_results: list[dict]):
         query_table = "ancillary"
     elif "repointing" in query_results[0]:
         query_table = "science"
+
+    print(f"Found [{num_files}] matching files in {query_table} table")
 
     # Science responses split version into major/minor; synthesize a combined
     # 'version' value so the width calc and printing can treat it as one column.
