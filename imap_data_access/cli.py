@@ -73,7 +73,7 @@ def _print_query_results_table(query_results: list[dict]):
     num_files = len(query_results)
 
     if num_files == 0:
-        print(f"Found no [{num_files}] matching files in {query_table} table")
+        print(f"Found [{num_files}] matching files")
         return
 
     # Get the database table
