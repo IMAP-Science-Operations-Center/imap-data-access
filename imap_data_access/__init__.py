@@ -93,6 +93,7 @@ VALID_INSTRUMENTS = {
     "hi",
     "ialirt",
     "idex",
+    "l1const",
     "lo",
     "mag",
     "spacecraft",
