@@ -757,7 +757,7 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<start_year_doy>\d{4}_\d{3})_"
         r"(?P<end_year_doy>\d{4}_\d{3})_"
         r"(?P<version>\d+)\."
-        r"(?P<extension>bc)"
+        r"(?P<extension>bc)\Z"
     )
     # Covers:
     # Repoint Files (type: repoint.csv, or repoint)
