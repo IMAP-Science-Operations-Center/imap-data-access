@@ -983,6 +983,7 @@ class SPICEFilePath(ImapFilePath):
             version - string
             type - string
             extension - string
+            repointing - int or None
             start_date - datetime or None
             end_date - datetime or None
 
