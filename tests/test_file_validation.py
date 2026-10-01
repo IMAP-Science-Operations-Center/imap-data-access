@@ -333,9 +333,9 @@ def test_spice_extract_lo_pivot_parts():
     )
     # Should have 6 fields including repointing
     assert len(file_path.spice_metadata) == 6
-    assert file_path.construct_path() == imap_data_access.config[
-        "DATA_DIR"
-    ] / Path("imap/spice/ck/imap_lopivot-repoint00125_2026_013_2026_014_001.bc")
+    assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/ck/imap_lopivot-repoint00125_2026_013_2026_014_001.bc"
+    )
 
 
 @pytest.mark.parametrize("suffix", ["spin", "spin.csv"])

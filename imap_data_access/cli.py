@@ -496,9 +496,9 @@ def add_query_args(subparser: ArgumentParser) -> None:
         "Valid types: attitude_history, attitude_predict, spin, repoint, "
         "ephemeris_reconstructed, ephemeris_nominal, ephemeris_predicted, "
         "ephemeris_90days, ephemeris_long, ephemeris_launch, planetary_ephemeris, "
-       "planetary_constants, leapseconds, pointing_attitude, lo_pivot_attitude, "
-       "spacecraft_clock, imap_frames, science_frames, metakernel, thruster, "
-       "lagrange_point, earth_attitude.",
+        "planetary_constants, leapseconds, pointing_attitude, lo_pivot_attitude, "
+        "spacecraft_clock, imap_frames, science_frames, metakernel, thruster, "
+        "lagrange_point, earth_attitude.",
     )
     subparser.set_defaults(func=_query_parser)
 

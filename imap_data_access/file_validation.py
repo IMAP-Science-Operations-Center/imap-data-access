@@ -961,10 +961,10 @@ class SPICEFilePath(ImapFilePath):
                     components["prediction_start_date"], "%y%m%d"
                 )
             if "repointing" in components:
-               components["repointing"] = int(components["repointing"])
+                components["repointing"] = int(components["repointing"])
         except ValueError:
             raise SPICEFilePath.InvalidImapFileError(
-               "Invalid date detect in product file name, ensure date exists"
+                "Invalid date detect in product file name, ensure date exists"
             ) from None
 
         if "start_date" not in components:

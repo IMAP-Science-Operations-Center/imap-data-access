@@ -170,7 +170,7 @@ def test_spice_input():
         "imap_pred_20260922_20261221_v02.bsp",
     )
     assert ephemeris_files.descriptor == "best"
- 
+
     # Test with a Lo pivot attitude file
     lo_pivot_file = processing_input.SPICEInput(
         "imap_lopivot-repoint00125_2026_013_2026_014_001.bc"
