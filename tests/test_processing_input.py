@@ -171,6 +171,19 @@ def test_spice_input():
     )
     assert ephemeris_files.descriptor == "best"
 
+    # Test with a Lo pivot attitude file
+    lo_pivot_file = processing_input.SPICEInput(
+        "imap_lopivot-repoint00125_2026_013_2026_014_001.bc"
+    )
+    assert lo_pivot_file.filename_list == [
+        "imap_lopivot-repoint00125_2026_013_2026_014_001.bc"
+    ]
+    assert len(lo_pivot_file.imap_file_paths) == 1
+    assert isinstance(lo_pivot_file.imap_file_paths[0], SPICEFilePath)
+    assert lo_pivot_file.input_type == ProcessingInputType.SPICE_FILE
+    assert lo_pivot_file.source == ["lo_pivot_attitude"]
+    assert lo_pivot_file.descriptor == "historical"
+
     # Test with a SPICE file containing "spin" in the source
     spin_file = processing_input.SpinInput("imap_1000_100_1000_100_01.spin.csv")
 

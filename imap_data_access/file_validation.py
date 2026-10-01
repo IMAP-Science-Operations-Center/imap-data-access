@@ -672,6 +672,7 @@ _SPICE_TYPE_MAPPING = {
     "pck": "planetary_constants",
     "naif": "leapseconds",
     "imap_dps": "pointing_attitude",
+    "imap_lopivot": "lo_pivot_attitude",
     "imap_sclk_": "spacecraft_clock",
     "tf": "imap_frames",
     "imap_science": "science_frames",
@@ -686,6 +687,7 @@ _SPICE_DIR_MAPPING = {
     "attitude_history": "ck",
     "pointing_attitude": "ck",
     "attitude_predict": "ck",
+    "lo_pivot_attitude": "ck",
     "spin": "spin",
     "repoint": "repoint",
     "ephemeris_reconstructed": "spk",
@@ -746,6 +748,16 @@ class SPICEFilePath(ImapFilePath):
         r"(?P<end_year_doy>[\d]{4}_[\d]{3})_"
         r"(?P<version>\d+)\."
         r"(?P<extension>ah\.bc)"
+    )
+    # Covers:
+    # Lo pivot attitude kernel (type: bc)
+    lo_pivot_file_pattern = (
+        r"(?P<type>imap_lopivot)-"
+        r"repoint(?P<repointing>\d{5})_"
+        r"(?P<start_year_doy>\d{4}_\d{3})_"
+        r"(?P<end_year_doy>\d{4}_\d{3})_"
+        r"(?P<version>\d+)\."
+        r"(?P<extension>bc)\Z"
     )
     # Covers:
     # Repoint Files (type: repoint.csv, or repoint)
@@ -836,6 +848,7 @@ class SPICEFilePath(ImapFilePath):
     valid_spice_regexes = (
         re.compile(attitude_file_pattern, re.IGNORECASE),
         re.compile(dps_file_pattern, re.IGNORECASE),
+        re.compile(lo_pivot_file_pattern, re.IGNORECASE),
         re.compile(repoint_file_pattern, re.IGNORECASE),
         re.compile(spacecraft_ephemeris_file_pattern, re.IGNORECASE),
         re.compile(spice_prod_ver_pattern, re.IGNORECASE),
@@ -947,6 +960,8 @@ class SPICEFilePath(ImapFilePath):
                 components["prediction_start_date"] = datetime.strptime(
                     components["prediction_start_date"], "%y%m%d"
                 )
+            if "repointing" in components:
+                components["repointing"] = int(components["repointing"])
         except ValueError:
             raise SPICEFilePath.InvalidImapFileError(
                 "Invalid date detect in product file name, ensure date exists"
@@ -956,6 +971,8 @@ class SPICEFilePath(ImapFilePath):
             components["start_date"] = None
         if "end_date" not in components:
             components["end_date"] = None
+        if "repointing" not in components:
+            components["repointing"] = None
         return components
 
     @staticmethod
@@ -966,6 +983,7 @@ class SPICEFilePath(ImapFilePath):
             version - string
             type - string
             extension - string
+            repointing - int or None
             start_date - datetime or None
             end_date - datetime or None
 

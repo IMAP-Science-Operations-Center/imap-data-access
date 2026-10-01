@@ -317,6 +317,27 @@ def test_spice_extract_dps_pointing_parts():
     print(file_path.spice_metadata)
 
 
+def test_spice_extract_lo_pivot_parts():
+    """Test the Lo pivot attitude kernel filename parsing."""
+    filename = "imap_lopivot-repoint00125_2026_013_2026_014_001.bc"
+    file_path = SPICEFilePath(filename)
+
+    assert file_path.spice_metadata["version"] == "001"
+    assert file_path.spice_metadata["type"] == "lo_pivot_attitude"
+    assert file_path.spice_metadata["repointing"] == 125
+    assert file_path.spice_metadata["start_date"] == datetime.strptime(
+        "2026_013", "%Y_%j"
+    )
+    assert file_path.spice_metadata["end_date"] == datetime.strptime(
+        "2026_014", "%Y_%j"
+    )
+    # Should have 6 fields including repointing
+    assert len(file_path.spice_metadata) == 6
+    assert file_path.construct_path() == imap_data_access.config["DATA_DIR"] / Path(
+        "imap/spice/ck/imap_lopivot-repoint00125_2026_013_2026_014_001.bc"
+    )
+
+
 @pytest.mark.parametrize("suffix", ["spin", "spin.csv"])
 def test_spice_extract_spin_parts(suffix):
     # Test spin
@@ -329,7 +350,7 @@ def test_spice_extract_spin_parts(suffix):
     assert file_path.spice_metadata["end_date"] == datetime.strptime(
         "2025_122", "%Y_%j"
     )
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_metakernel_parts():
@@ -337,7 +358,7 @@ def test_spice_extract_metakernel_parts():
     assert file_path.spice_metadata["version"] == "100"
     assert file_path.spice_metadata["type"] == "metakernel"
     assert file_path.spice_metadata["start_date"] == datetime(2025, 1, 1)
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_attitude_parts():
@@ -350,7 +371,7 @@ def test_spice_extract_attitude_parts():
     assert file_path.spice_metadata["end_date"] == datetime.strptime(
         "2025_034", "%Y_%j"
     )
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_leapsecond_parts():
@@ -360,7 +381,7 @@ def test_spice_extract_leapsecond_parts():
     assert file_path.spice_metadata["extension"] == "tls"
     assert file_path.spice_metadata["start_date"] is None
     assert file_path.spice_metadata["end_date"] is None
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_clock_parts():
@@ -370,7 +391,7 @@ def test_spice_extract_clock_parts():
     assert file_path.spice_metadata["extension"] == "tsc"
     assert file_path.spice_metadata["start_date"] is None
     assert file_path.spice_metadata["end_date"] is None
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_planetary_ephemeris_parts():
@@ -380,7 +401,7 @@ def test_spice_extract_planetary_ephemeris_parts():
     assert file_path.spice_metadata["extension"] == "bsp"
     assert file_path.spice_metadata["start_date"] is None
     assert file_path.spice_metadata["end_date"] is None
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_pck_parts():
@@ -390,7 +411,7 @@ def test_spice_extract_pck_parts():
     assert file_path.spice_metadata["extension"] == "tpc"
     assert file_path.spice_metadata["start_date"] is None
     assert file_path.spice_metadata["end_date"] is None
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_ephemeris_parts():
@@ -404,7 +425,7 @@ def test_spice_extract_ephemeris_parts():
         "20260220", "%Y%m%d"
     )
     assert file_path.spice_metadata["extension"] == "bsp"
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_repoint_parts():
@@ -416,7 +437,7 @@ def test_spice_extract_repoint_parts():
     assert file_path.spice_metadata["end_date"] == datetime.strptime(
         "2025_230", "%Y_%j"
     )
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_science_frame_parts():
@@ -427,7 +448,7 @@ def test_spice_extract_science_frame_parts():
     assert file_path.spice_metadata["start_date"] is None
     assert file_path.spice_metadata["end_date"] is None
 
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_extract_earth_attitude_parts():
@@ -438,7 +459,7 @@ def test_spice_extract_earth_attitude_parts():
     assert file_path.spice_metadata["end_date"] == datetime(2025, 11, 12)
     assert file_path.spice_metadata["prediction_start_date"] == datetime(2025, 8, 17)
 
-    assert len(file_path.spice_metadata) == 5
+    assert len(file_path.spice_metadata) == 6
 
 
 def test_spice_invalid_dates():
@@ -453,6 +474,25 @@ def test_spice_invalid_dates():
     # Ensure valid ephemeris type (type taco??)
     with pytest.raises(SPICEFilePath.InvalidImapFileError):
         SPICEFilePath("imap_taco_20251320_20260220_v01.bsp")
+
+
+def test_spice_lo_pivot_malformed_names():
+    """Test that malformed Lo pivot filenames are rejected."""
+    # Missing repoint
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
+        SPICEFilePath("imap_lopivot-2026_013_2026_014_001.bc")
+
+    # 4-digit repoint (too short)
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
+        SPICEFilePath("imap_lopivot-repoint0125_2026_013_2026_014_001.bc")
+
+    # Missing end date
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
+        SPICEFilePath("imap_lopivot-repoint00125_2026_013_001.bc")
+
+    # .ah.bc extension (wrong extension)
+    with pytest.raises(SPICEFilePath.InvalidImapFileError):
+        SPICEFilePath("imap_lopivot-repoint00125_2026_013_2026_014_001.ah.bc")
 
 
 def test_spice_extract_parts_static_method():
