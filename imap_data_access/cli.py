@@ -17,6 +17,7 @@ Use
 """
 
 import argparse
+import csv
 import datetime
 import json
 import logging
@@ -33,7 +34,11 @@ from imap_data_access.file_validation import (
 )
 from imap_data_access.io import query, release, spice_query
 from imap_data_access.utils import ReleaseType
-from imap_data_access.webpoda import download_daily_data
+from imap_data_access.webpoda import (
+    download_daily_data,
+    download_repointing_data,
+    get_repoint_file,
+)
 
 
 def _download_parser(args: argparse.Namespace):
@@ -355,12 +360,28 @@ def _webpoda_parser(args: argparse.Namespace):
     end_time = datetime.datetime.combine(end_time, datetime.time.max)
 
     query_by_ert = args.query_mode == "ert"
-    download_daily_data(
-        instrument=args.instrument,
-        start_time=args.start_date,
-        end_time=end_time,
-        query_by_ert=query_by_ert,
-    )
+    if args.instrument in imap_data_access.REPOINT_DEPENDENT_INSTRUMENTS:
+        repoint_file_path = get_repoint_file()
+        if repoint_file_path is None:
+            raise ValueError("No repoint files found.")
+        with open(repoint_file_path) as f:
+            repoint_data = list(csv.DictReader(f))
+        download_repointing_data(
+            instrument=args.instrument,
+            start_time=args.start_date,
+            end_time=end_time,
+            repoint_data=repoint_data,
+            query_by_ert=query_by_ert,
+            upload_to_sdc=args.upload_to_sdc,
+        )
+    else:
+        download_daily_data(
+            instrument=args.instrument,
+            start_time=args.start_date,
+            end_time=end_time,
+            query_by_ert=query_by_ert,
+            upload_to_sdc=args.upload_to_sdc,
+        )
     print("Successfully downloaded the data from webpoda.")
 
 
@@ -691,11 +712,17 @@ def main():
     parser_webpoda.add_argument(
         "--query-mode",
         type=str,
-        default="sct",
+        default="ert",
         choices=["ert", "sct"],
         help="Query mode: 'ert' to query by Earth Received Time "
-        "(ERT) or 'sct' to query all data with Spacecraft Time (SCT) "
-        "within the date range.",
+        "(ERT, default) or 'sct' to query all data with Spacecraft Time "
+        "(SCT) within the date range.",
+    )
+    parser_webpoda.add_argument(
+        "--upload-to-sdc",
+        action="store_true",
+        help="Upload any new or changed data to the IMAP SDC. "
+        "By default, data is only downloaded locally.",
     )
     parser_webpoda.set_defaults(func=_webpoda_parser)
 

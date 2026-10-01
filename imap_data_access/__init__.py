@@ -128,3 +128,5 @@ VALID_TABLES = {
     "ancillary",
     "spice",
 }
+
+REPOINT_DEPENDENT_INSTRUMENTS = ["glows", "hi", "lo", "ultra"]
