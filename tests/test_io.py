@@ -888,10 +888,13 @@ def test_reprocess(mock_send_request, reprocess_params: dict):
         Dictionary of key/value pairs that set the reprocessing parameters
     """
     mock_response = MagicMock()
-    mock_response.json.return_value = []
+    mock_response.json.return_value = {
+        "message": "Reprocess job queued",
+        "reprocess_id": "test-id",
+    }
     mock_send_request.return_value = mock_response
 
-    imap_data_access.reprocess(**reprocess_params)
+    assert imap_data_access.reprocess(**reprocess_params) == "test-id"
 
     # Should have only been one call to send
     mock_send_request.assert_called_once()
