@@ -124,7 +124,9 @@ results = imap_data_access.query(instrument="mag", data_level="l0")
 # Search for files ingested since a specific date ("since" query)
 results = imap_data_access.query(instrument="swe", ingestion_start_date="20240501")
 # Optionally bound the range
-results = imap_data_access.query(instrument="swe", ingestion_start_date="20240501", ingestion_end_date="20240601")
+results = imap_data_access.query(
+    instrument="swe", ingestion_start_date="20240501", ingestion_end_date="20240601"
+)
 
 # Download a file that was returned from the search
 imap_data_access.download("imap/mag/l0/2024/01/imap_mag_l0_raw_202040101_v001.pkts")
@@ -269,7 +271,6 @@ To use this class, use `imap_data_access.ScienceFilePath`.
 Usage:
 
 ```python
-
 science_file = imap_data_access.ScienceFilePath("imap_swe_l0_sci_20240101_v001.pkts")
 
 # Filepath = /imap/swe/l0/2024/01/imap_swe_l0_sci_20240101_v001.pkts
