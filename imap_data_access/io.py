@@ -444,7 +444,7 @@ def reprocess(
     instrument: Optional[str] = None,
     data_level: Optional[str] = None,
     descriptor: Optional[str] = None,
-):
+) -> Optional[str]:
     """Trigger reprocessing of files in the IMAP data archive.
 
     Start date and end date are required for a reprocessing Event. If data_level is
@@ -465,6 +465,13 @@ def reprocess(
         Data level (e.g. ``l1a``)
     descriptor : str, optional
         Descriptor of the data product / product name (e.g. ``burst``)
+
+    Returns
+    -------
+    str or None
+        ID of the reprocessing request, which is attached to the resulting
+        Dagster runs as the ``imap/reprocess_id`` tag. None if the server
+        did not return one.
     """
     # locals() gives us the keyword arguments passed to the function
     # and allows us to filter out the None values
@@ -523,6 +530,8 @@ def reprocess(
         # Decode the JSON response as a list of items
         items = response.json()
         logger.debug("Received JSON: %s", items)
+
+    return items.get("reprocess_id") if isinstance(items, dict) else None
 
 
 def upload(file_path: Union[Path, str]) -> None:

@@ -545,8 +545,13 @@ def _reprocess_parser(args: argparse.Namespace):
         for key, value in vars(args).items()
         if key in valid_args and value is not None
     }
-    imap_data_access.reprocess(**reprocess_params)
+    reprocess_id = imap_data_access.reprocess(**reprocess_params)
     print("Successfully triggered reprocessing for the given parameters.")
+    if reprocess_id:
+        print(
+            f"Reprocess ID: {reprocess_id} "
+            f"(filter Dagster runs by tag imap/reprocess_id={reprocess_id})"
+        )
 
 
 # PLR0915: too many statements

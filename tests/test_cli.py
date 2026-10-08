@@ -88,3 +88,12 @@ def test_cli_error_message(capsys):
             cli.main()
     captured = capsys.readouterr()
     assert "FileNotFoundError" in captured.err
+
+
+def test_cli_reprocess(capsys):
+    """Test that the CLI reprocess command prints the reprocess ID."""
+    args = Namespace(start_date="20260101", end_date="20260102")
+    with mock.patch("imap_data_access.reprocess", return_value="test-id"):
+        cli._reprocess_parser(args)
+    captured = capsys.readouterr()
+    assert "Reprocess ID: test-id" in captured.out
