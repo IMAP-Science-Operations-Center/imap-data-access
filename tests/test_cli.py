@@ -138,13 +138,18 @@ def test_cli_query_filename(filename, query_func, expected_kwargs, results, caps
 
 
 @pytest.mark.parametrize(
-    "options", [["--instrument", "swapi"], ["--table", "spice"], ["--version", "v001"]]
+    "query_args",
+    [
+        ["imap_130.tf", "--instrument", "swapi"],
+        ["imap_130.tf", "--table", "spice"],
+        ["imap_130.tf", "--version", "v001"],
+        ["imap_130.tf", "--table", "science"],
+        ["--table", "science", "imap_130.tf"],
+    ],
 )
-def test_cli_query_filename_with_options(options, capsys):
+def test_cli_query_filename_with_options(query_args, capsys):
     """Test that FILENAME cannot be combined with other query options."""
-    with mock.patch.object(
-        sys, "argv", ["imap-data-access", "query", "imap_130.tf", *options]
-    ):
+    with mock.patch.object(sys, "argv", ["imap-data-access", "query", *query_args]):
         with pytest.raises(SystemExit, match="2"):
             cli.main()
     assert "FILENAME cannot be combined" in capsys.readouterr().err

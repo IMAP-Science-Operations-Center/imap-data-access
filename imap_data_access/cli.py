@@ -243,7 +243,7 @@ def _query_parser(args: argparse.Namespace):
         An object containing the parsed arguments and their values
     """
     # Sets table parameter to science if not provided.
-    args.table = getattr(args, "table", "science")
+    args.table = getattr(args, "table", None) or "science"
 
     valid_args = [
         "table",
@@ -423,7 +423,6 @@ def add_query_args(subparser: ArgumentParser) -> None:
         help="Query a specific table within the IMAP SDC storage bucket. "
         "This subcommand is optional, with the Science table being the default.",
         choices=["science", "ancillary", "spice"],
-        default="science",
     )
     subparser.add_argument(
         "--instrument",
@@ -833,7 +832,9 @@ def main():
             "or use '-h' for more information.",
         )
 
-    # FILENAME queries a single file, so it cannot be combined with query options
+    # FILENAME queries a single file, so it cannot be combined with query options.
+    # Query options default to None, so this also catches explicitly passed options
+    # whose value matches what the default would be (e.g. '--table science').
     if getattr(args, "filename", None) is not None:
         query_defaults = vars(query_parser.parse_args([]))
         if any(
