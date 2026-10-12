@@ -127,7 +127,7 @@ def test_cli_query_json(mock_send_request, capsys):
     ],
 )
 def test_cli_query_filename(filename, query_func, expected_kwargs, results, capsys):
-    """Test that the query subcommand works with '--filename'."""
+    """Test that the query subcommand works with a FILENAME."""
     args = Namespace(filename=filename, output_format="json")
     with mock.patch(
         f"imap_data_access.cli.{query_func}", return_value=results
@@ -135,6 +135,19 @@ def test_cli_query_filename(filename, query_func, expected_kwargs, results, caps
         cli._query_parser(args)
     mock_query.assert_called_once_with(**expected_kwargs)
     assert json.loads(capsys.readouterr().out) == results[:1]
+
+
+@pytest.mark.parametrize(
+    "options", [["--instrument", "swapi"], ["--table", "spice"], ["--version", "v001"]]
+)
+def test_cli_query_filename_with_options(options, capsys):
+    """Test that FILENAME cannot be combined with other query options."""
+    with mock.patch.object(
+        sys, "argv", ["imap-data-access", "query", "imap_130.tf", *options]
+    ):
+        with pytest.raises(SystemExit, match="2"):
+            cli.main()
+    assert "FILENAME cannot be combined" in capsys.readouterr().err
 
 
 def test_cli_error_message(capsys):

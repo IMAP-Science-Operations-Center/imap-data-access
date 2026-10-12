@@ -272,14 +272,6 @@ def _query_parser(args: argparse.Namespace):
 
     # Checking to see if a filename was passed.
     if args.filename is not None:
-        del query_params["filename"]
-        # need to see if any other params besides table where provided
-        non_table_params = {k: v for k, v in query_params.items() if k != "table"}
-        if non_table_params:
-            raise TypeError(
-                "Too many arguments: '--filename' should be used by itself."
-            )
-
         file_path = generate_imap_file_path(args.filename)
         # ancillary file query
         if isinstance(file_path, AncillaryFilePath):
@@ -517,12 +509,11 @@ def add_query_args(subparser: ArgumentParser) -> None:
         default="table",
     )
     subparser.add_argument(
-        "--filename",
-        type=str,
-        required=False,
-        help="Name of a file to be searched for. For convention standards see https://imap-"
-        "processing.readthedocs.io/en/latest/development-guide/style-guide/naming-conventions"
-        ".html#data-product-file-naming-conventions",
+        "filename",
+        nargs="?",
+        metavar="FILENAME",
+        help="Name of a file to be searched for. "
+        "E.g., imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts",
     )
     subparser.add_argument(
         "--type",
@@ -684,7 +675,10 @@ def main():
 
     # Query command (with optional arguments)
     query_parser = subparsers.add_parser(
-        "query", help=query_help, description=help_menu_for_query
+        "query",
+        help=query_help,
+        description=help_menu_for_query,
+        usage="%(prog)s [-h] FILENAME\n       %(prog)s [-h] [options]",
     )
     add_query_args(query_parser)
 
@@ -838,6 +832,19 @@ def main():
             message="Please provide input parameters, "
             "or use '-h' for more information.",
         )
+
+    # FILENAME queries a single file, so it cannot be combined with query options
+    if getattr(args, "filename", None) is not None:
+        query_defaults = vars(query_parser.parse_args([]))
+        if any(
+            getattr(args, key) != value
+            for key, value in query_defaults.items()
+            if key not in ("filename", "output_format")
+        ):
+            query_parser.error(
+                "FILENAME cannot be combined with other query options. "
+                "Use either 'query FILENAME' or 'query [options]'."
+            )
 
     logging.basicConfig(level=args.loglevel)
 
