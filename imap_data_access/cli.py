@@ -29,6 +29,7 @@ import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
     ScienceFilePath,
+    SPICEFilePath,
     Version,
     generate_imap_file_path,
 )
@@ -295,6 +296,7 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
+            query_results = query(**query_params)
         # science table query
         elif isinstance(file_path, ScienceFilePath):
             query_params = {
@@ -305,11 +307,24 @@ def _query_parser(args: argparse.Namespace):
                 "start_date": file_path.start_date,
                 "end_date": file_path.start_date,
                 "repointing": file_path.repointing,
-                "version": file_path.version,
+                "major_version": file_path.major_version,
+                "minor_version": file_path.minor_version,
                 "extension": file_path.extension,
             }
+            query_results = query(**query_params)
+        # SPICE table query
+        elif isinstance(file_path, SPICEFilePath):
+            query_results = spice_query(type=file_path.spice_metadata["type"])
         else:
             raise ValueError("Unrecognized file path type.")
+
+        # Only keep the result matching the requested filename
+        filename = Path(args.filename).name
+        query_results = [
+            item
+            for item in query_results
+            if Path(item.get("file_name") or item.get("file_path", "")).name == filename
+        ]
 
     # SPICE query table
     elif args.table == "spice":

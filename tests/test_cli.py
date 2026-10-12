@@ -78,6 +78,65 @@ def test_cli_query_json(mock_send_request, capsys):
     assert captured.out.strip() == json_output_expected
 
 
+@pytest.mark.parametrize(
+    ("filename", "query_func", "expected_kwargs", "results"),
+    [
+        (
+            "imap_swapi_l1_sci_20260808_v001.0003.cdf",
+            "query",
+            {
+                "table": "science",
+                "instrument": "swapi",
+                "data_level": "l1",
+                "descriptor": "sci",
+                "start_date": "20260808",
+                "end_date": "20260808",
+                "repointing": None,
+                "major_version": 1,
+                "minor_version": 3,
+                "extension": "cdf",
+            },
+            [{"file_path": "imap/swapi/l1/imap_swapi_l1_sci_20260808_v001.0003.cdf"}],
+        ),
+        (
+            "imap_swapi_proton-density-temperature-lut_20240905_v002.dat",
+            "query",
+            {
+                "table": "ancillary",
+                "instrument": "swapi",
+                "descriptor": "proton-density-temperature-lut",
+                "start_date": "20240905",
+                "end_date": "20240905",
+                "repointing": None,
+                "version": "v002",
+                "extension": "dat",
+            },
+            [
+                {
+                    "file_path": "imap/ancillary/swapi/"
+                    "imap_swapi_proton-density-temperature-lut_20240905_v002.dat"
+                }
+            ],
+        ),
+        (
+            "imap_130.tf",
+            "spice_query",
+            {"type": "imap_frames"},
+            [{"file_name": "fk/imap_130.tf"}, {"file_name": "fk/imap_129.tf"}],
+        ),
+    ],
+)
+def test_cli_query_filename(filename, query_func, expected_kwargs, results, capsys):
+    """Test that the query subcommand works with '--filename'."""
+    args = Namespace(filename=filename, output_format="json")
+    with mock.patch(
+        f"imap_data_access.cli.{query_func}", return_value=results
+    ) as mock_query:
+        cli._query_parser(args)
+    mock_query.assert_called_once_with(**expected_kwargs)
+    assert json.loads(capsys.readouterr().out) == results[:1]
+
+
 def test_cli_error_message(capsys):
     """Test the CLI error message when no arguments are passed."""
     with mock.patch.object(
