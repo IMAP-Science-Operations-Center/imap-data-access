@@ -29,6 +29,7 @@ import imap_data_access
 from imap_data_access.file_validation import (
     AncillaryFilePath,
     ScienceFilePath,
+    SPICEFilePath,
     Version,
     generate_imap_file_path,
 )
@@ -242,7 +243,7 @@ def _query_parser(args: argparse.Namespace):
         An object containing the parsed arguments and their values
     """
     # Sets table parameter to science if not provided.
-    args.table = getattr(args, "table", "science")
+    args.table = getattr(args, "table", None) or "science"
 
     valid_args = [
         "table",
@@ -271,14 +272,6 @@ def _query_parser(args: argparse.Namespace):
 
     # Checking to see if a filename was passed.
     if args.filename is not None:
-        del query_params["filename"]
-        # need to see if any other params besides table where provided
-        non_table_params = {k: v for k, v in query_params.items() if k != "table"}
-        if non_table_params:
-            raise TypeError(
-                "Too many arguments: '--filename' should be used by itself."
-            )
-
         file_path = generate_imap_file_path(args.filename)
         # ancillary file query
         if isinstance(file_path, AncillaryFilePath):
@@ -295,6 +288,7 @@ def _query_parser(args: argparse.Namespace):
                 "version": file_path.version,
                 "extension": file_path.extension,
             }
+            query_results = query(**query_params)
         # science table query
         elif isinstance(file_path, ScienceFilePath):
             query_params = {
@@ -305,11 +299,24 @@ def _query_parser(args: argparse.Namespace):
                 "start_date": file_path.start_date,
                 "end_date": file_path.start_date,
                 "repointing": file_path.repointing,
-                "version": file_path.version,
+                "major_version": file_path.major_version,
+                "minor_version": file_path.minor_version,
                 "extension": file_path.extension,
             }
+            query_results = query(**query_params)
+        # SPICE table query
+        elif isinstance(file_path, SPICEFilePath):
+            query_results = spice_query(type=file_path.spice_metadata["type"])
         else:
             raise ValueError("Unrecognized file path type.")
+
+        # Only keep the result matching the requested filename
+        filename = Path(args.filename).name
+        query_results = [
+            item
+            for item in query_results
+            if Path(item.get("file_name") or item.get("file_path", "")).name == filename
+        ]
 
     # SPICE query table
     elif args.table == "spice":
@@ -416,7 +423,6 @@ def add_query_args(subparser: ArgumentParser) -> None:
         help="Query a specific table within the IMAP SDC storage bucket. "
         "This subcommand is optional, with the Science table being the default.",
         choices=["science", "ancillary", "spice"],
-        default="science",
     )
     subparser.add_argument(
         "--instrument",
@@ -502,12 +508,11 @@ def add_query_args(subparser: ArgumentParser) -> None:
         default="table",
     )
     subparser.add_argument(
-        "--filename",
-        type=str,
-        required=False,
-        help="Name of a file to be searched for. For convention standards see https://imap-"
-        "processing.readthedocs.io/en/latest/development-guide/style-guide/naming-conventions"
-        ".html#data-product-file-naming-conventions",
+        "filename",
+        nargs="?",
+        metavar="FILENAME",
+        help="Name of a file to be searched for. "
+        "E.g., imap/mag/l0/2025/01/imap_mag_l0_raw_20250101_v001.pkts",
     )
     subparser.add_argument(
         "--type",
@@ -669,7 +674,10 @@ def main():
 
     # Query command (with optional arguments)
     query_parser = subparsers.add_parser(
-        "query", help=query_help, description=help_menu_for_query
+        "query",
+        help=query_help,
+        description=help_menu_for_query,
+        usage="%(prog)s [-h] FILENAME\n       %(prog)s [-h] [options]",
     )
     add_query_args(query_parser)
 
@@ -823,6 +831,21 @@ def main():
             message="Please provide input parameters, "
             "or use '-h' for more information.",
         )
+
+    # FILENAME queries a single file, so it cannot be combined with query options.
+    # Query options default to None, so this also catches explicitly passed options
+    # whose value matches what the default would be (e.g. '--table science').
+    if getattr(args, "filename", None) is not None:
+        query_defaults = vars(query_parser.parse_args([]))
+        if any(
+            getattr(args, key) != value
+            for key, value in query_defaults.items()
+            if key not in ("filename", "output_format")
+        ):
+            query_parser.error(
+                "FILENAME cannot be combined with other query options. "
+                "Use either 'query FILENAME' or 'query [options]'."
+            )
 
     logging.basicConfig(level=args.loglevel)
 
