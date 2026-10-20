@@ -567,10 +567,14 @@ def test_spice_query(mock_send_request, query_params: dict):
     if fixed_query.get("version") == "latest":
         del fixed_query["version"]
         fixed_query["latest"] = "true"
-    if "ingestion_start_date" in fixed_query:
-        fixed_query["start_ingest_date"] = fixed_query.pop("ingestion_start_date")
-    if "ingestion_end_date" in fixed_query:
-        fixed_query["end_ingest_date"] = fixed_query.pop("ingestion_end_date")
+    for cli_argument, spice_query_argument in [
+        ("ingestion_start_date", "start_ingest_date"),
+        ("ingestion_end_date", "end_ingest_date"),
+        ("start_date", "start_time"),
+        ("end_date", "end_time"),
+    ]:
+        if cli_argument in fixed_query:
+            fixed_query[spice_query_argument] = fixed_query.pop(cli_argument)
     str_params = "&".join(f"{k}={v}" for k, v in fixed_query.items())
     expected_url_encoded = f"https://api.test.com/spice-query?{str_params}"
     assert called_url == expected_url_encoded
