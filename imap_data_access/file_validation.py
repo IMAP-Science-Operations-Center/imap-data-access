@@ -379,6 +379,7 @@ class ScienceFilePath(ImapFilePath):
         if self.error_message:
             raise self.InvalidImapFileError(f"{self.error_message}")
 
+    # ruff: noqa: PLR0917
     @classmethod
     def generate_from_inputs(
         cls,
@@ -1114,6 +1115,7 @@ class AncillaryFilePath(ImapFilePath):
         if self.error_message:
             raise self.InvalidImapFileError(f"{self.error_message}")
 
+    # ruff: noqa: PLR0917
     @classmethod
     def generate_from_inputs(
         cls,

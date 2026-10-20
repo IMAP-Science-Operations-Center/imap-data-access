@@ -280,11 +280,15 @@ def spice_query(
             "Run 'query -h' for more information."
         )
 
-    # Remap ingestion date params to /spice-query naming convention
-    if "ingestion_start_date" in query_params:
-        query_params["start_ingest_date"] = query_params.pop("ingestion_start_date")
-    if "ingestion_end_date" in query_params:
-        query_params["end_ingest_date"] = query_params.pop("ingestion_end_date")
+    # Remap date params to /spice-query naming convention
+    for cli_argument, spice_query_argument in [
+        ("ingestion_start_date", "start_ingest_date"),
+        ("ingestion_end_date", "end_ingest_date"),
+        ("start_date", "start_time"),
+        ("end_date", "end_time"),
+    ]:
+        if cli_argument in query_params:
+            query_params[spice_query_argument] = query_params.pop(cli_argument)
 
     url = f"{_get_base_url()}/spice-query"
     request = requests.Request(method="GET", url=url, params=query_params).prepare()
