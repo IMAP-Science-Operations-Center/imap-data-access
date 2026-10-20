@@ -430,7 +430,7 @@ def download_daily_data(
     logger.info(f"Finished downloading data for instrument [{instrument}]")
 
 
-# ruff: noqa: PLR0912, PLR0913
+# ruff: noqa: PLR0912, PLR0913, PLR0917
 def download_repointing_data(
     instrument: str,
     start_time: datetime.datetime,

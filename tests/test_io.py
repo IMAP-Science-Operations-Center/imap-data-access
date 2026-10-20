@@ -780,6 +780,7 @@ def test_upload_no_file(mock_send_request):
     assert mock_send_request.call_count == 0
 
 
+# ruff: noqa: PLR0917
 @pytest.mark.parametrize(
     "upload_file_path", ["a/b/test-file.txt", Path("a/b/test-file.txt")]
 )
