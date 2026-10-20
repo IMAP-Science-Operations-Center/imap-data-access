@@ -1,7 +1,4 @@
 # IMAP Data Access Package
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 This lightweight  Python package allows users to download, query, and upload data from the IMAP Science Data Center (SDC).
 
@@ -210,12 +207,12 @@ The command line flag will override the environment variable if both are set.
 
 ### Automated use with Access token (for software)
 
-An alternative to using an API key to access protected data is using an access token provided by LASP's authentication server. LASP's authentication uses [keycloak authentication](https://www.keycloak.org/documentation).
+An alternative to using an API key to access protected data is using an access token provided by our authentication server, which uses [keycloak authentication](https://www.keycloak.org/documentation).
 
 To use an access token with imap-data-access you can set the following environment variable:
 
 ```dotenv
-IMAP_ACCESS_TOKEN={{Access token from LASP auth server}}
+IMAP_ACCESS_TOKEN={{Access token from our auth server}}
 ```
 
 Any queries or downloads made with imap-data-access will now use these credentials.
@@ -253,7 +250,7 @@ with the following potential solutions.
 
 This could mean that the service is temporarily down. If you
 continue to encounter this, reach out to the IMAP SDC at
-<imap-sdc@lasp.colorado.edu>.
+<imap-pipeline@princeton.edu>.
 
 #### FileNotFoundError
 
@@ -276,30 +273,3 @@ science_file = imap_data_access.ScienceFilePath("imap_swe_l0_sci_20240101_v001.p
 # Filepath = /imap/swe/l0/2024/01/imap_swe_l0_sci_20240101_v001.pkts
 filepath = science_file.construct_path()
 ```
-
-## Contributors ✨
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://greglucas.github.io"><img src="https://avatars.githubusercontent.com/u/12417828?v=4?s=100" width="100px;" alt="Greg Lucas"/><br /><sub><b>Greg Lucas</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=greglucas" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/bourque"><img src="https://avatars.githubusercontent.com/u/2250769?v=4?s=100" width="100px;" alt="Matthew Bourque"/><br /><sub><b>Matthew Bourque</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=bourque" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/maxinelasp"><img src="https://avatars.githubusercontent.com/u/117409426?v=4?s=100" width="100px;" alt="Maxine Hartnett"/><br /><sub><b>Maxine Hartnett</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=maxinelasp" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/mfacchinelli"><img src="https://avatars.githubusercontent.com/u/19731497?v=4?s=100" width="100px;" alt="Michele Facchinelli"/><br /><sub><b>Michele Facchinelli</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=mfacchinelli" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anamanica"><img src="https://avatars.githubusercontent.com/u/171708990?v=4?s=100" width="100px;" alt="anamanica"/><br /><sub><b>anamanica</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=anamanica" title="Documentation">📖</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/daralynnrhode"><img src="https://avatars.githubusercontent.com/u/143308810?v=4?s=100" width="100px;" alt="Daralynn Rhode"/><br /><sub><b>Daralynn Rhode</b></sub></a><br /><a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=daralynnrhode" title="Documentation">📖</a> <a href="https://github.com/IMAP-Science-Operations-Center/imap-data-access/commits?author=daralynnrhode" title="Code">💻</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
