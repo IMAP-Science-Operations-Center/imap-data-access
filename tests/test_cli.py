@@ -47,6 +47,30 @@ def test_cli_spice_query(capsys):
     mock_spice_query.assert_called_once_with(type="ephemeris_predicted")
 
 
+def test_cli_spice_query_table_shows_filename_only(capsys):
+    """SPICE table output should show only the filename, not its directory."""
+    results = [
+        {
+            "kernel_type": "leapseconds",
+            "min_date_datetime": "",
+            "max_date_datetime": "",
+            "ingestion_date": "2025-01-01 00:00:00",
+            "version": 1,
+            "file_name": "lsk/naif0012.tls",
+        }
+    ]
+    with mock.patch.object(
+        sys,
+        "argv",
+        ["imap-data-access", "query", "--table", "spice", "--type", "leapseconds"],
+    ):
+        with mock.patch("imap_data_access.cli.spice_query", return_value=results):
+            cli.main()
+    out = capsys.readouterr().out
+    assert "| naif0012.tls |" in out
+    assert "lsk/" not in out
+
+
 def test_cli_query_json(mock_send_request, capsys):
     """
     Test the CLI query subcommand's json output formatting

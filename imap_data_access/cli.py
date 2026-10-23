@@ -200,7 +200,7 @@ def _print_query_results_table(query_results: list[dict]):
         if query_table == "spice":
             values = [
                 str(item.get(spice_header_keys[header], "")) for header in headers[:-1]
-            ] + [str(item.get("file_name", ""))]
+            ] + [os.path.basename(item.get("file_name", ""))]
         elif query_table == "ancillary":
             values = [
                 str(item.get("instrument", "")),
