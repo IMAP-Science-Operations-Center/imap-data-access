@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+from http import HTTPStatus
+from io import BytesIO
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import requests
+import urllib3
 
 import imap_data_access
 from imap_data_access.io import _get_base_url, _make_request
@@ -20,6 +23,36 @@ test_science_path = "imap/swe/l1/2010/01/" + test_science_filename
 def api_key(monkeypatch):
     """Set a dummy API key so release() doesn't raise on missing key."""
     monkeypatch.setitem(imap_data_access.config, "API_KEY", "test-api-key")
+
+
+@pytest.fixture
+def mock_urllib3_request():
+    """Mock urllib3 beneath its retry loop, so requests go through the real retries.
+
+    Yields
+    ------
+    mock_urllib3_request : unittest.mock.MagicMock
+        Mock object for ``HTTPConnectionPool._make_request``, whose
+        ``side_effect`` gives the responses to return in order
+    """
+    with (
+        # Undo the autouse mock of requests.Session
+        patch("requests.Session", requests.sessions.Session),
+        patch("urllib3.connectionpool.HTTPConnectionPool._make_request") as mock,
+        # Don't wait out the backoff between retries
+        patch("time.sleep"),
+    ):
+        yield mock
+
+
+def urllib3_response(status_code, body=b""):
+    """Create a response like the ones the urllib3 connection pool returns."""
+    return urllib3.HTTPResponse(
+        body=BytesIO(body),
+        status=status_code,
+        reason=HTTPStatus(status_code).phrase,
+        preload_content=False,
+    )
 
 
 @pytest.mark.parametrize(
@@ -111,6 +144,70 @@ def test_request_errors(mock_send_request):
         imap_data_access.io.IMAPDataAccessError, match="connection error"
     ):
         imap_data_access.download(test_science_path)
+
+
+@pytest.mark.parametrize("status_code", [429, 500, 502, 503, 504])
+def test_download_retries_transient_errors(mock_urllib3_request, status_code, caplog):
+    """Test that a transient error response is retried until the download succeeds."""
+    mock_urllib3_request.side_effect = [
+        urllib3_response(status_code),
+        urllib3_response(200, b"Mock file content"),
+    ]
+    result = imap_data_access.download(test_science_path)
+
+    assert result.read_bytes() == b"Mock file content"
+    assert mock_urllib3_request.call_count == 2
+    assert f"Retrying GET request after a {status_code} response" in caplog.text
+
+
+def test_download_raises_after_retry_limit(mock_urllib3_request):
+    """Test that repeated error responses are retried with backoff, then raised."""
+    mock_urllib3_request.side_effect = lambda *args, **kwargs: urllib3_response(
+        503, b"<Error><Code>SlowDown</Code></Error>"
+    )
+    with (
+        # Record the waits, with the jitter fixed at 0.5 s
+        patch("time.sleep") as mock_sleep,
+        patch("random.random", return_value=0.5),
+        pytest.raises(
+            imap_data_access.io.IMAPDataAccessError,
+            match="503 Service Unavailable: <Error><Code>SlowDown</Code></Error>",
+        ),
+    ):
+        imap_data_access.download(test_science_path)
+
+    # The first attempt plus 5 retries, the first of them right away
+    assert mock_urllib3_request.call_count == 6
+    assert mock_sleep.call_args_list == [call(2.5), call(4.5), call(8.5), call(16.5)]
+
+
+def test_upload_put_error_response_is_not_retried(mock_urllib3_request, tmp_path):
+    """Test that an error response to the S3 PUT is raised rather than resent."""
+    file_to_upload = tmp_path / test_science_filename
+    file_to_upload.write_bytes(b"test file content")
+    mock_urllib3_request.side_effect = [
+        # The upload API returns the presigned S3 URL to PUT the file to
+        urllib3_response(200, b'"https://s3-test-bucket.com"'),
+        urllib3_response(503, b"<Error><Code>SlowDown</Code></Error>"),
+    ]
+    with pytest.raises(
+        imap_data_access.io.IMAPDataAccessError,
+        match="503 Service Unavailable: <Error><Code>SlowDown</Code></Error>",
+    ):
+        imap_data_access.upload(file_to_upload)
+
+    assert mock_urllib3_request.call_count == 2
+
+
+def test_reprocess_error_response_is_not_retried(mock_urllib3_request):
+    """Test that an error response to a reprocess POST is raised rather than resent."""
+    mock_urllib3_request.side_effect = lambda *args, **kwargs: urllib3_response(503)
+    with pytest.raises(
+        imap_data_access.io.IMAPDataAccessError, match="503 Service Unavailable"
+    ):
+        imap_data_access.reprocess(start_date="20100101", end_date="20100102")
+
+    assert mock_urllib3_request.call_count == 1
 
 
 @pytest.mark.parametrize(

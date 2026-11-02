@@ -26,7 +26,7 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-dependencies = ["requests>=2.29"]
+dependencies = ["requests>=2.29", "urllib3>=2.0"]
 
 [project.scripts]
 imap-data-access = "imap_data_access.cli:main"
