@@ -84,6 +84,7 @@ def test_cli_query_json(mock_send_request, capsys):
         "version": "latest",
         "filename": None,
         "output_format": "json",
+        "download": False,
     }
     query_output_expected = [
         glows_l3e_hi_repoint1,
@@ -152,13 +153,77 @@ def test_cli_query_json(mock_send_request, capsys):
 )
 def test_cli_query_filename(filename, query_func, expected_kwargs, results, capsys):
     """Test that the query subcommand works with a FILENAME."""
-    args = Namespace(filename=filename, output_format="json")
+    args = Namespace(filename=filename, output_format="json", download=False)
     with mock.patch(
         f"imap_data_access.cli.{query_func}", return_value=results
     ) as mock_query:
         cli._query_parser(args)
     mock_query.assert_called_once_with(**expected_kwargs)
     assert json.loads(capsys.readouterr().out) == results[:1]
+
+
+@pytest.mark.parametrize(
+    ("filename", "query_func", "results", "expected_path"),
+    [
+        (
+            "imap_swapi_l1_sci_20260808_v001.0003.cdf",
+            "query",
+            [{"file_path": "imap/swapi/l1/imap_swapi_l1_sci_20260808_v001.0003.cdf"}],
+            "imap/swapi/l1/imap_swapi_l1_sci_20260808_v001.0003.cdf",
+        ),
+        (
+            "imap_130.tf",
+            "spice_query",
+            [{"file_name": "fk/imap_130.tf"}, {"file_name": "fk/imap_129.tf"}],
+            "fk/imap_130.tf",
+        ),
+    ],
+)
+def test_cli_query_download(filename, query_func, results, expected_path):
+    """Test that --download downloads each matching query result."""
+    args = Namespace(filename=filename, output_format="table", download=True)
+    with (
+        mock.patch(f"imap_data_access.cli.{query_func}", return_value=results),
+        mock.patch("imap_data_access.download") as mock_download,
+    ):
+        cli._query_parser(args)
+    mock_download.assert_called_once_with(expected_path)
+
+
+def test_cli_spice_query_download(capsys):
+    """Test that 'query --table spice --download' downloads every result."""
+    results = [{"file_name": "lsk/naif0012.tls"}, {"file_name": "fk/imap_130.tf"}]
+    with (
+        mock.patch.object(
+            sys,
+            "argv",
+            ["imap-data-access", "query", "--table", "spice", "--download"],
+        ),
+        mock.patch("imap_data_access.cli.spice_query", return_value=results),
+        mock.patch(
+            "imap_data_access.download", side_effect=lambda path: f"/data/{path}"
+        ) as mock_download,
+    ):
+        cli.main()
+    assert mock_download.call_args_list == [
+        mock.call("lsk/naif0012.tls"),
+        mock.call("fk/imap_130.tf"),
+    ]
+    out = capsys.readouterr().out
+    assert "Found [2] matching files" in out
+    assert "Successfully downloaded the file to: /data/lsk/naif0012.tls" in out
+    assert "Successfully downloaded the file to: /data/fk/imap_130.tf" in out
+
+
+def test_cli_query_download_no_results():
+    """Test that --download does nothing when the query has no results."""
+    args = Namespace(table="spice", filename=None, output_format="json", download=True)
+    with (
+        mock.patch("imap_data_access.cli.spice_query", return_value=[]),
+        mock.patch("imap_data_access.download") as mock_download,
+    ):
+        cli._query_parser(args)
+    mock_download.assert_not_called()
 
 
 @pytest.mark.parametrize(
