@@ -22,6 +22,7 @@ import datetime
 import json
 import logging
 import os
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -345,7 +346,10 @@ def _query_parser(args: argparse.Namespace):
         for result in query_results:
             filepath = result.get("file_name") or result["file_path"]
             output_path = imap_data_access.download(filepath)
-            print(f"Successfully downloaded the file to: {output_path}")
+            # Report to stderr so stdout keeps the requested output format
+            print(
+                f"Successfully downloaded the file to: {output_path}", file=sys.stderr
+            )
 
 
 def _upload_parser(args: argparse.Namespace):
@@ -852,7 +856,7 @@ def main():
         if any(
             getattr(args, key) != value
             for key, value in query_defaults.items()
-            if key not in ("filename", "output_format")
+            if key not in ("filename", "output_format", "download")
         ):
             query_parser.error(
                 "FILENAME cannot be combined with other query options. "

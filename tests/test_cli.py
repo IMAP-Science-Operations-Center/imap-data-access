@@ -209,10 +209,51 @@ def test_cli_spice_query_download(capsys):
         mock.call("lsk/naif0012.tls"),
         mock.call("fk/imap_130.tf"),
     ]
-    out = capsys.readouterr().out
-    assert "Found [2] matching files" in out
-    assert "Successfully downloaded the file to: /data/lsk/naif0012.tls" in out
-    assert "Successfully downloaded the file to: /data/fk/imap_130.tf" in out
+    captured = capsys.readouterr()
+    assert "Found [2] matching files" in captured.out
+    assert "Successfully downloaded" not in captured.out
+    assert "Successfully downloaded the file to: /data/lsk/naif0012.tls" in captured.err
+    assert "Successfully downloaded the file to: /data/fk/imap_130.tf" in captured.err
+
+
+def test_cli_query_download_json_output(capsys):
+    """Test that --download keeps stdout valid JSON with '--output-format json'."""
+    results = [{"file_name": "lsk/naif0012.tls"}]
+    with (
+        mock.patch.object(
+            sys,
+            "argv",
+            [
+                "imap-data-access",
+                "query",
+                "--table",
+                "spice",
+                "--output-format",
+                "json",
+                "--download",
+            ],
+        ),
+        mock.patch("imap_data_access.cli.spice_query", return_value=results),
+        mock.patch("imap_data_access.download", return_value="/data/naif0012.tls"),
+    ):
+        cli.main()
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == results
+    assert "Successfully downloaded the file to: /data/naif0012.tls" in captured.err
+
+
+def test_cli_query_filename_download():
+    """Test that FILENAME can be combined with --download."""
+    results = [{"file_name": "fk/imap_130.tf"}, {"file_name": "fk/imap_129.tf"}]
+    with (
+        mock.patch.object(
+            sys, "argv", ["imap-data-access", "query", "imap_130.tf", "--download"]
+        ),
+        mock.patch("imap_data_access.cli.spice_query", return_value=results),
+        mock.patch("imap_data_access.download") as mock_download,
+    ):
+        cli.main()
+    mock_download.assert_called_once_with("fk/imap_130.tf")
 
 
 def test_cli_query_download_no_results():
