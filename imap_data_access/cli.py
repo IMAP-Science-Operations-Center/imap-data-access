@@ -11,7 +11,7 @@ Use
     imap-data-access <command> [<args>]
     imap-data-access --help
     imap-data-access download <file_path>
-    imap-data-access query <query-parameters>
+    imap-data-access query <query-parameters> [--download]
     imap-data-access upload <file_path>
     imap-data-access reprocess <reprocessing parameters>
 """
@@ -341,6 +341,12 @@ def _query_parser(args: argparse.Namespace):
     elif args.output_format == "json":
         print(json.dumps(query_results))
 
+    if args.download:
+        for result in query_results:
+            filepath = result.get("file_name") or result["file_path"]
+            output_path = imap_data_access.download(filepath)
+            print(f"Successfully downloaded the file to: {output_path}")
+
 
 def _upload_parser(args: argparse.Namespace):
     """Upload a file to the IMAP SDC.
@@ -525,6 +531,12 @@ def add_query_args(subparser: ArgumentParser) -> None:
         "planetary_constants, leapseconds, pointing_attitude, lo_pivot_attitude, "
         "spacecraft_clock, imap_frames, science_frames, metakernel, thruster, "
         "lagrange_point, earth_attitude.",
+    )
+    subparser.add_argument(
+        "--download",
+        required=False,
+        action="store_true",
+        help="Download all files in query result",
     )
     subparser.set_defaults(func=_query_parser)
 
