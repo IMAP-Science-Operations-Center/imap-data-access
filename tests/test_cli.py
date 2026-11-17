@@ -212,6 +212,7 @@ def test_cli_spice_query_download(capsys):
     captured = capsys.readouterr()
     assert "Found [2] matching files" in captured.out
     assert "Successfully downloaded" not in captured.out
+    assert "Downloading 2 matching files" in captured.err
     assert "Successfully downloaded the file to: /data/lsk/naif0012.tls" in captured.err
     assert "Successfully downloaded the file to: /data/fk/imap_130.tf" in captured.err
 
@@ -239,6 +240,7 @@ def test_cli_query_download_json_output(capsys):
         cli.main()
     captured = capsys.readouterr()
     assert json.loads(captured.out) == results
+    assert "Downloading 1 matching files" in captured.err
     assert "Successfully downloaded the file to: /data/naif0012.tls" in captured.err
 
 

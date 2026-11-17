@@ -342,7 +342,8 @@ def _query_parser(args: argparse.Namespace):
     elif args.output_format == "json":
         print(json.dumps(query_results))
 
-    if args.download:
+    if args.download and query_results:
+        print(f"Downloading {len(query_results)} matching files", file=sys.stderr)
         for result in query_results:
             filepath = result.get("file_name") or result["file_path"]
             output_path = imap_data_access.download(filepath)
