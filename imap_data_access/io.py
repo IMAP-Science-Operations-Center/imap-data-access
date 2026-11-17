@@ -8,6 +8,7 @@ from time import sleep
 from typing import Optional, Union
 
 import requests
+from urllib3.util import Retry
 
 import imap_data_access
 from imap_data_access import file_validation
@@ -27,7 +28,34 @@ class IMAPDataAccessError(Exception):
     pass
 
 
-_RETRY_ADAPTER = requests.adapters.HTTPAdapter(max_retries=3)
+class _LoggingRetry(Retry):
+    """Retry that logs a warning each time it retries an error response.
+
+    urllib3 warns when it retries after a connection error, but logs retries of
+    error responses only at debug level, so job logs wouldn't show them.
+    """
+
+    def increment(self, method=None, url=None, response=None, **kwargs):
+        """Count a retry, logging a warning if it was caused by an error response."""
+        retry = super().increment(method, url, response=response, **kwargs)
+        if response is not None:
+            logger.warning(
+                "Retrying %s request after a %s response", method, response.status
+            )
+        return retry
+
+
+_RETRY_ADAPTER = requests.adapters.HTTPAdapter(
+    max_retries=_LoggingRetry(
+        total=5,
+        backoff_factor=1,  # 0, 2, 4, 8, 16 s (plus jitter)
+        backoff_jitter=1,  # spread out retries from concurrent jobs
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET", "HEAD"],  # don't blindly retry uploads/POSTs
+        respect_retry_after_header=True,
+        raise_on_status=False,  # let raise_for_status() produce the existing error
+    )
+)
 
 
 @contextlib.contextmanager
