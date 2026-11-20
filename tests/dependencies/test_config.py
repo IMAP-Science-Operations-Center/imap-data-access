@@ -270,14 +270,6 @@ def yaml_dir(tmp_path):
     return write_yaml_files(tmp_path / "dependencies")
 
 
-@pytest.fixture(autouse=True)
-def _clear_dependency_cache():
-    """Start and end every test with an empty configuration cache."""
-    clear_config_cache()
-    yield
-    clear_config_cache()
-
-
 def test_reads_every_job(yaml_dir):
     """Every job in every file is keyed by its instrument, data type and descriptor."""
     reader = DependencyConfigReader(yaml_dir)
@@ -538,8 +530,3 @@ def test_get_kickoff_jobs_none_found(tmp_path, caplog):
     with caplog.at_level(logging.INFO, logger="imap_data_access.dependencies"):
         assert get_kickoff_jobs(reader=reader) == []
     assert "No kickoff jobs found" in caplog.text
-
-
-def test_get_kickoff_jobs_needs_a_reader():
-    with pytest.raises(TypeError, match="needs a reader"):
-        get_kickoff_jobs()

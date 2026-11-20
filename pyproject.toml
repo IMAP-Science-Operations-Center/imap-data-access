@@ -41,7 +41,14 @@ dev = ["imap_data_access[test]", "pre-commit", "ruff"]
 test = ["pytest", "pytest-cov"]
 
 [tool.setuptools]
-packages = ["imap_data_access", "imap_data_access.dependencies"]
+packages = [
+  "imap_data_access",
+  "imap_data_access.dependencies",
+  "imap_data_access.dependencies.config_files",
+]
+
+[tool.setuptools.package-data]
+"imap_data_access.dependencies.config_files" = ["*.yaml", "*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = [

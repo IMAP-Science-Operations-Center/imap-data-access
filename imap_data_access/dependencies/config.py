@@ -11,6 +11,20 @@ from imap_data_access.dependencies.nodes import DependencyNode, ProcessingJobNod
 
 logger = logging.getLogger(__name__)
 
+DEPENDENCY_CONFIG_DIR = Path(__file__).parent / "config_files"
+"""Folder of the dependency configuration that ships with imap-data-access.
+
+It holds one ``imap_<instrument>_dependencies.yaml`` file per instrument, which
+:class:`DependencyConfigReader` reads by default, and the IDEX 10-day window CSV.
+"""
+
+IDEX_10_DAY_RANGES_PATH = DEPENDENCY_CONFIG_DIR / "idex_10_day_CDF_names.csv"
+"""CSV of the IDEX 10-day processing windows.
+
+Each row is one window, with ``start_date`` and ``end_date`` as ``YYYYMMDD`` and
+the window's day of year as ``doy``.
+"""
+
 
 def clear_config_cache():
     """Drop the process-wide cached dependency configuration.
@@ -33,16 +47,20 @@ class DependencyConfigReader:
         dict[Path, dict[tuple[str, str, str], ProcessingJobNode]]
     ] = {}
 
-    def __init__(self, yaml_dir: Path):
+    def __init__(self, yaml_dir: Path | None = None):
         """Initialize DependencyConfig by loading all dependencies.
 
         Parameters
         ----------
-        yaml_dir : Path
+        yaml_dir : Path, optional
             Directory containing the ``imap_<instrument>_dependencies.yaml``
-            files. Each directory is loaded once per process and then cached;
+            files. Defaults to :data:`DEPENDENCY_CONFIG_DIR`, the files that ship
+            with imap-data-access. Pass a different directory to load the
+            configuration from elsewhere, e.g. to compare against an older
+            release. Each directory is loaded once per process and then cached;
             see :func:`clear_config_cache`.
         """
+        yaml_dir = yaml_dir or DEPENDENCY_CONFIG_DIR
         if yaml_dir not in DependencyConfigReader._cached_config:
             DependencyConfigReader._cached_config[yaml_dir] = (
                 self._load_all_dependencies(yaml_dir)
@@ -77,7 +95,7 @@ class DependencyConfigReader:
 
         Examples
         --------
-        >>> reader = DependencyConfigReader(yaml_dir)
+        >>> reader = DependencyConfigReader()
         >>> reader.inputs(('glows', 'l1a', 'all'))
         [DependencyNode(source='leapseconds', ...), ...]
         """
@@ -98,7 +116,7 @@ class DependencyConfigReader:
 
         Examples
         --------
-        >>> reader = DependencyConfigReader(yaml_dir)
+        >>> reader = DependencyConfigReader()
         >>> reader.outputs(('glows', 'l1a', 'all'))
         [DependencyNode(source='glows', data_type='l1a', descriptor='de', ...), ...]
         """
@@ -145,7 +163,7 @@ class DependencyConfigReader:
 
         Examples
         --------
-        >>> reader = DependencyConfigReader(yaml_dir)
+        >>> reader = DependencyConfigReader()
         >>> nodes = reader.inputs(('codice', 'l1a', 'all'))
         >>> nodes[0]
         DependencyNode(source='codice', data_type='l0', descriptor='raw', ...)
@@ -371,10 +389,10 @@ def get_kickoff_jobs(
     ----------
     instrument : str, optional
         The instrument for which to get the kickoff job.
-    reader : DependencyConfigReader
+    reader : DependencyConfigReader, optional
         An instance of DependencyConfigReader to use for reading the dependency
-        configuration. Required for now: the dependency YAML files aren't
-        packaged with imap-data-access yet, so there is no default to read.
+        configuration. Defaults to one that reads the dependency YAML files that
+        ship with imap-data-access.
 
     Returns
     -------
@@ -382,20 +400,10 @@ def get_kickoff_jobs(
         List of ProcessingJobNode that are the root job node of each instrument
         pipeline.
         If instrument is provided, return only the kickoff job for that instrument.
-
-    Raises
-    ------
-    TypeError
-        If no reader is given.
     """
     kick_off_jobs = []
     if reader is None:
-        # TODO: default to the packaged dependency YAML once it ships with
-        # imap-data-access, as DependencyConfigReader will then have a default.
-        raise TypeError(
-            "get_kickoff_jobs() needs a reader: there is no default dependency "
-            "YAML directory yet, so pass reader=DependencyConfigReader(yaml_dir)"
-        )
+        reader = DependencyConfigReader()
 
     for potential_job in reader.config:
         for upstream_node in reader.inputs(potential_job):

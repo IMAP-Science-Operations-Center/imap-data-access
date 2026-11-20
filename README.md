@@ -273,3 +273,35 @@ science_file = imap_data_access.ScienceFilePath("imap_swe_l0_sci_20240101_v001.p
 # Filepath = /imap/swe/l0/2024/01/imap_swe_l0_sci_20240101_v001.pkts
 filepath = science_file.construct_path()
 ```
+
+## Dependency configuration
+
+The `imap_data_access.dependencies` subpackage describes what each SDC processing
+job reads and writes. Each instrument's jobs are defined in one YAML file,
+`imap_data_access/dependencies/config_files/imap_<instrument>_dependencies.yaml`,
+which ships with this package. The SDC processing pipeline reads these files from
+the version of `imap-data-access` it uses, so a change to one of them takes
+effect only once it's in an `imap-data-access` release and the pipeline has
+been updated to that release.
+
+To change a job's dependencies, open a pull request against this repository that
+edits the instrument's YAML file. The
+[data dependency guide](https://imap-processing.readthedocs.io/en/latest/development/data-dependency.html)
+describes the format. Before you open the pull request, run this from the root of
+your checkout to check that the major versions in the files are consistent:
+
+```bash
+python -m imap_data_access.dependencies.validation
+```
+
+To read the configuration from Python:
+
+```python
+from imap_data_access.dependencies import DependencyConfigReader
+
+reader = DependencyConfigReader()
+# Jobs are keyed by (instrument, data level, descriptor)
+job = reader.config[("swe", "l1b", "sci")]
+job.inputs  # what the job reads
+job.outputs  # what the job writes
+```
