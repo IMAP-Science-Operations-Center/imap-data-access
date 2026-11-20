@@ -26,7 +26,7 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-dependencies = ["requests>=2.29", "urllib3>=2.0"]
+dependencies = ["pyyaml>=6.0", "requests>=2.29", "urllib3>=2.0"]
 
 [project.scripts]
 imap-data-access = "imap_data_access.cli:main"
@@ -41,7 +41,7 @@ dev = ["imap_data_access[test]", "pre-commit", "ruff"]
 test = ["pytest", "pytest-cov"]
 
 [tool.setuptools]
-packages = ["imap_data_access"]
+packages = ["imap_data_access", "imap_data_access.dependencies"]
 
 [tool.pytest.ini_options]
 testpaths = [
