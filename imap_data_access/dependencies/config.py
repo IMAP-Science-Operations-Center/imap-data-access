@@ -1,0 +1,411 @@
+"""Simple utilities for reading dependency configurations."""
+
+import logging
+from pathlib import Path
+from typing import ClassVar
+
+import yaml
+
+import imap_data_access
+from imap_data_access.dependencies.nodes import DependencyNode, ProcessingJobNode
+
+logger = logging.getLogger(__name__)
+
+
+def clear_config_cache():
+    """Drop the process-wide cached dependency configuration.
+
+    The configuration is immutable at runtime, so this is only needed by tests
+    that patch the YAML content out from under :class:`DependencyConfigReader`.
+    """
+    DependencyConfigReader._cached_config = {}
+
+
+class DependencyConfigReader:
+    """Dependency configuration reader.
+
+    This class encapsulates all operations for reading instrument dependency
+    configurations, including loading from YAML files, validating nodes.
+    """
+
+    # Mapping from YAML directory to its loaded dependency configuration.
+    _cached_config: ClassVar[
+        dict[Path, dict[tuple[str, str, str], ProcessingJobNode]]
+    ] = {}
+
+    def __init__(self, yaml_dir: Path):
+        """Initialize DependencyConfig by loading all dependencies.
+
+        Parameters
+        ----------
+        yaml_dir : Path
+            Directory containing the ``imap_<instrument>_dependencies.yaml``
+            files. Each directory is loaded once per process and then cached;
+            see :func:`clear_config_cache`.
+        """
+        if yaml_dir not in DependencyConfigReader._cached_config:
+            DependencyConfigReader._cached_config[yaml_dir] = (
+                self._load_all_dependencies(yaml_dir)
+            )
+        self._config = DependencyConfigReader._cached_config[yaml_dir]
+
+    @property
+    def config(self) -> dict[tuple[str, str, str], ProcessingJobNode]:
+        """Get the underlying dependency configuration dictionary.
+
+        Returns
+        -------
+        dict[tuple[str, str, str], ProcessingJobNode]
+            Mapping of ``(source, data_type, descriptor)`` tuples to
+            :class:`~imap_data_access.dependencies.nodes.ProcessingJobNode`
+            objects.
+        """
+        return self._config
+
+    def inputs(self, key: tuple[str, str, str]) -> list[DependencyNode]:
+        """Return upstream input nodes for the given job key.
+
+        Parameters
+        ----------
+        key : tuple[str, str, str]
+            ``(source, data_type, descriptor)`` identifying the downstream job.
+
+        Returns
+        -------
+        list[DependencyNode]
+            Upstream dependency nodes required as inputs for this job.
+
+        Examples
+        --------
+        >>> reader = DependencyConfigReader(yaml_dir)
+        >>> reader.inputs(('glows', 'l1a', 'all'))
+        [DependencyNode(source='leapseconds', ...), ...]
+        """
+        return self._config[key].inputs
+
+    def outputs(self, key: tuple[str, str, str]) -> list[DependencyNode]:
+        """Return output product nodes produced by the given job key.
+
+        Parameters
+        ----------
+        key : tuple[str, str, str]
+            ``(source, data_type, descriptor)`` identifying the downstream job.
+
+        Returns
+        -------
+        list[DependencyNode]
+            Output product nodes for this job.
+
+        Examples
+        --------
+        >>> reader = DependencyConfigReader(yaml_dir)
+        >>> reader.outputs(('glows', 'l1a', 'all'))
+        [DependencyNode(source='glows', data_type='l1a', descriptor='de', ...), ...]
+        """
+        return self._config[key].outputs
+
+    def partition(self, key: tuple[str, str, str]) -> str | None:
+        """Return the partition string for the given job key.
+
+        Parameters
+        ----------
+        key : tuple[str, str, str]
+            ``(source, data_type, descriptor)`` identifying the downstream job.
+
+        Returns
+        -------
+        str | None
+            Partition cadence string (e.g. ``'1d'``, ``'repoint'``) or ``None``.
+        """
+        return self._config[key].partition
+
+    def _load_all_dependencies(
+        self,
+        yaml_dir: Path,
+    ) -> dict[tuple[str, str, str], list[DependencyNode]]:
+        """Load all instrument YAML dependency files and unified dependency.
+
+        Sets inputs and outputs to dictionaries where each key is a parent node
+        (source, data_type, descriptor) representing a downstream product,
+        and each value is a list of upstream
+        :class:`~imap_data_access.dependencies.nodes.DependencyNode` objects.
+
+        Parameters
+        ----------
+        yaml_dir : Path
+            Directory containing the ``imap_<instrument>_dependencies.yaml``
+            files.
+
+        Raises
+        ------
+        FileNotFoundError
+            If any expected YAML file is missing.
+        ValueError
+            If YAML content is invalid or empty.
+
+        Examples
+        --------
+        >>> reader = DependencyConfigReader(yaml_dir)
+        >>> nodes = reader.inputs(('codice', 'l1a', 'all'))
+        >>> nodes[0]
+        DependencyNode(source='codice', data_type='l0', descriptor='raw', ...)
+        """
+        dependencies = {}
+
+        for instrument in imap_data_access.VALID_INSTRUMENTS:
+            yaml_file = yaml_dir / f"imap_{instrument}_dependencies.yaml"
+
+            if instrument in ("ialirt", "l1const"):
+                continue
+
+            if not yaml_file.exists():
+                raise FileNotFoundError(
+                    f"Dependency configuration file not found for '{instrument}' "
+                    f"at {yaml_file}"
+                )
+
+            with open(yaml_file) as f:
+                instrument_config = yaml.safe_load(f)
+
+            if not instrument_config:
+                raise ValueError(
+                    f"Dependency content is empty for '{instrument}' in {yaml_file}"
+                )
+
+            # Parse YAML keys to construct (source, data_type, descriptor) tuples
+            for key_str, value in instrument_config.items():
+                # Skip any anchor definitions (common dependency groups).
+                if not key_str.startswith("("):
+                    continue
+
+                try:
+                    # Extract data_type and descriptor from key string
+                    key_parts = key_str.strip("()").split(",")
+                    data_type = key_parts[0].strip()
+                    descriptor = key_parts[1].strip()
+                    # Convert string key like "(l1a, all)" in the YAML to tuple
+                    # (<instrument>,l1a, all) by combining with instrument source
+                    # to get full downstream node.
+                    # Validate the downstream product node by constructing a
+                    # DependencyNode (validation runs in __post_init__).
+                    DependencyNode(
+                        source=instrument,
+                        data_type=data_type,
+                        descriptor=descriptor,
+                    )
+                    potential_job_node = (instrument, data_type, descriptor)
+
+                    upstream_list = value["inputs"]
+                    outputs_list = value.get("outputs") or []
+                    flattened_upstream_deps = self.recursive_flatten_list(upstream_list)
+
+                    upstream_deps_nodes = []
+                    for upstream in flattened_upstream_deps:
+                        upstream_deps_nodes.append(
+                            DependencyNode(
+                                source=upstream["source"],
+                                data_type=upstream["data_type"],
+                                descriptor=upstream["descriptor"],
+                                required=upstream.get("required", True),
+                                trigger_job=upstream.get("trigger_job", True),
+                                dependency_query_time_range=upstream.get(
+                                    "date_range", []
+                                ),
+                                major_version=upstream.get("major_version"),
+                            )
+                        )
+                    job_outputs_list = []
+                    for output in outputs_list:
+                        job_outputs_list.append(
+                            DependencyNode(
+                                source=output["source"],
+                                data_type=output["data_type"],
+                                descriptor=output["descriptor"],
+                                # NOTE: required flag is not supported yet.
+                                # That's why it's default to false for outputs.
+                                required=output.get("required", False),
+                                trigger_job=output.get("trigger_job", True),
+                                dependency_query_time_range=output.get(
+                                    "date_range", []
+                                ),
+                                major_version=output.get("major_version"),
+                            )
+                        )
+
+                    dependencies[potential_job_node] = ProcessingJobNode(
+                        source=instrument,
+                        data_type=data_type,
+                        descriptor=descriptor,
+                        inputs=upstream_deps_nodes,
+                        outputs=job_outputs_list,
+                        partition=value.get("partition"),
+                    )
+
+                except (ValueError, IndexError) as e:
+                    raise ValueError(
+                        f"Non-product key error: '{key_str}' in {yaml_file}: {e}"
+                    ) from e
+
+        return dependencies
+
+    def recursive_flatten_list(self, nested_list):
+        """Recursively flatten a nested list structure.
+
+        Multiple inheritance in dependency YAML files can result in
+        lists containing other lists, which this method flattens.
+
+        For example:
+        spice_basic: &spice_basic
+            - source: leapseconds
+                data_type: spice
+                descriptor: historical
+                trigger_job: false
+            - source: spacecraft_clock
+                data_type: spice
+                descriptor: historical
+                trigger_job: false
+
+        spice_45sensor_l1b: &spice_45sensor_l1b
+            - *spice_basic
+            - source: imap_frames
+                data_type: spice
+                descriptor: historical
+                trigger_job: false
+
+        (l1b, 45sensor-de):
+            inputs:
+              - *spice_45sensor_l1b
+              - source: hi
+                  data_type: l1a
+                  descriptor: 45sensor-de
+
+        Parameters
+        ----------
+        nested_list : list
+            A potentially nested list of dependencies.
+
+        Returns
+        -------
+        list
+            A single flattened list of dependencies.
+        """
+        flat_list = []
+        for item in nested_list:
+            if isinstance(item, list):
+                # If the item is a list, extend with the flattened version of
+                # that list
+                flat_list.extend(self.recursive_flatten_list(item))
+            else:
+                # Otherwise, append the item (which can be any object)
+                flat_list.append(item)
+        return flat_list
+
+    def get_node_for_output(self, dep_node: DependencyNode) -> ProcessingJobNode:
+        """Return the ProcessingJobNode that produces the given DependencyNode output.
+
+        Parameters
+        ----------
+        dep_node : DependencyNode
+            The output DependencyNode for which to find the producing job.
+
+        Returns
+        -------
+        ProcessingJobNode
+            The job node whose outputs include the specified product.
+
+        Raises
+        ------
+        ValueError
+            If no job is found that produces the given output.
+        """
+        for job_node in self._config.values():
+            for output in job_node.outputs:
+                if (
+                    output.source == dep_node.source
+                    and output.data_type == dep_node.data_type
+                    and output.descriptor == dep_node.descriptor
+                ):
+                    return job_node
+
+        raise ValueError(f"No job found that produces output: ({dep_node})")
+
+    def get_nodes_for_input(self, dep_node: DependencyNode) -> list[ProcessingJobNode]:
+        """Return the ProcessingJobNodes that have the given DependencyNode input.
+
+        Parameters
+        ----------
+        dep_node : DependencyNode
+            The input DependencyNode for which to find the consuming job.
+
+        Returns
+        -------
+        list[ProcessingJobNode]
+            The job nodes whose inputs include the specified product.
+        """
+        # returns a list because an input can be consumed by multiple jobs.
+        # E.g. PSETS often times are the inputs to more than one job.
+        processing_nodes = []
+        for job_node in self._config.values():
+            for input in job_node.inputs:
+                if (
+                    input.source == dep_node.source
+                    and input.data_type == dep_node.data_type
+                    and input.descriptor == dep_node.descriptor
+                ):
+                    processing_nodes.append(job_node)
+        return processing_nodes
+
+
+def get_kickoff_jobs(
+    instrument: str | None = None, reader: DependencyConfigReader | None = None
+) -> list[ProcessingJobNode]:
+    """Return all the jobs that kick off each instrument pipeline.
+
+    These are nodes that are downstream from a node with the data_level equal to
+    "l0" and the descriptor equal to "raw".
+
+    If instrument is provided, return only the kickoff job for that instruments
+    pipeline.
+
+    Parameters
+    ----------
+    instrument : str, optional
+        The instrument for which to get the kickoff job.
+    reader : DependencyConfigReader
+        An instance of DependencyConfigReader to use for reading the dependency
+        configuration. Required for now: the dependency YAML files aren't
+        packaged with imap-data-access yet, so there is no default to read.
+
+    Returns
+    -------
+    list[ProcessingJobNode]
+        List of ProcessingJobNode that are the root job node of each instrument
+        pipeline.
+        If instrument is provided, return only the kickoff job for that instrument.
+
+    Raises
+    ------
+    TypeError
+        If no reader is given.
+    """
+    kick_off_jobs = []
+    if reader is None:
+        # TODO: default to the packaged dependency YAML once it ships with
+        # imap-data-access, as DependencyConfigReader will then have a default.
+        raise TypeError(
+            "get_kickoff_jobs() needs a reader: there is no default dependency "
+            "YAML directory yet, so pass reader=DependencyConfigReader(yaml_dir)"
+        )
+
+    for potential_job in reader.config:
+        for upstream_node in reader.inputs(potential_job):
+            if upstream_node.data_type == "l0" and upstream_node.descriptor == "raw":
+                if instrument and upstream_node.source == instrument:
+                    return [reader.config[potential_job]]
+                kick_off_jobs.append(reader.config[potential_job])
+
+    if not kick_off_jobs:
+        logger.info(
+            "No kickoff jobs found. Please check the instrument dependency YAML files."
+        )
+    return kick_off_jobs
