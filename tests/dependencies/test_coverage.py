@@ -73,11 +73,11 @@ def repoints(monkeypatch):
     """Stand in for the SDC's repoint file, and record the lookups."""
     lookups = []
 
-    def query_repoint(repoint_id):
+    def repoint_query(repoint_id):
         lookups.append(repoint_id)
         return REPOINTS.get(repoint_id)
 
-    monkeypatch.setattr(coverage_module, "query_repoint", query_repoint)
+    monkeypatch.setattr(coverage_module, "repoint_query", repoint_query)
     return lookups
 
 

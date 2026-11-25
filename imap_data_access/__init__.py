@@ -28,7 +28,7 @@ from imap_data_access.processing_input import (
     SPICEInput,
     SpinInput,
 )
-from imap_data_access.repoint import Repoint, query_repoint
+from imap_data_access.repoint import Repoint, repoint_query
 
 __all__ = [
     "VALID_DATALEVELS",
@@ -50,8 +50,8 @@ __all__ = [
     "SpinInput",
     "download",
     "query",
-    "query_repoint",
     "release",
+    "repoint_query",
     "reprocess",
     "spice_query",
     "upload",

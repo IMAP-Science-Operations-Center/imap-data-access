@@ -56,7 +56,7 @@ class Repoint(NamedTuple):
 _cache: dict = {"file_path": None, "repoints": {}}
 
 
-def query_repoint(repoint_id: int) -> Repoint | None:
+def repoint_query(repoint_id: int) -> Repoint | None:
     """Return a repointing maneuver, and the pointing that follows it.
 
     The times come from the newest repoint file at the SDC, which is read once

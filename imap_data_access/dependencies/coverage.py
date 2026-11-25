@@ -33,7 +33,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     generate_imap_file_path,
 )
-from imap_data_access.repoint import query_repoint
+from imap_data_access.repoint import repoint_query
 
 ONE_DAY = datetime.timedelta(days=1)
 
@@ -99,7 +99,7 @@ def nominal_coverage(
     maneuver with the file's repointing number to the end of the next one, as
     in the SDC's pointing table and repoint partitions. Those times come from
     the SDC's newest repoint file, through
-    :func:`imap_data_access.query_repoint`, so files that cover a pointing need
+    :func:`imap_data_access.repoint_query`, so files that cover a pointing need
     access to the SDC. Other files don't.
 
     Parameters
@@ -233,7 +233,7 @@ def _day(date: str) -> datetime.datetime:
 
 def _pointing_coverage(repointing: int, name: str) -> Coverage:
     """Return the span of a pointing, from the SDC's repoint file."""
-    repoint = query_repoint(repointing)
+    repoint = repoint_query(repointing)
     if repoint is None or repoint.pointing_start is None:
         raise PointingNotFoundError(
             f"{name} covers repointing {repointing}, which the SDC's repoint "

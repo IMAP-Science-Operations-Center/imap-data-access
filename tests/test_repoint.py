@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 
 import imap_data_access
-from imap_data_access import Repoint, query_repoint, repoint
+from imap_data_access import Repoint, repoint, repoint_query
 
 HEADER = (
     "repoint_start_sec_sclk,repoint_start_subsec_sclk,repoint_end_sec_sclk,"
@@ -85,18 +85,18 @@ def test_parse_repoints_missing_times():
     assert repoints[2].pointing_end == utc(2025, 9, 30, 10, 1, 43, 215581)
 
 
-def test_query_repoint(sdc):
-    assert query_repoint(2).pointing_start == utc(2025, 9, 29, 10, 4, 27, 294196)
-    assert query_repoint(1).repoint_id == 1
+def test_repoint_query(sdc):
+    assert repoint_query(2).pointing_start == utc(2025, 9, 29, 10, 4, 27, 294196)
+    assert repoint_query(1).repoint_id == 1
     # The file is read once, and reused for later lookups.
     assert sdc["lists"] == 1
     assert sdc["reads"] == ["imap/spice/repoint/a.repoint"]
 
 
 @pytest.mark.parametrize("repoint_id", [3, 4], ids=["not ended", "not listed"])
-def test_query_repoint_checks_for_a_newer_file(sdc, repoint_id):
+def test_repoint_query_checks_for_a_newer_file(sdc, repoint_id):
     """A pointing that's missing or hasn't ended sends it back to the SDC."""
-    query_repoint(1)
+    repoint_query(1)
     sdc["files"]["imap/spice/repoint/b.repoint"] = REPOINT_FILE.replace(
         ",,,,,,\n",
         "7,0,8,0,2025-10-01 10:00:00.000000,2025-10-01 10:03:00.000000,4\n"
@@ -104,7 +104,7 @@ def test_query_repoint_checks_for_a_newer_file(sdc, repoint_id):
     )
     sdc["newest"] = "imap/spice/repoint/b.repoint"
 
-    found = query_repoint(repoint_id)
+    found = repoint_query(repoint_id)
     assert found.pointing_end is not None
     assert sdc["reads"] == [
         "imap/spice/repoint/a.repoint",
@@ -112,16 +112,16 @@ def test_query_repoint_checks_for_a_newer_file(sdc, repoint_id):
     ]
 
 
-def test_query_repoint_unknown(sdc):
+def test_repoint_query_unknown(sdc):
     """With no newer file, an unknown maneuver is None, and nothing is reread."""
-    assert query_repoint(99) is None
+    assert repoint_query(99) is None
     assert sdc["lists"] == 2
     assert sdc["reads"] == ["imap/spice/repoint/a.repoint"]
 
 
-def test_query_repoint_no_files(sdc):
+def test_repoint_query_no_files(sdc):
     sdc["newest"] = None
-    assert query_repoint(1) is None
+    assert repoint_query(1) is None
     assert sdc["reads"] == []
 
 
