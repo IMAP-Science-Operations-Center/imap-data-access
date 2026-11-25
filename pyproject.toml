@@ -48,7 +48,7 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-"imap_data_access.dependencies.config_files" = ["*.yaml", "*.csv"]
+"imap_data_access.dependencies.config_files" = ["*.yaml", "*.csv", "README.md"]
 
 [tool.pytest.ini_options]
 testpaths = [

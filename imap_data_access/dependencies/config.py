@@ -11,11 +11,15 @@ from imap_data_access.dependencies.nodes import DependencyNode, ProcessingJobNod
 
 logger = logging.getLogger(__name__)
 
+# sds-data-manager's deploy-time reprocess check reads the YAML files at this path
+# from older releases, so moving or renaming the folder or the files breaks that
+# check. See config_files/README.md, which documents the format.
 DEPENDENCY_CONFIG_DIR = Path(__file__).parent / "config_files"
 """Folder of the dependency configuration that ships with imap-data-access.
 
 It holds one ``imap_<instrument>_dependencies.yaml`` file per instrument, which
 :class:`DependencyConfigReader` reads by default, and the IDEX 10-day window CSV.
+``README.md`` in the folder documents the YAML format.
 """
 
 IDEX_10_DAY_RANGES_PATH = DEPENDENCY_CONFIG_DIR / "idex_10_day_CDF_names.csv"
