@@ -77,9 +77,10 @@ def nominal_coverage(
 
     The span depends on the kind of file:
 
-    - **An ancillary file** covers the dates in its name, from the start of its
-      start date up to the end of its end date. If its name has no end date, the
-      span has no end.
+    - **An ancillary file with a repointing in its name** covers that pointing.
+    - **Any other ancillary file** covers the dates in its name, from the start
+      of its start date up to the end of its end date. If its name has no end
+      date, the span has no end.
     - **A science or quicklook file that a processing job makes** covers the
       job's partition window that the file belongs to:
 
@@ -154,7 +155,9 @@ def nominal_coverage(
 
 
 def _ancillary_coverage(path: AncillaryFilePath, name: str) -> Coverage:
-    """Return the span of the dates in an ancillary file's name."""
+    """Return the pointing or the dates in an ancillary file's name."""
+    if path.repointing is not None:
+        return _pointing_coverage(path.repointing, name)
     start = _day(path.start_date)
     if path.end_date is None:
         return Coverage(start, None)

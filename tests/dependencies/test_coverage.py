@@ -253,6 +253,24 @@ def test_ancillary_ending_before_it_starts():
         nominal_coverage("imap_swe_esa-lut_20250110_20250101_v001.csv")
 
 
+def test_ancillary_with_a_repointing(repoints):
+    """An ancillary file with a repointing in its name covers that pointing."""
+    coverage = nominal_coverage(
+        "imap_hi_45sensor-cal-prod_20250415-repoint00123_v001.csv"
+    )
+    assert coverage == Coverage(
+        utc(2025, 4, 15, 3, 0, 5, 250000), utc(2025, 4, 16, 2, 45)
+    )
+    assert repoints == [123]
+
+
+@pytest.mark.parametrize("repointing", [124, 999], ids=["not ended", "unknown"])
+def test_ancillary_with_a_repointing_not_found(repointing):
+    name = f"imap_hi_45sensor-cal-prod_20250415-repoint{repointing:05d}_v001.csv"
+    with pytest.raises(PointingNotFoundError, match=f"repointing {repointing}"):
+        nominal_coverage(name)
+
+
 @pytest.mark.parametrize(
     "name",
     [
