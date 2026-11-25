@@ -130,6 +130,11 @@ imap_data_access.download("imap/mag/l0/2024/01/imap_mag_l0_raw_202040101_v001.pk
 
 # Upload a calibration file that exists locally
 imap_data_access.upload("imap/swe/l1a/2024/01/imap_swe_l1a_sci_20240105_v001.cdf")
+
+# Look up a repointing maneuver and the pointing after it, by the number that
+# files from that pointing have in their names, such as "repoint00005"
+repoint = imap_data_access.repoint_query(5)
+repoint.pointing_start, repoint.pointing_end  # datetimes in UTC
 ```
 
 ## Configuration
