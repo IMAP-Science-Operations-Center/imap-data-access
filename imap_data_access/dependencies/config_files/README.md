@@ -254,8 +254,9 @@ the jobs that read their outputs.
 ### Partitions
 
 `partition` sets the time window that each run of the job covers, and so the
-time span of the files it writes. The reader doesn't check the value, but
-`sds-data-manager` only knows these:
+time span of the files it writes. For any file,
+`imap_data_access.dependencies.nominal_coverage()` returns that window. The
+reader doesn't check the value, but `sds-data-manager` only knows these:
 
 | Value | Each run covers |
 |---|---|

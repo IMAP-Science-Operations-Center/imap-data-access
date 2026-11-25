@@ -10,6 +10,8 @@ This subpackage describes what each processing job reads and writes:
   dependency YAML files into those node types.
 - :mod:`~imap_data_access.dependencies.validation`: checks that the major
   versions in the dependency YAML files are consistent.
+- :mod:`~imap_data_access.dependencies.coverage`: the time span that a file
+  nominally covers.
 
 The dependency YAML files, one per instrument, ship with this package in
 :data:`DEPENDENCY_CONFIG_DIR`, together with the IDEX 10-day window CSV.
@@ -21,6 +23,12 @@ from imap_data_access.dependencies.config import (
     DependencyConfigReader,
     clear_config_cache,
     get_kickoff_jobs,
+)
+from imap_data_access.dependencies.coverage import (
+    Coverage,
+    CoverageError,
+    PointingNotFoundError,
+    nominal_coverage,
 )
 from imap_data_access.dependencies.map_windows import (
     BaseENAMapPartition,
@@ -48,6 +56,8 @@ __all__ = [
     "NEAREST_OPTIONS",
     "SPICE_SOURCES",
     "BaseENAMapPartition",
+    "Coverage",
+    "CoverageError",
     "DataSource",
     "DataType",
     "DependencyConfigReader",
@@ -57,8 +67,10 @@ __all__ = [
     "Map6MoPartition",
     "MapWindow",
     "Node",
+    "PointingNotFoundError",
     "ProcessingJobNode",
     "WindowBoundary",
     "clear_config_cache",
     "get_kickoff_jobs",
+    "nominal_coverage",
 ]
