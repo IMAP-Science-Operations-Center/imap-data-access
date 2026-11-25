@@ -286,9 +286,10 @@ been updated to that release.
 
 To change a job's dependencies, open a pull request against this repository that
 edits the instrument's YAML file. The
-[data dependency guide](https://imap-processing.readthedocs.io/en/latest/development/data-dependency.html)
-describes the format. Before you open the pull request, run this from the root of
-your checkout to check that the major versions in the files are consistent:
+[format reference](imap_data_access/dependencies/config_files/README.md)
+describes every field, how the processing pipeline uses it, and what happens when
+you change a major version. Before you open the pull request, run this from the
+root of your checkout to check that the major versions in the files are consistent:
 
 ```bash
 python -m imap_data_access.dependencies.validation

@@ -2,7 +2,6 @@
 
 import pytest
 
-import imap_data_access
 from imap_data_access.dependencies import DependencyConfigReader, get_kickoff_jobs
 from imap_data_access.dependencies.validation import (
     validate_dependency_yaml_versions,
@@ -193,34 +192,14 @@ SWE_VALID_YAML_BUMPED = (
 )
 
 
-def _one_job(instrument):
-    """Return the YAML for a pipeline with one job, which reads the L0 data."""
-    return f"""
-(l1a, all):
-  inputs:
-    - source: {instrument}
-      data_type: l0
-      descriptor: raw
-  outputs:
-    - source: {instrument}
-      data_type: l1a
-      descriptor: sci
-      major_version: 1
-"""
-
-
 @pytest.fixture
-def yaml_dir(tmp_path):
+def yaml_dir(one_job_yaml_dir):
     """A one-job YAML file for every instrument, for a test to replace.
 
-    The reader needs a file for every instrument, but validation only follows
-    one instrument's pipeline at a time, so the other files can be minimal.
+    Validation only follows one instrument's pipeline at a time, so the other
+    instruments' files can be minimal.
     """
-    for instrument in imap_data_access.VALID_INSTRUMENTS - {"ialirt", "l1const"}:
-        (tmp_path / f"imap_{instrument}_dependencies.yaml").write_text(
-            _one_job(instrument)
-        )
-    return tmp_path
+    return one_job_yaml_dir
 
 
 def reader_with(yaml_dir, **instrument_yaml):

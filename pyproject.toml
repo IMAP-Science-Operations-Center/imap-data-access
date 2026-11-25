@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "imap-data-access"
-version = "1.4.0.dev0"
+version = "1.4.0.dev1"
 description = "IMAP SDC Data Access"
 authors = [{name = "IMAP SDC Developers", email = "imap-sdc@lists.lasp.colorado.edu"}]
 readme = "README.md"
@@ -48,7 +48,7 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-"imap_data_access.dependencies.config_files" = ["*.yaml", "*.csv"]
+"imap_data_access.dependencies.config_files" = ["*.yaml", "*.csv", "README.md"]
 
 [tool.pytest.ini_options]
 testpaths = [

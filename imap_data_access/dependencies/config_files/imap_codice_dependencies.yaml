@@ -1,8 +1,9 @@
 # <---- Warning ---->
-# For latest dependency configuration guidelines and requirements,
-# please refer to this document https://imap-processing.readthedocs.io/en/latest/development/data-dependency.html#.
-# It contains important information such as the default values and expected behavior of these dependencies,
-# and how to properly configure them for your pipeline lambdas.
+# The format of this file is documented in README.md, in the same folder as this
+# file. It describes every field, its default, how the SDC processing pipeline
+# uses it, and what happens when a major_version changes. Before opening a pull
+# request, check your change by running this from the root of your checkout:
+#   python -m imap_data_access.dependencies.validation
 
 # ====== Common Data Dependencies ======
 lo_l3b_dist_common: &lo_l3b_dist_common
