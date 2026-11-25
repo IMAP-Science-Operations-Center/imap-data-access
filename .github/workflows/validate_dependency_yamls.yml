@@ -1,0 +1,27 @@
+name: Validate Dependency YAMLs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the package
+        run: |
+          pip install .
+
+      # Run outside the checkout, so that this checks the installed package and
+      # the dependency YAML files packaged with it.
+      - name: Validate dependency YAMLs
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -m imap_data_access.dependencies.validation

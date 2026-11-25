@@ -8,9 +8,16 @@ This subpackage describes what each processing job reads and writes:
   maps cover.
 - :mod:`~imap_data_access.dependencies.config`: the reader that loads the
   dependency YAML files into those node types.
+- :mod:`~imap_data_access.dependencies.validation`: checks that the major
+  versions in the dependency YAML files are consistent.
+
+The dependency YAML files, one per instrument, ship with this package in
+:data:`DEPENDENCY_CONFIG_DIR`, together with the IDEX 10-day window CSV.
 """
 
 from imap_data_access.dependencies.config import (
+    DEPENDENCY_CONFIG_DIR,
+    IDEX_10_DAY_RANGES_PATH,
     DependencyConfigReader,
     clear_config_cache,
     get_kickoff_jobs,
@@ -36,6 +43,8 @@ from imap_data_access.dependencies.nodes import (
 
 __all__ = [
     "DATE_RANGE_OPTIONS",
+    "DEPENDENCY_CONFIG_DIR",
+    "IDEX_10_DAY_RANGES_PATH",
     "NEAREST_OPTIONS",
     "SPICE_SOURCES",
     "BaseENAMapPartition",
