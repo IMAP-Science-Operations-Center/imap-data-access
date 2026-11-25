@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from imap_data_access import Repoint
 from imap_data_access.dependencies import (
     Coverage,
     CoverageError,
@@ -12,6 +13,7 @@ from imap_data_access.dependencies import (
     PointingNotFoundError,
     nominal_coverage,
 )
+from imap_data_access.dependencies import coverage as coverage_module
 from imap_data_access.file_validation import ScienceFilePath
 
 UTC = timezone.utc
@@ -52,13 +54,31 @@ def _job(data_type, descriptor, partition):
 """
 
 
-# Repointing 123 is complete, 124 has started but not ended, and 125 ends
-# before it starts.
-POINTINGS = {
-    123: (utc(2025, 4, 15, 3, 0, 5, 250000), utc(2025, 4, 16, 2, 45)),
-    124: (utc(2025, 4, 16, 3), None),
-    125: (utc(2025, 4, 17), utc(2025, 4, 16)),
+def _repoint(repoint_id, pointing_start, pointing_end):
+    return Repoint(repoint_id, None, pointing_start, pointing_start, pointing_end)
+
+
+# Repointing 123's pointing is complete, 124's hasn't ended, 125's ends before
+# it starts, and 126's maneuver has no end time.
+REPOINTS = {
+    123: _repoint(123, utc(2025, 4, 15, 3, 0, 5, 250000), utc(2025, 4, 16, 2, 45)),
+    124: _repoint(124, utc(2025, 4, 16, 3), None),
+    125: _repoint(125, utc(2025, 4, 17), utc(2025, 4, 16)),
+    126: _repoint(126, None, utc(2025, 4, 18)),
 }
+
+
+@pytest.fixture(autouse=True)
+def repoints(monkeypatch):
+    """Stand in for the SDC's repoint file, and record the lookups."""
+    lookups = []
+
+    def query_repoint(repoint_id):
+        lookups.append(repoint_id)
+        return REPOINTS.get(repoint_id)
+
+    monkeypatch.setattr(coverage_module, "query_repoint", query_repoint)
+    return lookups
 
 
 @pytest.fixture
@@ -80,62 +100,54 @@ def test_coverage_unpacks_to_start_and_end(reader):
     assert end - start == timedelta(days=1)
 
 
-def test_repoint(reader):
+def test_repoint(reader, repoints):
+    """A repoint file covers the pointing named by the number in its name."""
     coverage = nominal_coverage(
-        "imap_swe_l1b_pointing_20250415-repoint00123_v001.cdf",
-        pointing_window=POINTINGS.get,
-        reader=reader,
+        "imap_swe_l1b_pointing_20250415-repoint00123_v001.cdf", reader=reader
     )
     # The pointing's times are kept to full precision.
-    assert coverage == Coverage(*POINTINGS[123])
+    assert coverage == Coverage(
+        utc(2025, 4, 15, 3, 0, 5, 250000), utc(2025, 4, 16, 2, 45)
+    )
+    assert repoints == [123]
 
 
 @pytest.mark.parametrize(
-    ("repointing", "pointing_window"),
+    ("repointing", "message"),
     [
-        pytest.param(999, POINTINGS.get, id="no pointing row"),
-        pytest.param(124, POINTINGS.get, id="pointing not ended"),
-        pytest.param(123, None, id="no lookup"),
+        pytest.param(999, "don't have yet", id="no repoint row"),
+        pytest.param(126, "don't have yet", id="no pointing start"),
+        pytest.param(124, "hasn't ended yet", id="pointing not ended"),
     ],
 )
-def test_repoint_pointing_not_found(reader, repointing, pointing_window):
+def test_repoint_pointing_not_found(reader, repointing, message):
     name = f"imap_swe_l1b_pointing_20250415-repoint{repointing:05d}_v001.cdf"
-    with pytest.raises(PointingNotFoundError, match=f"repointing {repointing}"):
-        nominal_coverage(name, pointing_window=pointing_window, reader=reader)
+    with pytest.raises(
+        PointingNotFoundError, match=f"repointing {repointing}.*{message}"
+    ):
+        nominal_coverage(name, reader=reader)
 
 
 def test_repoint_pointing_ends_before_it_starts(reader):
     with pytest.raises(CoverageError, match="ends before it starts"):
         nominal_coverage(
-            "imap_swe_l1b_pointing_20250417-repoint00125_v001.cdf",
-            pointing_window=POINTINGS.get,
-            reader=reader,
+            "imap_swe_l1b_pointing_20250417-repoint00125_v001.cdf", reader=reader
         )
 
 
-def test_repoint_file_without_a_repointing(reader):
+def test_repoint_file_without_a_repointing(reader, repoints):
     with pytest.raises(CoverageError, match="no repointing in its name") as error:
-        nominal_coverage(
-            "imap_swe_l1b_pointing_20250415_v001.cdf",
-            pointing_window=POINTINGS.get,
-            reader=reader,
-        )
+        nominal_coverage("imap_swe_l1b_pointing_20250415_v001.cdf", reader=reader)
     assert not isinstance(error.value, PointingNotFoundError)
+    assert repoints == []
 
 
-def test_pointing_times_are_converted_to_utc(reader):
-    """Times without a time zone are UTC; other time zones are converted."""
-    mountain = timezone(timedelta(hours=-7))
-    coverage = nominal_coverage(
-        "imap_swe_l1b_pointing_20250415-repoint00001_v001.cdf",
-        pointing_window=lambda _: (
-            datetime(2025, 4, 15, 3),
-            datetime(2025, 4, 15, 20, tzinfo=mountain),
-        ),
-        reader=reader,
-    )
-    assert coverage == Coverage(utc(2025, 4, 15, 3), utc(2025, 4, 16, 3))
-    assert coverage.start.tzinfo == coverage.end.tzinfo == UTC
+def test_only_pointing_files_look_up_repoints(reader, repoints):
+    """Other files need no access to the SDC."""
+    nominal_coverage("imap_swe_l1a_day_20250101_v001.cdf", reader=reader)
+    nominal_coverage("imap_swe_l2_map-3mo_20250325_v001.cdf", reader=reader)
+    nominal_coverage("imap_swe_esa-lut_20250101_v001.csv")
+    assert repoints == []
 
 
 def test_10_day(reader):
@@ -207,11 +219,16 @@ def test_no_job_makes_the_file(reader):
 
 def test_no_job_makes_the_file_with_a_repointing(reader):
     """With a repointing in its name, such a file covers that pointing."""
-    name = "imap_swe_l0_raw_20250415-repoint00123_v001.pkts"
-    coverage = nominal_coverage(name, pointing_window=POINTINGS.get, reader=reader)
-    assert coverage == Coverage(*POINTINGS[123])
+    coverage = nominal_coverage(
+        "imap_swe_l0_raw_20250415-repoint00123_v001.pkts", reader=reader
+    )
+    assert coverage == Coverage(
+        utc(2025, 4, 15, 3, 0, 5, 250000), utc(2025, 4, 16, 2, 45)
+    )
     with pytest.raises(PointingNotFoundError):
-        nominal_coverage(name, reader=reader)
+        nominal_coverage(
+            "imap_swe_l0_raw_20250416-repoint00124_v001.pkts", reader=reader
+        )
 
 
 def test_quicklook(reader):

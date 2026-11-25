@@ -4,13 +4,13 @@ A file's nominal coverage is the time window it's meant to cover by
 construction: the window of the processing run that makes it, rather than the
 span of the data inside it. It's worked out from the file's name and, for a
 file that a processing job makes, from that job's partition, so that it
-matches the windows the SDC processing pipeline runs jobs over.
+matches the windows the SDC processing pipeline runs jobs over. A file that
+covers a pointing gets the pointing's times from the SDC's repoint file.
 """
 
 import csv
 import datetime
 import os
-from collections.abc import Callable
 from functools import cache
 from typing import NamedTuple
 
@@ -33,6 +33,7 @@ from imap_data_access.file_validation import (
     ScienceFilePath,
     generate_imap_file_path,
 )
+from imap_data_access.repoint import query_repoint
 
 ONE_DAY = datetime.timedelta(days=1)
 
@@ -41,14 +42,6 @@ _MAP_PARTITIONS: dict[str, type[BaseENAMapPartition]] = {
     "6mo": Map6MoPartition,
     "1yr": Map1YrPartition,
 }
-
-PointingWindow = Callable[
-    [int], tuple[datetime.datetime | None, datetime.datetime | None] | None
-]
-"""Look up a pointing's ``(start, end)`` by its repointing number.
-
-It returns None, or None for either time, if the pointing isn't known yet.
-"""
 
 
 class Coverage(NamedTuple):
@@ -78,7 +71,6 @@ class PointingNotFoundError(CoverageError):
 
 def nominal_coverage(
     file: str | os.PathLike | ImapFilePath,
-    pointing_window: PointingWindow | None = None,
     reader: DependencyConfigReader | None = None,
 ) -> Coverage:
     """Return the time span that a file nominally covers.
@@ -102,18 +94,17 @@ def nominal_coverage(
       one that an instrument team uploads, covers the pointing in its name if it
       has one, and otherwise the day of its start date.
 
-    Days start at midnight UTC.
+    Days start at midnight UTC. A pointing runs from the end of the repointing
+    maneuver with the file's repointing number to the end of the next one, as
+    in the SDC's pointing table and repoint partitions. Those times come from
+    the SDC's newest repoint file, through
+    :func:`imap_data_access.query_repoint`, so files that cover a pointing need
+    access to the SDC. Other files don't.
 
     Parameters
     ----------
     file : str, os.PathLike or ImapFilePath
         The file, as its name, its path or a parsed file path.
-    pointing_window : callable, optional
-        Looks up a pointing's ``(start, end)`` from its repointing number, and
-        returns None if the pointing isn't known yet. It's needed only for files
-        that cover a pointing. To match the pointing table and the repoint
-        partitions, return the pointing's ``pointing_start_utc`` and
-        ``pointing_end_utc``. A time without a time zone is taken to be in UTC.
     reader : DependencyConfigReader, optional
         The dependency configuration that says which job makes a file. Defaults
         to the configuration that ships with imap-data-access.
@@ -126,8 +117,10 @@ def nominal_coverage(
     Raises
     ------
     PointingNotFoundError
-        If the file covers a pointing whose start or end isn't known yet, or if
-        no ``pointing_window`` was given.
+        If the file covers a pointing that the SDC's repoint files don't have
+        yet, or that hasn't ended yet.
+    IMAPDataAccessError
+        If the file covers a pointing and the SDC can't be reached.
     CoverageError
         If the file has no nominal coverage, for example because it's a SPICE
         file or the job that makes it has no usable partition, or if its name
@@ -154,10 +147,10 @@ def nominal_coverage(
     except ValueError:
         # No job makes this file, so the file's name decides.
         if path.repointing is not None:
-            return _pointing_coverage(path.repointing, pointing_window, name)
+            return _pointing_coverage(path.repointing, name)
         start = _day(path.start_date)
         return Coverage(start, start + ONE_DAY)
-    return _partition_coverage(path, name, job, pointing_window)
+    return _partition_coverage(path, name, job)
 
 
 def _ancillary_coverage(path: AncillaryFilePath, name: str) -> Coverage:
@@ -172,10 +165,7 @@ def _ancillary_coverage(path: AncillaryFilePath, name: str) -> Coverage:
 
 
 def _partition_coverage(
-    path: ScienceFilePath,
-    name: str,
-    job: ProcessingJobNode,
-    pointing_window: PointingWindow | None,
+    path: ScienceFilePath, name: str, job: ProcessingJobNode
 ) -> Coverage:
     """Return the window of the job's partition that a file belongs to."""
     start = _day(path.start_date)
@@ -189,7 +179,7 @@ def _partition_coverage(
                 f"{name} is made by the repoint job {job_name}, but has no "
                 "repointing in its name"
             )
-        return _pointing_coverage(path.repointing, pointing_window, name)
+        return _pointing_coverage(path.repointing, name)
     if partition == "10d":
         window = _idex_10_day_windows().get(start)
         if window is None:
@@ -238,24 +228,19 @@ def _day(date: str) -> datetime.datetime:
     )
 
 
-def _utc(time: datetime.datetime) -> datetime.datetime:
-    """Return a time in UTC, taking a time without a time zone to be in UTC."""
-    if time.tzinfo is None:
-        return time.replace(tzinfo=datetime.timezone.utc)
-    return time.astimezone(datetime.timezone.utc)
-
-
-def _pointing_coverage(
-    repointing: int, pointing_window: PointingWindow | None, name: str
-) -> Coverage:
-    """Return the span of a pointing, from the caller's pointing lookup."""
-    window = pointing_window(repointing) if pointing_window else None
-    start, end = window if window else (None, None)
-    if start is None or end is None:
+def _pointing_coverage(repointing: int, name: str) -> Coverage:
+    """Return the span of a pointing, from the SDC's repoint file."""
+    repoint = query_repoint(repointing)
+    if repoint is None or repoint.pointing_start is None:
         raise PointingNotFoundError(
-            f"{name} covers repointing {repointing}, whose start or end isn't known yet"
+            f"{name} covers repointing {repointing}, which the SDC's repoint "
+            "files don't have yet"
         )
-    start, end = _utc(start), _utc(end)
+    if repoint.pointing_end is None:
+        raise PointingNotFoundError(
+            f"{name} covers repointing {repointing}, whose pointing hasn't ended yet"
+        )
+    start, end = repoint.pointing_start, repoint.pointing_end
     if end <= start:
         raise CoverageError(
             f"{name} covers repointing {repointing}, which ends before it starts"
